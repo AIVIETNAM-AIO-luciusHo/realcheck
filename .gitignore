@@ -232,3 +232,9 @@ data/features/*
 !data/*/.gitkeep
 models/*.joblib
 .env
+
+# Giao tiếp giữa các agent (không track)
+TASK_DISPATCH.md
+TASK_REPORT.md
+TEST_REPORT.md
+PENDING_SETUP.md
