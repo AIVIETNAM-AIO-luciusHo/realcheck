@@ -27,7 +27,7 @@ API FastAPI phát hiện ảnh do AI tạo: trả **Ảnh thật / Ảnh AI / Ch
 Mỗi thư mục có `README.md` riêng (làm gì, cách chạy, input/output, lưu ý).
 
 ## Quy ước làm việc
-- Không commit thẳng `main`. Nhánh `ten/mo-ta-ngan`, ví dụ `quang/analyze-endpoint`.
+- Không commit thẳng `main`. Nhánh `ten/mo-ta-ngan`.
 - Mở Pull Request vào `main`; GitHub tự gán người review theo [CODEOWNERS](.github/CODEOWNERS); cần CI xanh (`ci-ok`) và ít nhất 1 approval.
 - Đổi cách dùng một thư mục thì cập nhật README thư mục đó trong cùng PR.
 - Commit tiếng Anh, tiền tố `feat:` `fix:` `docs:` `chore:` `test:`.
