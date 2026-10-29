@@ -218,3 +218,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Sách tham khảo cục bộ
+docs-local/
+
+CLAUDE.md
+ 
+
+# Dữ liệu và model: chỉ giữ README, .gitkeep, labels.csv
+data/raw/*
+data/processed/*
+data/features/*
+!data/*/.gitkeep
+models/*.joblib
+.env
