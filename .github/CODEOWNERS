@@ -3,25 +3,25 @@
 # Owner phải có quyền Write trở lên thì CODEOWNERS mới có hiệu lực.
 # Tác giả PR không tự duyệt PR của mình, nên đường dẫn của Lực luôn có thêm Loan.
 #
-# Lực    = @Lucius-Ho
+# Lực    = @AIVIETNAM-AIO-luciusHo
 # Quang  = @AIVIETNAM-AIO-DangQuang (leader)
 # Loan   = @AIVIETNAM-AIO-ThanhLoan
 # Kiệt   = @AIVIETNAM-AIO-tuankietdzvl1
 
-*                    @Lucius-Ho 
+*                    @AIVIETNAM-AIO-luciusHo
 
 # Thư mục quan trọng: Lực + một người không trực tiếp làm thư mục đó
-/app/                @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
-/models/             @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
-/.github/            @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
+/app/                @AIVIETNAM-AIO-luciusHo @AIVIETNAM-AIO-ThanhLoan
+/models/             @AIVIETNAM-AIO-luciusHo@AIVIETNAM-AIO-ThanhLoan
+/.github/            @AIVIETNAM-AIO-luciusHo @AIVIETNAM-AIO-ThanhLoan
 
 # Các thư mục còn lại: Lực duyệt
-/data/               @Lucius-Ho
-/streamlit/          @Lucius-Ho
-/nginx/              @Lucius-Ho
+/data/               @AIVIETNAM-AIO-luciusHo
+/streamlit/          @AIVIETNAM-AIO-luciusHo
+/nginx/              @AIVIETNAM-AIO-luciusHo
 
 # Thư mục của Lực: cần Loan duyệt
-/tests/              @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
-/locust/             @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
-/scripts/            @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
-/docs/               @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
+/tests/              @AIVIETNAM-AIO-luciusHo @AIVIETNAM-AIO-ThanhLoan
+/locust/             @AIVIETNAM-AIO-luciusHo @AIVIETNAM-AIO-ThanhLoan
+/scripts/            @AIVIETNAM-AIO-luciusHo @AIVIETNAM-AIO-ThanhLoan
+/docs/               @AIVIETNAM-AIO-luciusHo @AIVIETNAM-AIO-ThanhLoan
