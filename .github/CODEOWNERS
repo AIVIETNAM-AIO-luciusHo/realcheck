@@ -1,27 +1,27 @@
 # Mỗi PR chạm vào đường dẫn dưới đây sẽ tự yêu cầu review từ owner.
 # Dòng khớp SAU CÙNG thắng, nên catch-all `*` đặt đầu tiên.
 # Owner phải có quyền Write trở lên thì CODEOWNERS mới có hiệu lực.
-# Tác giả PR không tự duyệt PR của mình, nên đường dẫn của Lực luôn có thêm Quang.
+# Tác giả PR không tự duyệt PR của mình, nên đường dẫn của Lực luôn có thêm Loan.
 #
 # Lực    = @Lucius-Ho
 # Quang  = @AIVIETNAM-AIO-DangQuang (leader)
 # Loan   = @AIVIETNAM-AIO-ThanhLoan
 # Kiệt   = @AIVIETNAM-AIO-tuankietdzvl1
 
-*                    @Lucius-Ho @AIVIETNAM-AIO-DangQuang
+*                    @Lucius-Ho 
 
 # Thư mục quan trọng: Lực + một người không trực tiếp làm thư mục đó
 /app/                @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
-/models/             @Lucius-Ho @AIVIETNAM-AIO-DangQuang
-/.github/            @Lucius-Ho @AIVIETNAM-AIO-DangQuang
+/models/             @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
+/.github/            @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
 
 # Các thư mục còn lại: Lực duyệt
 /data/               @Lucius-Ho
 /streamlit/          @Lucius-Ho
 /nginx/              @Lucius-Ho
 
-# Thư mục của Lực: cần Quang duyệt
-/tests/              @Lucius-Ho @AIVIETNAM-AIO-DangQuang
-/locust/             @Lucius-Ho @AIVIETNAM-AIO-DangQuang
-/scripts/            @Lucius-Ho @AIVIETNAM-AIO-DangQuang
-/docs/               @Lucius-Ho @AIVIETNAM-AIO-DangQuang
+# Thư mục của Lực: cần Loan duyệt
+/tests/              @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
+/locust/             @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
+/scripts/            @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
+/docs/               @Lucius-Ho @AIVIETNAM-AIO-ThanhLoan
