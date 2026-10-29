@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Huỷ lượt chạy cũ khi đẩy commit mới lên cùng nhánh
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    # Chưa có code/test thì bỏ qua bước pytest để CI vẫn xanh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check for tests
+        id: has_tests
+        run: |
+          if ls tests/test_*.py >/dev/null 2>&1 && [ -f requirements.txt ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No tests or requirements.txt yet, skipping."
+          fi
+      - name: Install
+        if: steps.has_tests.outputs.run == 'true'
+        run: pip install -r requirements.txt pytest pytest-cov
+      - name: Pytest (coverage app/ >= 70%)
+        if: steps.has_tests.outputs.run == 'true'
+        run: pytest --cov=app --cov-fail-under=70
+
+  # Job duy nhất Ruleset cần yêu cầu: required check = "ci-ok"
+  ci-ok:
+    if: always()
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All jobs must succeed
+        run: |
+          [ "${{ needs.lint.result }}" = "success" ] && [ "${{ needs.test.result }}" = "success" ]

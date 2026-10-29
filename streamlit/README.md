@@ -1,4 +1,16 @@
-# streamlit
+# streamlit/ – Giao diện demo
 
-- **Mục đích:** Giao diện demo Streamlit: trang Kiểm tra ảnh, trang Kết quả đánh giá
-- **Phụ trách:** Loan (Data)
+Phụ trách: Loan
+
+## Làm gì
+Kéo thả ảnh, hiện kết quả từ API. Hai trang: "Kiểm tra ảnh" và "Kết quả đánh giá".
+
+## Cách chạy
+`streamlit run streamlit/app.py`
+
+## Input / Output
+- Input: ảnh người dùng kéo thả.
+- Output: verdict, điểm, lý do; bảng số đo đánh giá.
+
+## Lưu ý và giả định
+- Gọi API qua Nginx, không gọi thẳng model.
