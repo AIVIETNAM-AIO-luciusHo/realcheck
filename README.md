@@ -22,7 +22,7 @@ API FastAPI phát hiện ảnh do AI tạo: trả **Ảnh thật / Ảnh AI / Ch
 | [`locust/`](locust/) | Đo tải | Lực |
 | [`scripts/`](scripts/) | Script đánh giá, xử lý dữ liệu | Lực |
 | [`docs/`](docs/) | Báo cáo, kịch bản demo | Lực |
-| [`.github/`](.github/) | CODEOWNERS, CI, PR template | Lực + Quang |
+| [`.github/`](.github/) | CODEOWNERS, CI, PR template | Lực + Loan |
 
 Mỗi thư mục có `README.md` riêng (làm gì, cách chạy, input/output, lưu ý).
 
