@@ -1,0 +1,7 @@
+# Thư viện cho các script dữ liệu (download_data, prepare_data, baseline_filesize)
+huggingface_hub==2.4.0
+numpy==2.4.6
+pandas==3.1.0
+pillow==13.0.0
+pyarrow==26.0.0
+scikit-learn==1.9.1
