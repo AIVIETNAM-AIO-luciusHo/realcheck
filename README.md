@@ -5,6 +5,7 @@ API FastAPI phát hiện ảnh do AI tạo: trả **Ảnh thật / Ảnh AI / Ch
 ## Thành viên
 | Họ và tên | GitHub | Vai trò |
 |---|---|---|
+
 | Lực | [@AIVIETNAM-AIO-luciusHo](https://github.com/AIVIETNAM-AIO-luciusHo) | QA & Performance |
 | Quang | [@AIVIETNAM-AIO-DangQuang](https://github.com/AIVIETNAM-AIO-DangQuang) | Backend & DevOps (leader) |
 | Loan | [@AIVIETNAM-AIO-ThanhLoan](https://github.com/AIVIETNAM-AIO-ThanhLoan) | Data & Evaluation |
