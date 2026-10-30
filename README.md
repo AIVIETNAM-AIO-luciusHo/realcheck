@@ -5,7 +5,8 @@ API FastAPI phát hiện ảnh do AI tạo: trả **Ảnh thật / Ảnh AI / Ch
 ## Thành viên
 | Họ và tên | GitHub | Vai trò |
 |---|---|---|
-| Lực | [@AIVIETNAM-AIO-luciusHo](https://github.com/Lucius-Ho) | QA & Performance |
+
+| Lực | [@AIVIETNAM-AIO-luciusHo](https://github.com/AIVIETNAM-AIO-luciusHo) | QA & Performance |
 | Quang | [@AIVIETNAM-AIO-DangQuang](https://github.com/AIVIETNAM-AIO-DangQuang) | Backend & DevOps (leader) |
 | Loan | [@AIVIETNAM-AIO-ThanhLoan](https://github.com/AIVIETNAM-AIO-ThanhLoan) | Data & Evaluation |
 | Kiệt | [@AIVIETNAM-AIO-tuankietdzvl1](https://github.com/AIVIETNAM-AIO-tuankietdzvl1) | ML Engineer |
@@ -26,12 +27,46 @@ API FastAPI phát hiện ảnh do AI tạo: trả **Ảnh thật / Ảnh AI / Ch
 
 Mỗi thư mục có `README.md` riêng (làm gì, cách chạy, input/output, lưu ý).
 
+```text
+realcheck/
+├── .github/
+│   ├── workflows/
+│   │   └── ci.yml
+│   ├── CODEOWNERS
+│   └── pull_request_template.md
+├── app/
+│   └── README.md
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   ├── features/
+│   └── README.md
+├── docs/
+│   └── README.md
+├── locust/
+│   └── README.md
+├── models/
+│   └── README.md
+├── nginx/
+│   └── README.md
+├── scripts/
+│   └── README.md
+├── streamlit/
+│   └── README.md
+├── tests/
+│   └── README.md
+├── .gitignore
+├── LICENSE
+└── README.md
+```
+
+
 ## Quy ước làm việc
 - Không commit thẳng `main`. Nhánh `ten/mo-ta-ngan`.
 - Mở Pull Request vào `main`; GitHub tự gán người review theo [CODEOWNERS](.github/CODEOWNERS); cần CI xanh (`ci-ok`) và ít nhất 1 approval.
 - Đổi cách dùng một thư mục thì cập nhật README thư mục đó trong cùng PR.
 - Commit tiếng Anh, tiền tố `feat:` `fix:` `docs:` `chore:` `test:`.
-- Việc cần làm quản lý bằng GitHub Issues + Projects.
+- Việc cần làm và báo lỗi quản lý bằng Jira (Sprint 1 – Tuần 1).
 - Không commit dữ liệu, model nặng, secret (`.env`).
 
 ## Dữ liệu
