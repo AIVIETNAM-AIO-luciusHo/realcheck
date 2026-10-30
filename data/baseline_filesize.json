@@ -1,0 +1,176 @@
+{
+  "cifake": {
+    "n": {
+      "test": 2000,
+      "train": 1700,
+      "val": 300
+    },
+    "baseline": {
+      "all": {
+        "raw": {
+          "logreg": {
+            "val_acc": 0.5,
+            "test_acc": 0.5
+          },
+          "tree_depth3": {
+            "val_acc": 0.5733,
+            "test_acc": 0.543
+          }
+        },
+        "processed": {
+          "logreg": {
+            "val_acc": 0.4833,
+            "test_acc": 0.4935
+          },
+          "tree_depth3": {
+            "val_acc": 0.5567,
+            "test_acc": 0.5385
+          }
+        }
+      }
+    },
+    "raw_stats": {
+      "cifake_ai": {
+        "formats": {
+          "JPEG": 2000
+        },
+        "median_short_side": 32,
+        "median_kb": 0.9
+      },
+      "cifake_real": {
+        "formats": {
+          "JPEG": 2000
+        },
+        "median_short_side": 32,
+        "median_kb": 0.9
+      }
+    }
+  },
+  "genimage": {
+    "n": {
+      "train": 4200,
+      "test": 900,
+      "val": 900
+    },
+    "baseline": {
+      "all": {
+        "raw": {
+          "logreg": {
+            "val_acc": 0.7411,
+            "test_acc": 0.7278
+          },
+          "tree_depth3": {
+            "val_acc": 0.8189,
+            "test_acc": 0.85
+          }
+        },
+        "processed": {
+          "logreg": {
+            "val_acc": 0.6511,
+            "test_acc": 0.6422
+          },
+          "tree_depth3": {
+            "val_acc": 0.6533,
+            "test_acc": 0.6322
+          }
+        }
+      },
+      "real_vs_glide": {
+        "raw": {
+          "logreg": {
+            "val_acc": 0.6344,
+            "test_acc": 0.6733
+          },
+          "tree_depth3": {
+            "val_acc": 0.7767,
+            "test_acc": 0.8222
+          }
+        },
+        "processed": {
+          "logreg": {
+            "val_acc": 0.8122,
+            "test_acc": 0.7956
+          },
+          "tree_depth3": {
+            "val_acc": 0.8033,
+            "test_acc": 0.8033
+          }
+        }
+      },
+      "real_vs_midjourney": {
+        "raw": {
+          "logreg": {
+            "val_acc": 0.9822,
+            "test_acc": 0.99
+          },
+          "tree_depth3": {
+            "val_acc": 0.9822,
+            "test_acc": 0.99
+          }
+        },
+        "processed": {
+          "logreg": {
+            "val_acc": 0.67,
+            "test_acc": 0.6589
+          },
+          "tree_depth3": {
+            "val_acc": 0.6644,
+            "test_acc": 0.6711
+          }
+        }
+      },
+      "real_vs_sd14": {
+        "raw": {
+          "logreg": {
+            "val_acc": 0.9833,
+            "test_acc": 0.9878
+          },
+          "tree_depth3": {
+            "val_acc": 0.9833,
+            "test_acc": 0.9867
+          }
+        },
+        "processed": {
+          "logreg": {
+            "val_acc": 0.4711,
+            "test_acc": 0.5322
+          },
+          "tree_depth3": {
+            "val_acc": 0.5378,
+            "test_acc": 0.5789
+          }
+        }
+      }
+    },
+    "raw_stats": {
+      "genimage_glide": {
+        "formats": {
+          "PNG": 1000
+        },
+        "median_short_side": 256,
+        "median_kb": 79.1
+      },
+      "genimage_midjourney": {
+        "formats": {
+          "PNG": 1000
+        },
+        "median_short_side": 1024,
+        "median_kb": 1199.9
+      },
+      "genimage_real": {
+        "formats": {
+          "JPEG": 3000
+        },
+        "median_short_side": 374,
+        "median_kb": 110.7
+      },
+      "genimage_sd14": {
+        "formats": {
+          "PNG": 1000
+        },
+        "median_short_side": 512,
+        "median_kb": 440.0
+      }
+    }
+  }
+}
