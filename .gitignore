@@ -222,6 +222,11 @@ __marimo__/
 # Sách tham khảo cục bộ
 docs-local/
 
+# technical-report
+docs/bug-report-template.md 
+docs/technical-report
+docs/test-plan.md 
+
 CLAUDE.md
  
 
