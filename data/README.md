@@ -55,9 +55,27 @@ Lọc theo `source`: chỉ dùng `genimage_*` cho mô hình chính; `cifake_*` c
 | Chia tập CIFAKE | train gốc → 85% train / 15% val; test gốc → test | |
 | Ảnh trùng | Bỏ ảnh trùng pixel sau chuẩn hóa; trùng khác nhãn thì bỏ cả hai | |
 
+## Kết quả baseline dung lượng file (D4)
+Balanced accuracy trên test, mô hình cây độ sâu 3 (50% = đoán mò). Chi tiết: `baseline_filesize.json`.
+
+| GenImage | Ảnh gốc | Đã chuẩn hóa |
+|---|---|---|
+| Tất cả nguồn | 85% | 63% ⚠ |
+| Thật vs SD v1.4 | 99% | 58% |
+| Thật vs Midjourney | 99% | 67% ⚠ |
+| Thật vs GLIDE | 82% | 80% ⚠ |
+
+Ảnh gốc lộ nhãn vì ảnh thật là JPEG còn ảnh AI là PNG, khác cả kích thước (cạnh ngắn trung vị: thật 374, GLIDE 256, SD v1.4 512, Midjourney 1024). Chuẩn hóa đưa SD v1.4 về gần đoán mò.
+
+### Hạn chế đã biết
+- **GLIDE vẫn lộ nhãn sau chuẩn hóa (80%).** Ảnh GLIDE gốc chỉ 256×256 và mịn, ít chi tiết, nên JPEG nhẹ hơn ảnh thật (trung vị ~18KB so với ~31KB). Đây là đặc điểm nội dung, không sửa được bằng đổi định dạng.
+- Midjourney còn lộ một phần (67%), cùng nguyên nhân nhưng nhẹ hơn.
+- Rủi ro: mô hình có thể học "ảnh mịn = AI" và gọi oan ảnh thật ít chi tiết. Khi đánh giá cần báo accuracy **theo từng `source`**, không chỉ con số chung.
+- Hướng xử lý đang bàn với nhóm; dữ liệu hiện tại giữ 3 nguồn theo kế hoạch.
+
 ## Lưu ý và giả định
 - Không commit ảnh và `.npy` (đã gitignore); chỉ commit `labels.csv` và README.
 - Dữ liệu chỉ dùng cho học tập; trích dẫn GenImage, CIFAKE trong báo cáo. Tiny-GenImage có giấy phép CC BY-NC-SA 4.0.
 - CIFAKE trên Hugging Face gán `0 = FAKE, 1 = REAL`; script đã đổi về quy ước của nhóm.
 - Tránh chụp mặt người lạ.
-- Baseline chỉ dùng kích thước file phải gần 50%; cao hơn hẳn thì làm lại dữ liệu. Script cảnh báo khi test accuracy trên ảnh đã chuẩn hóa vượt 60% (ngưỡng tạm, nhóm chưa chốt).
+- Baseline chỉ dùng kích thước file phải gần 50%; cao hơn hẳn thì làm lại dữ liệu. Script cảnh báo khi balanced accuracy trên ảnh đã chuẩn hóa vượt 60% (ngưỡng tạm, nhóm chưa chốt).
