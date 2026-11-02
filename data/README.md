@@ -11,7 +11,8 @@ Tải, chuẩn hóa và chia tập dữ liệu. Nhãn lấy theo thư mục (rea
 | `processed/` | Ảnh đã làm sạch, cùng JPEG, cùng chất lượng và kích thước |
 | `features/` | Kết quả CLIP (`.npy`) |
 | `labels.csv` | `filepath, label, source, split, raw_path` |
-| `baseline_filesize.json` | Kết quả baseline dung lượng file (D4) |
+| `metadata_audit.json` | Kết quả kiểm tra rò rỉ metadata (gate) |
+| `baseline_filesize.json` | Dung lượng file theo nguồn (chỉ tham khảo độ chi tiết ảnh) |
 
 Nguồn: CIFAKE (Kaggle), GenImage (NeurIPS 2023), ảnh nhóm tự chụp/tạo, ảnh qua Zalo.
 
@@ -23,7 +24,8 @@ python scripts/download_data.py cifake     # D1: ~16MB
 python scripts/download_data.py genimage   # D2: tải ~4GB từng phần, giữ lại ~1.5GB
 python scripts/prepare_data.py             # D3: processed/ + labels.csv
 python scripts/check_data.py               # tự kiểm tra; lỗi thì thoát mã 1
-python scripts/baseline_filesize.py        # D4: baseline_filesize.json
+python scripts/metadata_audit.py           # gate metadata; không đạt thì thoát mã 1
+python scripts/baseline_filesize.py        # tham khảo: dung lượng file theo nguồn
 ```
 Chạy lại cho cùng kết quả (seed 42). `download_data.py genimage` chạy tiếp được nếu bị ngắt.
 
@@ -33,7 +35,7 @@ Chạy lại cho cùng kết quả (seed 42). `download_data.py genimage` chạy
   - GenImage: 3.000 ảnh thật (ImageNet) + 1.000 ảnh mỗi nguồn Midjourney, GLIDE, SD v1.4.
     - Ảnh thật, Midjourney, GLIDE: [`TheKernel01/Tiny-GenImage`](https://huggingface.co/datasets/TheKernel01/Tiny-GenImage) (bản thu nhỏ của GenImage).
     - SD v1.4: Tiny-GenImage không có, lấy từ split test của [`nebula/GenImage-arrow`](https://huggingface.co/datasets/nebula/GenImage-arrow) (shard `data-00004`, toàn ảnh AI).
-- Output: `processed/`, `labels.csv`, `baseline_filesize.json`.
+- Output: `processed/`, `labels.csv`, `metadata_audit.json`, `baseline_filesize.json`.
 
 ### labels.csv
 | Cột | Ý nghĩa |
@@ -55,27 +57,39 @@ Lọc theo `source`: chỉ dùng `genimage_*` cho mô hình chính; `cifake_*` c
 | Chia tập CIFAKE | train gốc → 85% train / 15% val; test gốc → test | |
 | Ảnh trùng | Bỏ ảnh trùng pixel sau chuẩn hóa; trùng khác nhãn thì bỏ cả hai | |
 
-## Kết quả baseline dung lượng file (D4)
-Balanced accuracy trên test, mô hình cây độ sâu 3 (50% = đoán mò). Chi tiết: `baseline_filesize.json`.
+### Nén JPEG hai lần
+Ảnh thật (ImageNet) vốn là JPEG nên khi lưu lại bị nén 2 lần, còn ảnh AI (PNG) chỉ nén 1 lần; mô hình có thể học dấu vết nén này thay vì dấu vết AI. Vì vậy `prepare_data.py` **crop/resize về 256×256 trước, rồi mới nén JPEG**: đổi kích thước làm lệch lưới khối 8×8 của lần nén cũ, giảm dấu vết nén trước đó.
 
-| GenImage | Ảnh gốc | Đã chuẩn hóa |
+| Ảnh thật gốc (3.000) | Số ảnh | Lưới nén cũ |
 |---|---|---|
-| Tất cả nguồn | 85% | 63% ⚠ |
-| Thật vs SD v1.4 | 99% | 58% |
-| Thật vs Midjourney | 99% | 67% ⚠ |
-| Thật vs GLIDE | 82% | 80% ⚠ |
+| Thu nhỏ (cạnh ngắn > 256) | 2.706 | Bị lệch |
+| Phóng to (cạnh ngắn < 256) | 292 | Bị lệch, nhưng ảnh mờ (xem Hạn chế) |
+| Chỉ crop, không đổi kích thước (= 256) | 2 | Có thể còn; 1 ảnh lưới cũ trùng lưới mới |
 
-Ảnh gốc lộ nhãn vì ảnh thật là JPEG còn ảnh AI là PNG, khác cả kích thước (cạnh ngắn trung vị: thật 374, GLIDE 256, SD v1.4 512, Midjourney 1024). Chuẩn hóa đưa SD v1.4 về gần đoán mò.
+Cách này **giảm thiểu**, không chứng minh xóa hết dấu vết nén 2 lần.
+
+## Kiểm tra rò rỉ metadata (gate)
+Probe chỉ đọc metadata (định dạng, kích thước, mode, EXIF, ICC, bảng lượng tử và subsampling JPEG), không dùng pixel, dung lượng file, đường dẫn hay nguồn. Gate áp cho ảnh đã chuẩn hóa: `A_eff = max(AUROC, 1-AUROC) <= 0.55`. Chi tiết: `metadata_audit.json`.
+
+| GenImage (test) | Ảnh gốc | Đã chuẩn hóa |
+|---|---|---|
+| Tất cả nguồn | 1.00 | 0.50 |
+| Thật vs SD v1.4 | 1.00 | 0.50 |
+| Thật vs Midjourney | 1.00 | 0.50 |
+| Thật vs GLIDE | 1.00 | 0.50 |
+
+Ảnh gốc lộ nhãn hoàn toàn (thật là JPEG nhiều kích thước, AI là PNG kích thước cố định); sau chuẩn hóa mọi metadata giống nhau. Control dương 1.00, control âm 0.51. Probe, protocol và cỡ mẫu tối thiểu (D03/D04) đang dùng giá trị tạm.
+
+### Dung lượng file (chỉ tham khảo)
+Sau khi nén cùng chất lượng, dung lượng file phản ánh **độ chi tiết của ảnh** (tương quan Spearman 0.94 với mật độ cạnh), không phải rò rỉ định dạng, nên không dùng làm gate. Trung vị sau chuẩn hóa: thật 31KB, SD v1.4 32KB, Midjourney 24KB, GLIDE 18KB.
 
 ### Hạn chế đã biết
-- **GLIDE vẫn lộ nhãn sau chuẩn hóa (80%).** Ảnh GLIDE gốc chỉ 256×256 và mịn, ít chi tiết, nên JPEG nhẹ hơn ảnh thật (trung vị ~18KB so với ~31KB). Đây là đặc điểm nội dung, không sửa được bằng đổi định dạng.
-- Midjourney còn lộ một phần (67%), cùng nguyên nhân nhưng nhẹ hơn.
-- Rủi ro: mô hình có thể học "ảnh mịn = AI" và gọi oan ảnh thật ít chi tiết. Khi đánh giá cần báo accuracy **theo từng `source`**, không chỉ con số chung.
-- Hướng xử lý đang bàn với nhóm; dữ liệu hiện tại giữ 3 nguồn theo kế hoạch.
+- **Ảnh AI mịn hơn ảnh thật**, rõ nhất ở GLIDE (ảnh gốc 256×256, ít chi tiết), rồi đến Midjourney. Đây là khác biệt nội dung, metadata đã sạch. Rủi ro: mô hình học "ảnh mịn = AI" và gọi oan ảnh thật ít chi tiết; khi đánh giá cần báo accuracy **theo từng `source`** và tỷ lệ gọi oan trên ảnh thật mịn.
+- **292/3.000 ảnh thật có cạnh ngắn dưới 256px** nên bị phóng to khi chuẩn hóa và mờ hơn các ảnh khác; ảnh AI không có trường hợp này. Rủi ro: mô hình học "ảnh mờ = ảnh thật". Tạm giữ, sẽ thay bằng ảnh thật có cạnh ngắn ≥ 256px.
 
 ## Lưu ý và giả định
 - Không commit ảnh và `.npy` (đã gitignore); chỉ commit `labels.csv` và README.
 - Dữ liệu chỉ dùng cho học tập; trích dẫn GenImage, CIFAKE trong báo cáo. Tiny-GenImage có giấy phép CC BY-NC-SA 4.0.
 - CIFAKE trên Hugging Face gán `0 = FAKE, 1 = REAL`; script đã đổi về quy ước của nhóm.
 - Tránh chụp mặt người lạ.
-- Baseline chỉ dùng kích thước file phải gần 50%; cao hơn hẳn thì làm lại dữ liệu. Script cảnh báo khi balanced accuracy trên ảnh đã chuẩn hóa vượt 60% (ngưỡng tạm, nhóm chưa chốt).
+- Gate dữ liệu là kiểm tra metadata (post `A_eff <= 0.55`), không phải dung lượng file. Gate đạt không chứng minh hết mọi shortcut trong pixel.
