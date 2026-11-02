@@ -1,8 +1,9 @@
-"""Baseline chỉ dùng dung lượng file để đoán thật/AI (D4).
+"""Đoán thật/AI chỉ từ dung lượng file, để tham khảo (không phải gate).
 
-Nếu baseline trên ảnh đã chuẩn hóa cao hơn hẳn 50% thì định dạng file vẫn
-lộ nhãn và phải làm lại bước chuẩn hóa. Chạy trên cả ảnh gốc để so sánh, và
-so riêng ảnh thật với từng công cụ AI để biết nguồn nào lộ nhãn.
+Sau khi nén cùng chất lượng, dung lượng file phản ánh độ chi tiết của ảnh chứ
+không phải rò rỉ định dạng; gate dữ liệu là metadata_audit.py. Chạy trên cả ảnh
+gốc và ảnh đã chuẩn hóa, so riêng ảnh thật với từng công cụ AI để thấy nguồn
+nào khác biệt về độ chi tiết.
 
 Dùng balanced accuracy (đoán mò = 50% kể cả khi hai lớp lệch số lượng).
 
@@ -22,7 +23,6 @@ from sklearn.tree import DecisionTreeClassifier
 
 LABELS_CSV = Path("data/labels.csv")
 OUT_JSON = Path("data/baseline_filesize.json")
-WARN_ACC = 0.60  # ngưỡng cảnh báo tạm, kế hoạch chưa ấn định
 
 
 def evaluate(df: pd.DataFrame, kb_col: str) -> dict:
@@ -101,8 +101,7 @@ def main() -> None:
             for model in kinds["raw"]:
                 raw = kinds["raw"][model]["test_acc"]
                 proc = kinds["processed"][model]["test_acc"]
-                flag = " ⚠" if proc > WARN_ACC else ""
-                print(f"| {dataset} | {name} | {model} | {raw} | {proc}{flag} |")
+                print(f"| {dataset} | {name} | {model} | {raw} | {proc} |")
 
 
 if __name__ == "__main__":
