@@ -19,7 +19,8 @@
 /data/               @AIVIETNAM-AIO-luciusHo
 /streamlit/          @AIVIETNAM-AIO-luciusHo
 /nginx/              @AIVIETNAM-AIO-luciusHo
-
+/specs/              @AIVIETNAM-AIO-luciusHo
+/.speccify/          @AIVIETNAM-AIO-luciusHo
 # Thư mục của Lực: cần Loan duyệt
 /tests/              @AIVIETNAM-AIO-luciusHo @AIVIETNAM-AIO-ThanhLoan
 /locust/             @AIVIETNAM-AIO-luciusHo @AIVIETNAM-AIO-ThanhLoan
