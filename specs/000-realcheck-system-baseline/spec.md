@@ -4,7 +4,7 @@
 **Created**: 2026-11-01.  
 **Status**: Draft baseline để review; kiến trúc và bất biến hoàn chỉnh, tham số tại các decision ID cần nhóm chốt.  
 **Input**: Yêu cầu đặc tả toàn hệ thống RealCheck và phản biện chống shortcut metadata, Double JPEG, training-serving skew.  
-**Tài liệu liên quan**: [plan.md](plan.md), [tasks.md](tasks.md), [constitution](../../memory/constitution.md).
+**Tài liệu liên quan**: [plan.md](plan.md), [tasks.md](tasks.md), [constitution](../../.specify/memory/constitution.md).
 
 ## 1. Nguồn yêu cầu và hiệu lực
 

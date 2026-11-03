@@ -114,7 +114,7 @@ EXIF được đọc từ raw trước khi metadata bị xóa bởi canonicalize
 
 ## 4. Project Structure — cấu trúc đích
 
-Các file dưới đây là **sản phẩm phải tạo trong tasks**, không phải khẳng định hiện có. Ba tài liệu baseline ở `.specify/specs/realcheck-system/`; runtime code giữ cấu trúc repo cũ.
+Các file dưới đây là **sản phẩm phải tạo trong tasks**, không phải khẳng định hiện có. Ba tài liệu baseline ở `specs/000-realcheck-system-baseline/`; runtime code giữ cấu trúc repo cũ.
 
 ```text
 app/
