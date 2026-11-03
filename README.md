@@ -24,9 +24,11 @@ API FastAPI phát hiện ảnh do AI tạo: trả **Ảnh thật / Ảnh AI / Ch
 | [`locust/`](locust/) | Đo tải | Lực |
 | [`scripts/`](scripts/) | Script đánh giá, xử lý dữ liệu | Lực |
 | [`docs/`](docs/) | Báo cáo, kịch bản demo | Lực |
+| [`specs/`](specs/) | Đặc tả từng tính năng theo Spec Kit (`NNN-tên`: spec, plan, tasks) | Lực |
+| [`.specify/`](.specify/) | Công cụ Spec Kit và constitution của dự án (`memory/constitution.md`) | Lực |
 | [`.github/`](.github/) | CODEOWNERS, CI, PR template | Lực + Loan |
 
-Mỗi thư mục có `README.md` riêng (làm gì, cách chạy, input/output, lưu ý).
+Mỗi thư mục có `README.md` riêng (làm gì, cách chạy, input/output, lưu ý). Riêng `.specify/` chỉ chứa công cụ và constitution; mọi đặc tả nằm trong `specs/` (`000-realcheck-system-baseline` là đặc tả toàn hệ thống, các số tiếp theo là từng tính năng).
 
 ```text
 realcheck/
@@ -35,6 +37,13 @@ realcheck/
 │   │   └── ci.yml
 │   ├── CODEOWNERS
 │   └── pull_request_template.md
+├── .specify/                          # công cụ Spec Kit + constitution
+│   ├── integrations/
+│   ├── memory/
+│   │   └── constitution.md
+│   ├── scripts/
+│   ├── templates/
+│   └── workflows/
 ├── app/
 │   └── README.md
 ├── data/
@@ -52,6 +61,9 @@ realcheck/
 │   └── README.md
 ├── scripts/
 │   └── README.md
+├── specs/                             # đặc tả từng tính năng
+│   ├── 000-realcheck-system-baseline/
+│   └── 001-unified-image-normalization/
 ├── streamlit/
 │   └── README.md
 ├── tests/
