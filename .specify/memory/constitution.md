@@ -1,17 +1,3 @@
-<!--
-Sync Impact Report
-- Version: 1.0.0 -> 1.0.1.
-- Thay toàn bộ placeholder bằng nguyên tắc và quy tắc kỹ thuật RealCheck.
-- Bổ sung: nguồn chuẩn, kiến trúc, testing, code style, trách nhiệm và quản trị.
-- Xóa ghi chú về các module chưa thuộc dự án; giữ nguyên quy tắc testing
-  và trách nhiệm của tests/, locust/.
-- Templates: plan-template.md có Constitution Check dùng được; spec-template.md
-  và tasks-template.md không cần sửa. Checklist tuân thủ nằm trong tài liệu này.
-- Không sửa .constitution-template.json: đây là metadata của template nguồn.
-- Follow-up: chốt các hợp đồng còn mở tại mục Quyết định kỹ thuật
-  trước khi triển khai tính năng liên quan.
--->
-
 # RealCheck Constitution
 
 ## Nguồn chuẩn và cách áp dụng
@@ -54,8 +40,9 @@ không âm thầm giải quyết mâu thuẫn bằng một giả định triển
   Python phải đồng bộ local, Docker và CI.
 - Luồng phục vụ: người dùng/Streamlit → Nginx → FastAPI → `score(image)` →
   kết quả JSON. Locust gọi qua Nginx từ máy khác. Streamlit KHÔNG gọi model trực tiếp.
-- Luồng suy luận: ảnh → preprocessing CLIP 224×224 → CLIP ViT-B/32 giữ nguyên
-  trọng số → vector 512 chiều → Logistic Regression → điểm AI → ngưỡng verdict.
+- Luồng suy luận: ảnh gốc → đọc EXIF → hàm chuẩn hóa chung (nguyên tắc VI) →
+  preprocessing CLIP 224×224 → CLIP ViT-B/32 giữ nguyên trọng số → vector 512
+  chiều → Logistic Regression → điểm AI → ngưỡng verdict.
   KHÔNG huấn luyện lại CLIP hoặc thay mô hình nền nếu chưa có quyết định đổi kiến trúc.
 - `app/` chịu trách nhiệm HTTP, validation, schema, EXIF và tạo phản hồi;
   `models/` cung cấp `score(image) -> float` và artifact
@@ -76,23 +63,35 @@ không âm thầm giải quyết mâu thuẫn bằng một giả định triển
   `0.3 <= score <= 0.7` → **Chưa chắc**; `score > 0.7` → **Ảnh AI**.
   Hai biên thuộc vùng Chưa chắc. Ngưỡng PHẢI được cấu hình thống nhất và chỉ
   hiệu chỉnh trên validation, KHÔNG chọn trên test.
-- EXIF chỉ là bằng chứng phụ, KHÔNG quyết định hoặc ghi đè verdict. Thiếu thông
-  tin máy chụp vẫn xử lý được; `exif` trả `Không có thông tin máy chụp`.
-  `reason` PHẢI phù hợp với điểm và EXIF, không khẳng định kết quả chính xác 100%.
+- EXIF chỉ là bằng chứng phụ, KHÔNG quyết định hoặc ghi đè verdict. Thiếu EXIF
+  KHÔNG chứng minh ảnh là AI. PHẢI đọc EXIF từ ảnh gốc TRƯỚC khi chuẩn hóa, vì
+  chuẩn hóa nén lại JPEG và làm mất EXIF. Thiếu thông tin máy chụp vẫn xử lý được;
+  `exif` trả `Không có thông tin máy chụp`. `reason` PHẢI phù hợp với điểm và
+  EXIF, không khẳng định kết quả chính xác 100%.
 - CIFAKE chỉ dùng chạy thử luồng; GenImage là tập train/test chính. Không dùng
   kết quả CIFAKE để tuyên bố đạt mục tiêu Accuracy GenImage từ 90%.
-- `data/raw/` giữ ảnh gốc; `data/processed/` chứa ảnh đã chuẩn hóa JPEG cùng
-  kích thước/chất lượng giữa hai lớp; `data/features/` chứa đặc trưng;
-  `data/labels.csv` PHẢI có `filepath,label,source,split`.
+- Quyết định dữ liệu (phương án A): GIỮ tập GenImage hiện có; KHÔNG thay hoặc
+  thêm nguồn dữ liệu để xử lý thiên lệch. Thiên lệch được xử lý ở phần xử lý ảnh
+  (nguyên tắc VI). Đổi quyết định này cần PR có lý do và review.
+- `data/raw/` giữ ảnh gốc; `data/processed/` chứa ảnh GenImage đã chuẩn hóa JPEG
+  256×256 theo cùng một hàm chuẩn hóa cho hai lớp; `data/features/` chứa đặc
+  trưng; `data/labels.csv` PHẢI có `filepath,label,source,split`.
+  Ngoại lệ duy nhất: ảnh CIFAKE (chỉ dùng chạy thử luồng) được miễn bước
+  resize/cắt và giữ 32×32, vẫn qua cùng hàm chuẩn hóa (xoay, RGB, JPEG một lần).
+  Ảnh GenImage có cạnh ngắn dưới 256 px KHÔNG được phóng to: bị loại khỏi
+  dữ liệu đã chuẩn hóa kèm bản ghi lý do.
 - Pipeline PHẢI chạy lại được: ghi seed, tham số chuẩn hóa, tỷ lệ chia tập và
   nguồn dữ liệu. KHÔNG để cùng ảnh xuất hiện ở nhiều split, kiểm tra cả đường
   dẫn lẫn nội dung/hash. Không dùng tập test để train hoặc chọn tham số.
 - PHẢI đánh giá baseline chỉ dùng dung lượng file. Nếu cao hơn rõ rệt mức 50%
   trên dữ liệu cân bằng, PHẢI điều tra và sửa thiên lệch trước khi chấp nhận
   kết quả model; chưa có ngưỡng số học cụ thể để tự động nghiệm thu baseline.
-- Mỗi bộ đánh giá PHẢI có Accuracy, Precision, Recall, confusion matrix và tỷ lệ
-  Chưa chắc. PHẢI công bố cách tính chỉ số khi có vùng Chưa chắc; không âm thầm
-  loại các mẫu này để làm đẹp kết quả. Mục tiêu và số đo thực tế phải ghi riêng.
+- Mỗi bộ đánh giá PHẢI báo Accuracy theo từng `source` (không chỉ con số gộp),
+  kèm AUROC, Precision, Recall, confusion matrix và tỷ lệ Chưa chắc; với ảnh điện
+  thoại thật PHẢI báo thêm FPR (tỷ lệ gọi oan ảnh thật là ảnh AI). PHẢI công bố
+  cách tính chỉ số khi có vùng Chưa chắc; không âm thầm loại các mẫu này để làm
+  đẹp kết quả. Chỉ nêu kết quả đã đo; mục tiêu và số đo thực tế phải ghi riêng,
+  chưa đo thì ghi "chưa đo".
 
 ### III. Testing là điều kiện nghiệm thu bắt buộc
 
@@ -163,9 +162,26 @@ không âm thầm giải quyết mâu thuẫn bằng một giả định triển
 - ELA/heatmap, C2PA, Redis queue, ONNX và pipeline CD tự động chưa thuộc core.
   CI kiểm thử hiện có vẫn bắt buộc; việc kế hoạch để CI/CD ở giai đoạn sau
   không phải lý do bỏ GitHub Actions đang dùng.
-- KHÔNG commit secret/`.env`, ảnh dữ liệu, đặc trưng `.npy` hoặc model nặng.
+- KHÔNG commit secret/`.env`, ảnh dữ liệu, đặc trưng `.npy` hoặc `models/*.joblib`.
   PHẢI hướng dẫn lấy artifact để tái lập. Dữ liệu chỉ dùng cho học tập, ghi nguồn
   CIFAKE/GenImage; tránh thu thập ảnh mặt người lạ.
+
+### VI. Chuẩn hóa ảnh dùng chung, có version
+
+- Huấn luyện và `score(image)` PHẢI dùng CHUNG MỘT hàm chuẩn hóa, không có hai
+  bản cài đặt riêng cho train và suy luận. Các bước, theo đúng thứ tự: giải mã
+  ảnh; chuyển RGB và xử lý hướng ảnh (orientation); resize cạnh ngắn rồi
+  center-crop 256×256; nén JPEG đúng **một lần**; tiền xử lý CLIP.
+- Hàm chuẩn hóa PHẢI có **version** rõ ràng. Version PHẢI được ghi cùng artifact
+  `models/clip_probe.joblib` và cùng đặc trưng trích xuất; `score(image)` KHÔNG
+  ĐƯỢC chạy khi version của model khác version của hàm chuẩn hóa hiện hành.
+- Backend (`app/`) KHÔNG ĐƯỢC resize hoặc nén ảnh lần thứ hai ngoài hàm chuẩn hóa
+  chung. Nginx/FastAPI chỉ giới hạn và kiểm tra đầu vào, không biến đổi pixel.
+- Đổi bất kỳ tham số chuẩn hóa nào (kích thước, chất lượng JPEG, thuật toán
+  resize, thứ tự bước) PHẢI tăng version, rồi trích lại đặc trưng và train lại
+  mô hình. KHÔNG ĐƯỢC dùng đặc trưng hoặc model của version cũ cho kết quả mới.
+- Lý do: train và suy luận khác cách xử lý ảnh làm điểm số lệch phân phối; ảnh
+  bị nén hai lần tạo dấu vết mà mô hình có thể học nhầm thành dấu hiệu ảnh AI.
 
 ## Phạm vi trách nhiệm và giới hạn đặc tả
 
@@ -196,16 +212,19 @@ sau là giá trị mặc định đã được duyệt:
   không tự xác lập enum của hai trạng thái còn lại.
 - Mã lỗi cụ thể cho thiếu file, file giả/hỏng, vượt dung lượng/pixel và schema lỗi;
   giới hạn số pixel; cách tính chính xác 5 MB và overhead multipart.
-- Tỷ lệ train/validation/test, seed, kích thước JPEG chuẩn hóa và chất lượng nén.
-  Kích thước preprocessing CLIP 224×224 không tự quyết định kích thước lưu dataset.
+- Tỷ lệ train/validation/test và seed (kích thước chuẩn hóa 256×256 ở nguyên tắc
+  VI; chất lượng JPEG 95 và bộ lọc BICUBIC đã chốt trong spec
+  `001-unified-image-normalization`; preprocessing CLIP 224×224 là bước riêng).
 - Ngưỡng số học nghiệm thu baseline dung lượng file; quy tắc tính chỉ số phân loại
   khi có Chưa chắc; mục tiêu p95/request mỗi giây sau baseline Locust.
 
 ## Quy trình phát triển và kiểm tra tuân thủ
 
 Không push trực tiếp `main`. Dùng nhánh `ten/mo-ta-ngan`, PR vào `main`, commit
-có tiền tố `feat:`, `fix:`, `docs:`, `chore:` hoặc `test:`. PR PHẢI có `ci-ok`
-xanh và ít nhất một approval độc lập theo quy trình repo.
+có tiền tố `feat:`, `fix:`, `docs:`, `chore:` hoặc `test:`. Mỗi PR PHẢI được
+một người KHÁC tác giả review và approve; PHẢI có `ci-ok` xanh với test chạy thật
+(không phải bị skip), README liên quan được cập nhật, và không chứa ảnh, `.npy`,
+`models/*.joblib`, `.env`. Tài liệu viết tiếng Việt; code và commit tiếng Anh.
 
 Trong `Constitution Check` của plan, PHẢI kiểm tra trước nghiên cứu và sau thiết
 kế; PR kiểm tra lại các mục áp dụng:
@@ -237,4 +256,4 @@ MINOR khi bổ sung nguyên tắc hoặc mở rộng quy tắc; PATCH khi làm r
 Spec Kit template/tài liệu bị ảnh hưởng. Metadata `.constitution-template.json`
 chỉ mô tả template nguồn, không phải nơi khai báo quy tắc dự án.
 
-**Version**: 1.0.1 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-01
+**Version**: 1.1.0 | **Ratified**: 2026-11-01 | **Last Amended**: 2026-11-03
