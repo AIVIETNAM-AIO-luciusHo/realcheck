@@ -1,0 +1,310 @@
+{
+  "dataset": {
+    "version": "cifake",
+    "hash": "72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5"
+  },
+  "model": {
+    "version": "sentence-transformers/clip-ViT-B-32+LogisticRegression",
+    "hash": "c10f7388789b53082b75583d4d622368f5bd519288bfd88d0c040600a4b12cb5"
+  },
+  "profile": {
+    "version": "1",
+    "hash": "6fd24bb91d169eb72db1d0fd7beb1f010f78d3a30ba0132d17fdec7a2d58daec"
+  },
+  "metadata": {
+    "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+    "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+    "feature_dim": 512,
+    "normalize_embeddings": true,
+    "pillow_version": "13.0.0",
+    "norm_version": "1",
+    "dataset": "cifake",
+    "labels_sha256": "72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5",
+    "features_sha256": "1a08a1005c3ea3f6daf2172f944b97d51a6d3d33f73ec812558840d2cedfa217",
+    "seed": 42,
+    "C": 100.0,
+    "split_counts": {
+      "train": 1700,
+      "val": 300,
+      "test": 2000
+    }
+  },
+  "dependencies": {
+    "numpy": "2.4.6",
+    "pillow": "13.0.0",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0",
+    "torch": "2.15.0",
+    "transformers": "5.22.1",
+    "sentence-transformers": "6.2.0"
+  },
+  "thresholds": {
+    "binary": 0.5,
+    "low": 0.3,
+    "high": 0.7
+  },
+  "threshold_status": "initial_experiment_not_release_approval",
+  "selection": {
+    "metric": "validation_accuracy",
+    "candidates": [
+      {
+        "C": 0.01,
+        "validation_accuracy": 0.77
+      },
+      {
+        "C": 0.1,
+        "validation_accuracy": 0.81
+      },
+      {
+        "C": 1.0,
+        "validation_accuracy": 0.86
+      },
+      {
+        "C": 10.0,
+        "validation_accuracy": 0.8933333333333333
+      },
+      {
+        "C": 100.0,
+        "validation_accuracy": 0.9133333333333333
+      }
+    ],
+    "C": 100.0
+  },
+  "split_counts": {
+    "train": 1700,
+    "val": 300,
+    "test": 2000
+  },
+  "test": {
+    "n": 2000,
+    "accuracy": 0.93,
+    "precision": 0.924901185770751,
+    "recall": 0.936,
+    "auroc": 0.9824379999999999,
+    "confusion_matrix": [
+      [
+        924,
+        76
+      ],
+      [
+        64,
+        936
+      ]
+    ],
+    "uncertain_n": 178,
+    "uncertain_rate": 0.089,
+    "decided_accuracy": 0.9632272228320526,
+    "decided_n": 1822,
+    "false_positive_rate": 0.076,
+    "likely_ai_false_positive_rate": 0.034
+  },
+  "by_source": [
+    {
+      "name": "cifake_ai",
+      "n": 1000,
+      "accuracy": 0.936,
+      "precision": 1.0,
+      "recall": 0.936,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          64,
+          936
+        ]
+      ],
+      "uncertain_n": 87,
+      "uncertain_rate": 0.087,
+      "decided_accuracy": 0.963855421686747,
+      "decided_n": 913,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "cifake_real",
+      "n": 1000,
+      "accuracy": 0.924,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          924,
+          76
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "uncertain_n": 91,
+      "uncertain_rate": 0.091,
+      "decided_accuracy": 0.9625962596259626,
+      "decided_n": 909,
+      "false_positive_rate": 0.076,
+      "likely_ai_false_positive_rate": 0.034
+    }
+  ],
+  "limitations": [
+    "CIFAKE is a smoke test only",
+    "Independent data QA required before release",
+    "Validation selected C; GenImage test remains unevaluated unless explicitly requested",
+    "File size, smoothness and JPEG history shortcuts remain possible; T027 not implemented"
+  ],
+  "val": {
+    "n": 300,
+    "accuracy": 0.9133333333333333,
+    "precision": 0.8974358974358975,
+    "recall": 0.9333333333333333,
+    "auroc": 0.9583555555555556,
+    "confusion_matrix": [
+      [
+        134,
+        16
+      ],
+      [
+        10,
+        140
+      ]
+    ],
+    "uncertain_n": 27,
+    "uncertain_rate": 0.09,
+    "decided_accuracy": 0.9304029304029304,
+    "decided_n": 273,
+    "false_positive_rate": 0.10666666666666667,
+    "likely_ai_false_positive_rate": 0.06666666666666667
+  },
+  "val_by_source": [
+    {
+      "name": "cifake_ai",
+      "n": 150,
+      "accuracy": 0.9333333333333333,
+      "precision": 1.0,
+      "recall": 0.9333333333333333,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          140
+        ]
+      ],
+      "uncertain_n": 12,
+      "uncertain_rate": 0.08,
+      "decided_accuracy": 0.9347826086956522,
+      "decided_n": 138,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "cifake_real",
+      "n": 150,
+      "accuracy": 0.8933333333333333,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          134,
+          16
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "uncertain_n": 15,
+      "uncertain_rate": 0.1,
+      "decided_accuracy": 0.9259259259259259,
+      "decided_n": 135,
+      "false_positive_rate": 0.10666666666666667,
+      "likely_ai_false_positive_rate": 0.06666666666666667
+    }
+  ],
+  "test_by_source": [
+    {
+      "name": "cifake_ai",
+      "n": 1000,
+      "accuracy": 0.936,
+      "precision": 1.0,
+      "recall": 0.936,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          64,
+          936
+        ]
+      ],
+      "uncertain_n": 87,
+      "uncertain_rate": 0.087,
+      "decided_accuracy": 0.963855421686747,
+      "decided_n": 913,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "cifake_real",
+      "n": 1000,
+      "accuracy": 0.924,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          924,
+          76
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "uncertain_n": 91,
+      "uncertain_rate": 0.091,
+      "decided_accuracy": 0.9625962596259626,
+      "decided_n": 909,
+      "false_positive_rate": 0.076,
+      "likely_ai_false_positive_rate": 0.034
+    }
+  ],
+  "created_at": "2026-11-04T21:48:33.187527+00:00",
+  "run": {
+    "id": "3b1d9e71-28d5-48cd-8bec-68ad56ff7519",
+    "started_at": "2026-11-04T21:48:28.596504+00:00",
+    "command": [
+      "C:\\Users\\TuanKiet\\Desktop\\AI\\conquer-mdl5\\realcheck\\.venv\\Scripts\\python.exe",
+      "-m",
+      "models.train",
+      "--labels",
+      ".cache/ml-run/labels.csv",
+      "--features",
+      "data/features",
+      "--dataset",
+      "cifake",
+      "--output",
+      "models/cifake_probe.joblib",
+      "--report",
+      "../outputs/realcheck-pr15-review/reports/ml-cifake.json",
+      "--binary-threshold",
+      "0.5",
+      "--evaluate-test"
+    ],
+    "working_directory": "C:\\Users\\TuanKiet\\Desktop\\AI\\conquer-mdl5\\realcheck",
+    "git_commit": "58e45e9db8ce8ed5057af7e428e67eff02514e00",
+    "git_dirty": false,
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "elapsed_seconds": 4.561743300000671,
+    "finished_at": "2026-11-04T21:48:33.187527+00:00"
+  }
+}

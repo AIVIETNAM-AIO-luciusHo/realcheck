@@ -13,6 +13,25 @@ description: "Task list: Đồng bộ chuẩn hóa ảnh giữa huấn luyện v
 
 **Organization**: Nhóm theo user story. Mỗi task ghi người phụ trách (**Kiệt**, **Loan**, **Quang**, **Lực**) và lệnh kiểm chứng (`Kiểm chứng:`). Lệnh `ruff check .` và `pytest` chạy từ gốc repo.
 
+## Trạng thái triển khai trong PR 15 ngày 05 tháng 11 năm 2026
+
+PR ML KAN-16..20 có phần tích hợp liên quan spec 001. Bảng này ghi bằng chứng hiện có, không chuyển người phụ trách và không tự đánh dấu nghiệm thu các task của Loan/Lực.
+
+| Task | Trạng thái và giới hạn |
+|---|---|
+| T005, T009–T011 | Đã có hàm chuẩn hóa, encode, score, extraction và kiểm manifest trong PR ML; chờ review. |
+| T006–T008, T018, T020 | Có regression test trong `tests/test_ml_pipeline.py`, không đồng nghĩa hoàn tất toàn bộ task/test độc lập được chỉ định. Test recipe JPEG chỉ tái viết các lệnh Pillow trên ảnh tổng hợp, không chạy `prepare_data.py` cũ trên baseline thật. |
+| T012 | Chưa có `data/processed_baseline.sha256` được Loan chụp/commit trước migration. Dữ liệu chạy ML ở thư mục riêng; chưa ghi đè `data/labels.csv` chính. |
+| T013 | Chưa đối chiếu độc lập baseline thật từ commit cũ trên máy Lực. Không dùng test synthetic để tick task này. |
+| T014, T015, T021 | Có adapter dùng normalize chung, version bắt buộc và phân loại ảnh loại trong PR; chờ Loan/Lực review. Ảnh hỏng/bomb tách `rejected_invalid.csv`, không ghi vào `rejected_small.csv`. |
+| T016, T022 | Chưa có `scripts/check_normalization.py`, chưa đạt đối chiếu baseline hoặc kiểm kê toàn bộ dữ liệu thật. Checker tương lai cần tính cả `rejected_invalid.csv` và xử lý ảnh trùng, không mặc nhiên coi mọi ảnh raw nằm trong labels hoặc rejected_small. |
+| T023, T024 | Đã chạy bộ ML riêng 9.708 ảnh và train trên manifest version 1; chưa phải nghiệm thu migration dữ liệu chính sau baseline của Loan hoặc thay bù KAN-34. |
+| T026 | Chưa đổi gate metadata; vẫn chờ Loan/Lực xác nhận. Post metadata đều hằng, A_eff=0,50 không chứng minh hết shortcut. |
+| T027 | Chưa có `scripts/jpeg_trace_check.py`; chưa đo JPEG ghost, chờ xác nhận phương pháp. Kết quả 95,68% validation vẫn có nguy cơ shortcut dung lượng/độ mịn/dấu vết JPEG. |
+| T030 | Chưa có biên bản QA độc lập trên máy Lực. Bộ artifact bàn giao không thay thế nghiệm thu này. |
+
+Chi tiết phạm vi chồng lấn và bằng chứng: [bàn giao ML](../../docs/ml-handoff.md), [truy vết thí nghiệm](../../docs/ml-reproducibility.md).
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: có thể chạy song song (khác file, không phụ thuộc task chưa xong)

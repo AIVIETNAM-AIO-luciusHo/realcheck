@@ -1,0 +1,248 @@
+{
+  "cifake": {
+    "constant_features": {
+      "raw": [
+        "format",
+        "mode",
+        "width",
+        "height",
+        "aspect",
+        "has_exif",
+        "has_make",
+        "has_model",
+        "has_icc",
+        "progressive",
+        "subsampling",
+        "q_luma_mean",
+        "q_chroma_mean"
+      ],
+      "post": [
+        "format",
+        "mode",
+        "width",
+        "height",
+        "aspect",
+        "has_exif",
+        "has_make",
+        "has_model",
+        "has_icc",
+        "progressive",
+        "subsampling",
+        "q_luma_mean",
+        "q_chroma_mean"
+      ]
+    },
+    "slices": {
+      "all": {
+        "raw": {
+          "valid": true,
+          "test_counts": {
+            "1": 1000,
+            "0": 1000
+          },
+          "a_eff": 0.5,
+          "ci95": [
+            0.5,
+            0.5
+          ]
+        },
+        "post": {
+          "valid": true,
+          "test_counts": {
+            "1": 1000,
+            "0": 1000
+          },
+          "a_eff": 0.5,
+          "ci95": [
+            0.5,
+            0.5
+          ]
+        }
+      }
+    },
+    "controls": {
+      "positive": {
+        "valid": true,
+        "test_counts": {
+          "1": 1000,
+          "0": 1000
+        },
+        "a_eff": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "negative": {
+        "valid": true,
+        "test_counts": {
+          "1": 1005,
+          "0": 995
+        },
+        "a_eff": 0.5,
+        "ci95": [
+          0.5,
+          0.5
+        ]
+      },
+      "ok": true
+    }
+  },
+  "genimage": {
+    "constant_features": {
+      "raw": [],
+      "post": [
+        "format",
+        "mode",
+        "width",
+        "height",
+        "aspect",
+        "has_exif",
+        "has_make",
+        "has_model",
+        "has_icc",
+        "progressive",
+        "subsampling",
+        "q_luma_mean",
+        "q_chroma_mean"
+      ]
+    },
+    "slices": {
+      "all": {
+        "raw": {
+          "valid": true,
+          "test_counts": {
+            "1": 450,
+            "0": 406
+          },
+          "a_eff": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ]
+        },
+        "post": {
+          "valid": true,
+          "test_counts": {
+            "1": 450,
+            "0": 406
+          },
+          "a_eff": 0.5,
+          "ci95": [
+            0.5,
+            0.5
+          ]
+        }
+      },
+      "real_vs_glide": {
+        "raw": {
+          "valid": true,
+          "test_counts": {
+            "0": 406,
+            "1": 150
+          },
+          "a_eff": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ]
+        },
+        "post": {
+          "valid": true,
+          "test_counts": {
+            "0": 406,
+            "1": 150
+          },
+          "a_eff": 0.5,
+          "ci95": [
+            0.5,
+            0.5
+          ]
+        }
+      },
+      "real_vs_midjourney": {
+        "raw": {
+          "valid": true,
+          "test_counts": {
+            "0": 406,
+            "1": 150
+          },
+          "a_eff": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ]
+        },
+        "post": {
+          "valid": true,
+          "test_counts": {
+            "0": 406,
+            "1": 150
+          },
+          "a_eff": 0.5,
+          "ci95": [
+            0.5,
+            0.5
+          ]
+        }
+      },
+      "real_vs_sd14": {
+        "raw": {
+          "valid": true,
+          "test_counts": {
+            "0": 406,
+            "1": 150
+          },
+          "a_eff": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ]
+        },
+        "post": {
+          "valid": true,
+          "test_counts": {
+            "0": 406,
+            "1": 150
+          },
+          "a_eff": 0.5,
+          "ci95": [
+            0.5,
+            0.5
+          ]
+        }
+      }
+    },
+    "controls": {
+      "positive": {
+        "valid": true,
+        "test_counts": {
+          "1": 450,
+          "0": 406
+        },
+        "a_eff": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "negative": {
+        "valid": true,
+        "test_counts": {
+          "1": 437,
+          "0": 419
+        },
+        "a_eff": 0.5245,
+        "ci95": [
+          0.5013,
+          0.5627
+        ]
+      },
+      "ok": true
+    }
+  },
+  "gate": {
+    "max_a_eff": 0.55,
+    "passed": true
+  }
+}

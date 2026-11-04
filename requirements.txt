@@ -2,7 +2,9 @@
 # pillow, numpy cùng phiên bản với scripts/requirements-data.txt.
 fastapi==0.162.0
 httpx==0.28.1
+joblib==1.6.0
 numpy==2.4.6
+pandas==3.1.0
 pillow==13.0.0
 pydantic==2.14.2
 pydantic-settings==2.16.2
@@ -10,4 +12,5 @@ pytest==9.2.0
 pytest-cov==7.1.0
 python-multipart==0.0.33
 ruff==0.17.3
+scikit-learn==1.9.1
 uvicorn[standard]==0.54.0

@@ -3,9 +3,10 @@
 Lỗi (FAIL) làm script thoát với mã 1; cảnh báo (WARN) chỉ in ra để xem lại.
 
 Cách chạy (từ thư mục gốc repo, sau prepare_data.py):
-    python scripts/check_data.py
+    python -m scripts.check_data
 """
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -13,8 +14,10 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
+from models.normalize import NORMALIZATION_VERSION
+
 LABELS_CSV = Path("data/labels.csv")
-COLUMNS = ["filepath", "label", "source", "split", "raw_path"]
+COLUMNS = ["filepath", "label", "source", "split", "raw_path", "norm_version"]
 SPLITS = {"train", "val", "test"}
 EXPECTED_SIZE = {"genimage": (256, 256), "cifake": (32, 32)}
 # Hai ảnh có dHash lệch <= ngưỡng này coi là gần trùng
@@ -42,6 +45,13 @@ def dhash(im: Image.Image) -> int:
 def check_schema(df: pd.DataFrame) -> None:
     print("1. Cấu trúc labels.csv")
     check(list(df.columns) == COLUMNS, f"cột đúng {COLUMNS}")
+    if list(df.columns) != COLUMNS:
+        return
+    check(not df.empty, "manifest có ảnh")
+    check(
+        (df["norm_version"].astype(str) == NORMALIZATION_VERSION).all(),
+        "norm_version hiện hành",
+    )
     check(not df.isna().any().any(), "không có ô trống")
     check(set(df["label"]) <= {0, 1}, "label chỉ là 0/1")
     check(set(df["split"]) <= SPLITS, "split chỉ là train/val/test")
@@ -70,19 +80,23 @@ def dataset_of(df: pd.DataFrame) -> pd.Series:
     return df["source"].str.split("_").str[0]
 
 
-def check_images(df: pd.DataFrame) -> list[int]:
+def check_images(df: pd.DataFrame) -> list[int | None]:
     """Kiểm tra định dạng từng ảnh processed; trả về dHash để dùng ở bước rò rỉ."""
     print("4. Ảnh đã chuẩn hóa")
     hashes, problems = [], []
     for p, dataset in zip(df["filepath"], dataset_of(df)):
-        with Image.open(p) as im:
-            if im.format != "JPEG" or im.mode != "RGB":
-                problems.append(f"{p}: {im.format}/{im.mode}")
-            elif im.size != EXPECTED_SIZE[dataset]:
-                problems.append(f"{p}: kích thước {im.size}")
-            elif im.getexif():
-                problems.append(f"{p}: còn EXIF")
-            hashes.append(dhash(im))
+        try:
+            with Image.open(p) as im:
+                if im.format != "JPEG" or im.mode != "RGB":
+                    problems.append(f"{p}: {im.format}/{im.mode}")
+                elif im.size != EXPECTED_SIZE.get(dataset):
+                    problems.append(f"{p}: kích thước {im.size}, dataset {dataset}")
+                elif im.getexif():
+                    problems.append(f"{p}: còn EXIF")
+                hashes.append(dhash(im))
+        except (OSError, Image.DecompressionBombError) as exc:
+            problems.append(f"{p}: {type(exc).__name__}: {exc}")
+            hashes.append(None)
     check(not problems, f"JPEG RGB, đúng kích thước, không EXIF ({len(problems)} lỗi)")
     for line in problems[:5]:
         print(f"       {line}")
@@ -128,14 +142,25 @@ def check_balance(df: pd.DataFrame) -> None:
 
 
 def main() -> None:
-    df = pd.read_csv(LABELS_CSV)
-    print(f"{LABELS_CSV}: {len(df)} dòng\n")
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--labels", type=Path, default=LABELS_CSV)
+    args = parser.parse_args()
+    failures.clear()
+    warnings.clear()
+    df = pd.read_csv(args.labels)
+    print(f"{args.labels}: {len(df)} dòng\n")
     check_schema(df)
+    if failures:
+        sys.exit(1)
     check_labels(df)
     check_files(df)
     # File thiếu đã báo ở bước 3; các bước sau chỉ xét ảnh đọc được
     present = df[df["filepath"].map(lambda p: Path(p).is_file())]
-    present = present.assign(dhash=np.array(check_images(present), dtype=np.uint64))
+    present = present.assign(
+        dhash=pd.Series(check_images(present), index=present.index, dtype=object)
+    )
+    present = present.dropna(subset=["dhash"])
+    present = present.assign(dhash=present["dhash"].astype(np.uint64))
     check_leakage(present)
     check_balance(df)
     print(f"\n{len(failures)} lỗi, {len(warnings)} cảnh báo")

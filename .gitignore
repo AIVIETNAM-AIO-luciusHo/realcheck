@@ -236,6 +236,7 @@ data/processed/*
 data/features/*
 !data/*/.gitkeep
 models/*.joblib
+models/*.joblib.sha256
 .env
 
 # Giao tiếp giữa các agent (không track)

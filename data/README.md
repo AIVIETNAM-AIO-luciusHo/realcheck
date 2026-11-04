@@ -5,6 +5,17 @@ Phụ trách: Loan
 ## Làm gì
 Tải, chuẩn hóa và chia tập dữ liệu. Nhãn lấy theo thư mục (real = 0, ai = 1).
 
+**Luồng ML mới (normalization version 1):** dùng chung `models.normalize`; loại ảnh GenImage cạnh ngắn <256 thay vì phóng to, CIFAKE vẫn giữ 32×32. Manifest mới thêm `norm_version`. Để không ghi đè dữ liệu/manifest cũ đang được nhóm review:
+
+```bash
+python -m scripts.prepare_data --output-dir .cache/ml-run/processed-v1 --labels .cache/ml-run/labels.csv --workers 2
+python -m scripts.check_data --labels .cache/ml-run/labels.csv
+```
+
+Output đã tồn tại thì chọn đường dẫn mới. `data/labels.csv` và số đo cũ bên dưới giữ làm tham chiếu, không phải kết quả sau loại ảnh nhỏ. Lần chạy mới có 9.708 ảnh (4.000 CIFAKE + 5.708 GenImage), loại 292 ảnh thật quá nhỏ; chi tiết trong [`models/README.md`](../models/README.md), [`docs/ml-handoff.md`](../docs/ml-handoff.md). Chưa đối chiếu baseline trên máy Loan; không đánh dấu T012/T013 hoàn thành.
+
+Checker hiện yêu cầu manifest có sáu cột với `norm_version` ở cuối và đúng version hiện hành; manifest cũ thiếu version sẽ FAIL, không tự nâng version. `prepare_data` ghi riêng ảnh quá nhỏ vào `rejected_small.csv` và ảnh hỏng/decompression bomb vào `rejected_invalid.csv`, cạnh thư mục output. Cả hai danh sách giữ đường dẫn, source, kích thước, lý do và version để QA đối chiếu.
+
 | Đường dẫn | Nội dung |
 |---|---|
 | `raw/` | Ảnh gốc tải về, không sửa |
@@ -20,12 +31,10 @@ Nguồn: CIFAKE (Kaggle), GenImage (NeurIPS 2023), ảnh nhóm tự chụp/tạo
 Từ thư mục gốc repo:
 ```bash
 pip install -r scripts/requirements-data.txt
-python scripts/download_data.py cifake     # D1: ~16MB
-python scripts/download_data.py genimage   # D2: tải ~4GB từng phần, giữ lại ~1.5GB
-python scripts/prepare_data.py             # D3: processed/ + labels.csv
-python scripts/check_data.py               # tự kiểm tra; lỗi thì thoát mã 1
-python scripts/metadata_audit.py           # gate metadata; không đạt thì thoát mã 1
-python scripts/baseline_filesize.py        # tham khảo: dung lượng file theo nguồn
+python -m scripts.download_data cifake     # D1: ~16MB
+python -m scripts.download_data genimage   # D2: tải ~4GB từng phần, giữ lại ~1.5GB
+# Chuẩn hóa và kiểm tra: dùng bộ đường dẫn riêng ở đầu README này.
+# Lệnh audit/baseline cho bộ mới: xem docs/ml-handoff.md.
 ```
 Chạy lại cho cùng kết quả (seed 42). `download_data.py genimage` chạy tiếp được nếu bị ngắt.
 
