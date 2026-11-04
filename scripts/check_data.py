@@ -3,15 +3,18 @@
 Lỗi (FAIL) làm script thoát với mã 1; cảnh báo (WARN) chỉ in ra để xem lại.
 
 Cách chạy (từ thư mục gốc repo, sau prepare_data.py):
-    python scripts/check_data.py
+    python -m scripts.check_data
 """
 
+import argparse
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from PIL import Image
+
+from models.normalize import NORMALIZATION_VERSION
 
 LABELS_CSV = Path("data/labels.csv")
 COLUMNS = ["filepath", "label", "source", "split", "raw_path"]
@@ -41,7 +44,19 @@ def dhash(im: Image.Image) -> int:
 
 def check_schema(df: pd.DataFrame) -> None:
     print("1. Cấu trúc labels.csv")
-    check(list(df.columns) == COLUMNS, f"cột đúng {COLUMNS}")
+    expected = COLUMNS + (["norm_version"] if "norm_version" in df else [])
+    check(list(df.columns) == expected, f"cột đúng {expected}")
+    if "norm_version" in df:
+        check(
+            (df["norm_version"].astype(str) == NORMALIZATION_VERSION).all(),
+            "norm_version hiện hành",
+        )
+    else:
+        check(
+            False,
+            "manifest cũ chưa có norm_version; không dùng để trích đặc trưng mới",
+            warn=True,
+        )
     check(not df.isna().any().any(), "không có ô trống")
     check(set(df["label"]) <= {0, 1}, "label chỉ là 0/1")
     check(set(df["split"]) <= SPLITS, "split chỉ là train/val/test")
@@ -128,8 +143,11 @@ def check_balance(df: pd.DataFrame) -> None:
 
 
 def main() -> None:
-    df = pd.read_csv(LABELS_CSV)
-    print(f"{LABELS_CSV}: {len(df)} dòng\n")
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--labels", type=Path, default=LABELS_CSV)
+    args = parser.parse_args()
+    df = pd.read_csv(args.labels)
+    print(f"{args.labels}: {len(df)} dòng\n")
     check_schema(df)
     check_labels(df)
     check_files(df)

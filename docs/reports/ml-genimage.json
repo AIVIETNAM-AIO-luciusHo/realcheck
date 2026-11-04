@@ -1,0 +1,206 @@
+{
+  "created_at": "2026-11-04T11:52:01.449152+00:00",
+  "dataset": {
+    "version": "genimage",
+    "hash": "72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5"
+  },
+  "model": {
+    "version": "sentence-transformers/clip-ViT-B-32+LogisticRegression",
+    "hash": "69810fd60940ddeed07af92d600c6bb0466641bf4144aec73554b44013ae7bdb"
+  },
+  "profile": {
+    "version": "1",
+    "hash": "6fd24bb91d169eb72db1d0fd7beb1f010f78d3a30ba0132d17fdec7a2d58daec"
+  },
+  "metadata": {
+    "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+    "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+    "feature_dim": 512,
+    "normalize_embeddings": true,
+    "pillow_version": "13.0.0",
+    "norm_version": "1",
+    "dataset": "genimage",
+    "labels_sha256": "72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5",
+    "features_sha256": "1a08a1005c3ea3f6daf2172f944b97d51a6d3d33f73ec812558840d2cedfa217",
+    "seed": 42,
+    "C": 10.0,
+    "split_counts": {
+      "train": 3996,
+      "val": 856,
+      "test": 856
+    }
+  },
+  "dependencies": {
+    "numpy": "2.4.6",
+    "pillow": "13.0.0",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0",
+    "torch": "2.15.0",
+    "transformers": "5.22.1",
+    "sentence-transformers": "6.2.0"
+  },
+  "thresholds": {
+    "binary": 0.5,
+    "low": 0.3,
+    "high": 0.7
+  },
+  "threshold_status": "initial_experiment_not_release_approval",
+  "selection": {
+    "metric": "validation_accuracy",
+    "candidates": [
+      {
+        "C": 0.01,
+        "validation_accuracy": 0.8399532710280374
+      },
+      {
+        "C": 0.1,
+        "validation_accuracy": 0.8983644859813084
+      },
+      {
+        "C": 1.0,
+        "validation_accuracy": 0.9509345794392523
+      },
+      {
+        "C": 10.0,
+        "validation_accuracy": 0.9567757009345794
+      },
+      {
+        "C": 100.0,
+        "validation_accuracy": 0.9509345794392523
+      }
+    ],
+    "C": 10.0
+  },
+  "split_counts": {
+    "train": 3996,
+    "val": 856,
+    "test": 856
+  },
+  "test": null,
+  "by_source": [],
+  "limitations": [
+    "CIFAKE is a smoke test only",
+    "Independent data QA required before release"
+  ],
+  "val": {
+    "n": 856,
+    "accuracy": 0.9567757009345794,
+    "precision": 0.9640449438202248,
+    "recall": 0.9533333333333334,
+    "auroc": 0.9948494800218938,
+    "confusion_matrix": [
+      [
+        390,
+        16
+      ],
+      [
+        21,
+        429
+      ]
+    ],
+    "uncertain_n": 63,
+    "uncertain_rate": 0.07359813084112149,
+    "decided_accuracy": 0.9886506935687264,
+    "decided_n": 793,
+    "false_positive_rate": 0.03940886699507389,
+    "likely_ai_false_positive_rate": 0.007389162561576354
+  },
+  "val_by_source": [
+    {
+      "name": "genimage_glide",
+      "n": 150,
+      "accuracy": 0.96,
+      "precision": 1.0,
+      "recall": 0.96,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          6,
+          144
+        ]
+      ],
+      "uncertain_n": 8,
+      "uncertain_rate": 0.05333333333333334,
+      "decided_accuracy": 0.9859154929577465,
+      "decided_n": 142,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "genimage_midjourney",
+      "n": 150,
+      "accuracy": 0.9333333333333333,
+      "precision": 1.0,
+      "recall": 0.9333333333333333,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          10,
+          140
+        ]
+      ],
+      "uncertain_n": 18,
+      "uncertain_rate": 0.12,
+      "decided_accuracy": 0.9772727272727273,
+      "decided_n": 132,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "genimage_real",
+      "n": 406,
+      "accuracy": 0.9605911330049262,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          390,
+          16
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "uncertain_n": 29,
+      "uncertain_rate": 0.07142857142857142,
+      "decided_accuracy": 0.9920424403183024,
+      "decided_n": 377,
+      "false_positive_rate": 0.03940886699507389,
+      "likely_ai_false_positive_rate": 0.007389162561576354
+    },
+    {
+      "name": "genimage_sd14",
+      "n": 150,
+      "accuracy": 0.9666666666666667,
+      "precision": 1.0,
+      "recall": 0.9666666666666667,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          5,
+          145
+        ]
+      ],
+      "uncertain_n": 8,
+      "uncertain_rate": 0.05333333333333334,
+      "decided_accuracy": 0.9929577464788732,
+      "decided_n": 142,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    }
+  ]
+}

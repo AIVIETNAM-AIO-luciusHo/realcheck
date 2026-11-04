@@ -6,24 +6,25 @@ Mọi ảnh (thật và AI) được đưa về cùng một "vỏ ngoài" để 
 CIFAKE (32x32) giữ nguyên kích thước, chỉ lưu lại JPEG cùng chất lượng.
 
 Cách chạy (từ thư mục gốc repo):
-    python scripts/prepare_data.py
+    python -m scripts.prepare_data
 """
 
+import argparse
 import hashlib
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from PIL import Image, ImageOps
+from PIL import Image
+
+from models.normalize import NORMALIZATION_VERSION, ImageTooSmall, normalize_image
 
 RAW_DIR = Path("data/raw")
 PROCESSED_DIR = Path("data/processed")
 LABELS_CSV = Path("data/labels.csv")
 
 SEED = 42
-SIZE = 256
-QUALITY = 95
 SPLIT_RATIO = (0.70, 0.15, 0.15)  # train / val / test cho GenImage
 CIFAKE_VAL_RATIO = 0.15  # phần CIFAKE train tách ra làm val; test giữ split gốc
 
@@ -48,21 +49,24 @@ def collect_raw() -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["raw_path", "label", "source", "split"])
 
 
-def process_one(raw_path: str) -> tuple[str, str] | None:
-    """Chuẩn hóa một ảnh; trả về (đường dẫn processed, hash pixel), None nếu ảnh hỏng."""
-    rel = Path(raw_path).relative_to(RAW_DIR)
-    out = PROCESSED_DIR / rel.with_suffix(".jpg")
+def process_one(item: tuple[str, str, str]) -> dict:
+    """Normalize one image, or return an explicit rejection (Windows spawn-safe)."""
+    raw_path, raw_dir, processed_dir = item
+    rel = Path(raw_path).relative_to(raw_dir)
+    out = Path(processed_dir) / rel.with_suffix(".jpg")
+    width = height = 0
     try:
         with Image.open(raw_path) as im:
-            im = ImageOps.exif_transpose(im).convert("RGB")
-            if rel.parts[0] == "genimage":
-                im = ImageOps.fit(im, (SIZE, SIZE), Image.Resampling.BICUBIC)
+            width, height = im.size
+            normalized = normalize_image(im, resize=rel.parts[0] != "cifake")
             out.parent.mkdir(parents=True, exist_ok=True)
-            im.save(out, "JPEG", quality=QUALITY)  # không truyền exif= nên EXIF bị bỏ
-            return out.as_posix(), hashlib.md5(im.tobytes()).hexdigest()
-    except OSError as e:
-        print(f"Bỏ ảnh hỏng {raw_path}: {e}")
-        return None
+            out.write_bytes(normalized.jpeg)
+            return {
+                "filepath": out.as_posix(),
+                "hash": hashlib.sha256(normalized.image.tobytes()).hexdigest(),
+            }
+    except (ImageTooSmall, OSError) as exc:
+        return {"width": width, "height": height, "reason": str(exc)}
 
 
 def drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
@@ -92,18 +96,54 @@ def assign_splits(df: pd.DataFrame) -> pd.Series:
 
 
 def main() -> None:
+    global RAW_DIR, PROCESSED_DIR, LABELS_CSV
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--raw-dir", type=Path, default=RAW_DIR)
+    parser.add_argument("--output-dir", type=Path, default=PROCESSED_DIR)
+    parser.add_argument("--labels", type=Path, default=LABELS_CSV)
+    parser.add_argument("--workers", type=int, default=2)
+    args = parser.parse_args()
+    if args.workers < 1:
+        parser.error("--workers must be positive")
+    RAW_DIR, PROCESSED_DIR, LABELS_CSV = args.raw_dir, args.output_dir, args.labels
+    # A new output directory avoids overwriting the pre-migration data baseline.
+    if LABELS_CSV.exists() or any(PROCESSED_DIR.glob("**/*.jpg")):
+        parser.error("Output already exists; use new --output-dir and --labels paths")
     df = collect_raw()
+    if df.empty:
+        parser.error(f"No raw images under {RAW_DIR}")
     print(f"Tìm thấy {len(df)} ảnh gốc")
-    with ProcessPoolExecutor() as ex:
-        results = list(ex.map(process_one, df["raw_path"], chunksize=32))
-    ok = [r is not None for r in results]
+    items = [(p, str(RAW_DIR), str(PROCESSED_DIR)) for p in df["raw_path"]]
+    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+        results = list(ex.map(process_one, items, chunksize=32))
+    rejected = [
+        {
+            "raw_path": row.raw_path,
+            "source": row.source,
+            **result,
+            "norm_version": NORMALIZATION_VERSION,
+        }
+        for row, result in zip(df.itertuples(), results)
+        if "reason" in result
+    ]
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    rejected_df = pd.DataFrame(
+        rejected,
+        columns=["raw_path", "source", "width", "height", "reason", "norm_version"],
+    )
+    rejected_df.to_csv(PROCESSED_DIR / "rejected_small.csv", index=False)
+    print("Rejected images:", rejected_df.groupby("source").size().to_dict())
+    ok = ["filepath" in r for r in results]
     df = df[ok].assign(
-        filepath=[r[0] for r in results if r], hash=[r[1] for r in results if r]
+        filepath=[r["filepath"] for r in results if "filepath" in r],
+        hash=[r["hash"] for r in results if "hash" in r],
     )
     df = drop_duplicates(df)
     df["split"] = assign_splits(df)
 
     df = df[["filepath", "label", "source", "split", "raw_path"]]
+    df["norm_version"] = NORMALIZATION_VERSION
+    LABELS_CSV.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(LABELS_CSV, index=False)
     print(f"Đã ghi {LABELS_CSV}: {len(df)} dòng")
     print(pd.crosstab(df["source"], df["split"], margins=True))
