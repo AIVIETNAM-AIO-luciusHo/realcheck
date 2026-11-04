@@ -4,7 +4,6 @@ Cách chạy (từ thư mục gốc repo):
     streamlit run streamlit/app.py
 """
 
-import hashlib
 import html
 import io
 from dataclasses import dataclass
@@ -229,7 +228,8 @@ def check_image_page() -> None:
         return
 
     data = uploaded.getvalue()
-    fingerprint = hashlib.sha256(data).hexdigest()
+    # Theo từng lần tải lên, không theo nội dung: đổi file luôn xóa kết quả cũ
+    fingerprint = uploaded.file_id
     if state.get("fingerprint") != fingerprint:
         state.fingerprint, state.outcome, state.pending = fingerprint, None, False
 
