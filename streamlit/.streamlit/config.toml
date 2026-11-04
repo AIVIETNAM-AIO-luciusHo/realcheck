@@ -1,11 +1,22 @@
 [client]
-toolbarMode = "minimal"
+toolbarMode = "viewer"
 
 [server]
 maxUploadSize = 5
 
+[theme]
+baseRadius = "0.6rem"
+
 [theme.light]
 primaryColor = "#2a78d6"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3f6fb"
+textColor = "#1f2937"
+borderColor = "#d9e0ea"
 
 [theme.dark]
-primaryColor = "#3987e5"
+primaryColor = "#2a78d6"
+backgroundColor = "#0f172a"
+secondaryBackgroundColor = "#1e293b"
+textColor = "#e5e7eb"
+borderColor = "#334155"
