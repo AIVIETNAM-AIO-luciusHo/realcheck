@@ -157,10 +157,10 @@ Là QA, tôi cần biết dấu vết của các lần nén JPEG trước đó (
 
 Các mục sau do nhóm chưa quyết định; KHÔNG được tự đặt khi triển khai. Phải chốt qua `/speckit-clarify` hoặc review của nhóm:
 
-| # | Mục | Ảnh hưởng |
-|---|---|---|
-| 1 | Giá trị `verdict` (ngoài `likely_ai`) | FR-012 |
-| 2 | Mã lỗi (ảnh không đọc được, ảnh quá nhỏ) | FR-003, FR-012 |
+| # | Mục | Ảnh hưởng | Trạng thái |
+|---|---|---|---|
+| 1 | Giá trị `verdict` (ngoài `likely_ai`) | FR-012 | Đề xuất, chờ duyệt: D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md) |
+| 2 | Mã lỗi (ảnh không đọc được, ảnh quá nhỏ) | FR-003, FR-012 | Đề xuất, chờ duyệt: D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md) |
 
 Đã chốt (xem mục Clarifications): bộ lọc resize BICUBIC, chất lượng JPEG 95, xoay theo orientation, ngưỡng "quá nhỏ" (cạnh ngắn < 256 px), chủ sở hữu hàm chuẩn hóa chung, kiểu đầu vào của `score()`.
 
