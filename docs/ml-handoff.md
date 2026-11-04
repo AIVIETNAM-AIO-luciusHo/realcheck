@@ -1,6 +1,6 @@
 # Bàn giao ML – KAN-16 đến KAN-20
 
-Ngày thực hiện: 04/11/2026. Người phụ trách: Kiệt. Code nền đồng bộ từ `origin/main` tại `24bd0a6c301e251695c436ab9f941b5513476d5e`; nhánh làm việc `kiet/clip-vit-b32-ml`. Phần OpenCode nằm ngoài phạm vi.
+Ngày chạy ban đầu: 04/11/2026; cập nhật sau review: 05/11/2026. Người phụ trách: Kiệt. Nhánh `kiet/clip-vit-b32-ml` đã rebase lên `origin/main` tại `43caa16` (thêm ba commit Streamlit và merge commit), không conflict. Nguồn gốc báo cáo cũ, commit/lệnh của lần chạy lại và môi trường nằm trong [hồ sơ tái lập](ml-reproducibility.md). Phần OpenCode nằm ngoài phạm vi.
 
 ## Phạm vi đã thực hiện
 
@@ -9,7 +9,7 @@ Ngày thực hiện: 04/11/2026. Người phụ trách: Kiệt. Code nền đồ
 | KAN-16 – Chuẩn bị CLIP, thống nhất đầu vào | Nạp đúng `sentence-transformers/clip-ViT-B-32`, revision `327ab6726d33c0e22f920c83f2ff9e4bd38ca37f`, bằng `SentenceTransformer`; eval, tắt gradient, embedding 512 chiều L2. Chuẩn hóa chung theo spec 001, version `1` |
 | KAN-17 – CIFAKE + Logistic Regression | Chạy 4.000 ảnh CIFAKE, train/validation/test riêng, xuất model chạy thử và [số đo CIFAKE](reports/ml-cifake.json) |
 | KAN-18 – Đặc trưng GenImage | Trích đủ 5.708 ảnh GenImage cùng 4.000 CIFAKE; `features.npy` shape `(9708,512)`, float32; manifest kiểm row order, hash dữ liệu và model/version |
-| KAN-19 – Train và đánh giá ban đầu | Train LR GenImage trên 3.996 ảnh, chọn C trên 856 validation; xuất [báo cáo validation](reports/ml-genimage.json). Giữ 856 test GenImage chưa chấm điểm |
+| KAN-19 – Train và đánh giá ban đầu | Train LR GenImage trên 3.996 ảnh, chọn C trên 856 validation; accuracy 95,68% chưa loại trừ shortcut dung lượng file/độ mịn/dấu vết JPEG. [Báo cáo validation](reports/ml-genimage.json); 856 test GenImage chưa chấm điểm, T027 chưa có |
 | KAN-20 – Bàn giao score | Có `models/clip_probe.joblib`, checksum, `load_model()` và `score(PIL.Image)->float`; kiểm thử model thật/parity trong [biên bản tích hợp](reports/ml-integration.json). Quang tiếp nhận tích hợp HTTP, Lực review độc lập |
 
 Đây là kết quả triển khai và chạy thí nghiệm cục bộ, chưa phải xác nhận QA/reviewer đã nghiệm thu các task Jira hoặc bản phát hành. Không cập nhật trạng thái Jira.
@@ -31,7 +31,7 @@ Ngày thực hiện: 04/11/2026. Người phụ trách: Kiệt. Code nền đồ
 
 `data/labels.csv` đang track vẫn là bản cũ 10.000 dòng, không bị ghi đè. Bộ chạy mới là 4.000 CIFAKE + 2.708 real GenImage + 1.000 ảnh mỗi nguồn GLIDE/Midjourney/SD1.4. Đã loại 292 real GenImage cạnh ngắn <256 px, không phóng to; không có ảnh hỏng hoặc trùng pixel bị loại thêm. Chưa bổ sung ảnh thay thế của KAN-34.
 
-Không chạy migration ghi đè dữ liệu chính, không tự tạo chứng nhận baseline trên máy Loan. Test ảnh tổng hợp chứng minh byte JPEG khớp thuật toán cũ trong cùng runtime; việc so với baseline thực của Loan và QA độc lập T012/T013 vẫn còn.
+Không chạy migration ghi đè dữ liệu chính, không tự tạo chứng nhận baseline trên máy Loan. Test recipe JPEG chỉ so với các lệnh Pillow được **viết lại trong test trên ảnh tổng hợp**; không chạy `prepare_data.py` cũ trên baseline thật. T012/T013 chưa hoàn thành, chưa có `scripts/check_normalization.py` (T016/T022). Trạng thái đã ghi trong [tasks.md](../specs/001-unified-image-normalization/tasks.md); không dùng test này để nghiệm thu migration.
 
 ## Kết quả thực đo
 
@@ -53,13 +53,13 @@ Grid C cố định `[0.01, 0.1, 1, 10, 100]`, chọn bằng accuracy validation
 | Midjourney | 150 | 93,33% | 12,00% |
 | SD1.4 | 150 | 96,67% | 5,33% |
 
-Các source riêng chỉ có một lớp nên AUROC là `null`. Validation đã dùng chọn C nên 95,68% **không phải** kết quả test độc lập và không chứng minh mục tiêu ≥90% GenImage test. CIFAKE chỉ chứng minh luồng thử.
+Các source riêng chỉ có một lớp nên AUROC là `null`. Validation đã dùng chọn C nên 95,68% **không phải** kết quả test độc lập và không chứng minh mục tiêu ≥90% GenImage test. Kết quả vẫn có nguy cơ học shortcut từ dung lượng file, độ mịn/chi tiết và dấu vết nén JPEG; `jpeg_trace_check.py` (T027) chưa được triển khai, phương pháp còn chờ nhóm xác nhận. CIFAKE chỉ chứng minh luồng thử.
 
 ## Kiểm tra dữ liệu và tính nhất quán
 
 - `scripts.check_data`: 0 lỗi, 0 cảnh báo trên manifest mới; không phát hiện exact/near dHash trùng train–val hoặc train–test theo checker hiện có. Đây không phải chứng minh tuyệt đối không có ảnh gần trùng; review QA vẫn cần.
-- [Metadata audit](reports/ml-metadata-audit.json): post A_eff=0,50, CI95% `[0,50;0,50]` cho overall và ba cặp real–generator; gate hiện có đạt. Control dương=1,00, âm GenImage=0,5245. Protocol D03/D04 của script vẫn là bản nháp; không tự đổi gate thành cảnh báo.
-- [Baseline dung lượng](reports/ml-filesize-baseline.json): GenImage post balanced accuracy LR=66,75%; real–GLIDE=84,54%. Metadata sạch không chứng minh sạch shortcut pixel; độ mịn/chi tiết ảnh và lịch sử JPEG vẫn là hạn chế phải ghi rõ, đặc biệt khi đem model ra ảnh điện thoại/AI mới.
+- [Metadata audit](reports/ml-metadata-audit.json): toàn bộ 13 đặc trưng metadata post đều hằng trong từng dataset. Vì probe không còn tín hiệu phân biệt từ các cột này, A_eff=0,50 và CI95% `[0,50;0,50]` là kết quả hiển nhiên của phép kiểm tra đó, **không phải bằng chứng không có shortcut**. Gate hiện có đạt theo các cột được đo. Control dương=1,00, âm GenImage=0,5245. Protocol D03/D04 vẫn là bản nháp; không tự đổi gate thành cảnh báo.
+- [Baseline dung lượng](reports/ml-filesize-baseline.json): chỉ dùng dung lượng file cũng đạt balanced accuracy LR=66,75% trên GenImage post và **84,54% ở real–GLIDE**. Phép kiểm metadata không đo dung lượng, pixel hay lịch sử nén trong pixel. Shortcut dung lượng/độ mịn/dấu vết JPEG vẫn còn là nguy cơ; T027 chưa có, chưa được kết luận mô hình đã học dấu vết AI tổng quát.
 - Model thật: chọn một ảnh validation mỗi source; JPEG chuẩn hóa trong bộ nhớ khớp byte file processed; tensor thực của CLIP bằng nhau từng phần tử giữa train/serve. Sai khác điểm lớn nhất giữa suy luận một ảnh và feature batch là `3,36e-7`, dưới mức kiểm thử `1e-5` của lần chạy (không phải cam kết mọi phần cứng).
 - Ảnh tổng hợp kích thước 4000×3000, grayscale và RGBA cho score hữu hạn; ảnh 32×32 bị `ImageTooSmall`. Đây là smoke test kích thước/mode, không phải đánh giá accuracy trên ảnh điện thoại thật.
 - Startup + warmup khoảng 27,86 giây; bốn lượt score sau warmup khoảng 0,088–0,094 giây/lượt trên máy local. Không suy ra p95/RPS hoặc SLO server từ bốn mẫu này.
@@ -82,7 +82,13 @@ Main đang có health/schema nhưng chưa có `POST /v1/analyze`. Không sửa m
 
 ## Kiểm thử và trạng thái Git
 
-- 80 pytest chạy qua, coverage `app/` 98,31% trên Windows, Python 3.12.14; test nhẹ không cần torch. Danh sách dependency của lần train nằm trong JSON báo cáo.
+- Lần kiểm tra ban đầu có 80 pytest qua, coverage `app/` 98,31% trên Windows, Python 3.12.14. Lượt review bổ sung regression tests cho script và cả hai thứ tự `classes_`; log và số test cập nhật ghi trong hồ sơ tái lập. Test nhẹ không cần torch; `pandas` đã thêm vào requirements để CI chạy test script thật.
 - Ruff check/format đạt; kiểm tra Git không có unmerged entry hoặc lỗi whitespace.
-- Code ML được bàn giao trên nhánh `kiet/clip-vit-b32-ml`, phát triển từ `origin/main` tại `24bd0a6`; chưa mở PR. Không thể bảo đảm nhánh không conflict với các thay đổi được nhóm push trong tương lai.
+- Code ML bàn giao qua [PR #15](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/15), đã rebase lên main `43caa16`. Chưa merge; conflict với các thay đổi tương lai phải kiểm lại khi tích hợp.
 - Reviewer nên xem trước `models/`, rồi phần gọi shared normalization trong `scripts/prepare_data.py`, checker manifest và tests. Không có thay đổi ở `.opencode`, không commit dữ liệu hoặc trọng số.
+
+## Vì sao PR ML có sửa scripts và tests
+
+PR này mở rộng sang adapter của `prepare_data.py` và `check_data.py` để lần chạy ML riêng tạo đúng JPEG từ hàm chung, manifest version 1 và đặc trưng cùng contract với `score()`. Các regression test do Kiệt bổ sung kiểm trực tiếp phần tích hợp đã thay đổi. Đây là phần phạm vi chồng lấn với T014/T015 của Loan và phần kiểm thử của Lực; mô tả PR ban đầu đã thiếu giải thích này.
+
+Người phụ trách trong spec vẫn là Loan/Lực. Các thay đổi này cần họ review trước merge, không thay thế baseline T012, QA độc lập T013/T030 hay cho phép Kiệt tự nghiệm thu các task đó. Bộ dữ liệu chạy riêng không ghi đè manifest/data chính. Lần sửa review tách ảnh nhỏ vào `rejected_small.csv`, ảnh hỏng/bomb vào `rejected_invalid.csv`, giữ trace theo source; `check_data` thiếu hoặc sai `norm_version` phải FAIL.

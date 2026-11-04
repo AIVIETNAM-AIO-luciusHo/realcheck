@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
 
@@ -10,6 +11,7 @@ from PIL import Image
 
 from models.extract_features import load_features, sha256_file
 from models.normalize import ImageTooSmall, normalize_image
+from models.run_info import run_info
 from models.score import load_scorer
 
 
@@ -22,6 +24,7 @@ def main() -> None:
         "--report", type=Path, default=Path("docs/reports/ml-integration.json")
     )
     args = parser.parse_args()
+    provenance = run_info("scripts.verify_ml")
     features, rows, _ = load_features(args.labels, args.features)
     start = perf_counter()
     scorer = load_scorer(args.model)
@@ -29,14 +32,19 @@ def main() -> None:
     assert not scorer.encoder.training
     assert all(not parameter.requires_grad for parameter in scorer.encoder.parameters())
     sources = sorted({r["source"] for r in rows if r["source"].startswith("genimage_")})
+    if not sources:
+        raise ValueError("No GenImage sources in manifest")
     results = []
     sample = None
     for source in sources:
-        index, row = next(
+        candidates = [
             (i, r)
             for i, r in enumerate(rows)
             if r["source"] == source and r["split"] == "val"
-        )
+        ]
+        if not candidates:
+            raise ValueError(f"Missing validation image for {source}")
+        index, row = candidates[0]
         with (
             Image.open(row["raw_path"]) as raw,
             Image.open(row["filepath"]) as processed,
@@ -92,6 +100,8 @@ def main() -> None:
     else:
         raise AssertionError("Serving accepted a too-small image")
     report = {
+        "created_at": datetime.now(UTC).isoformat(),
+        "run": provenance,
         "model_sha256": sha256_file(args.model),
         "labels_sha256": sha256_file(args.labels),
         "startup_and_warmup_seconds": startup_s,

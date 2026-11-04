@@ -7,6 +7,7 @@ import warnings
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+from time import perf_counter
 
 import joblib
 import numpy as np
@@ -23,6 +24,7 @@ from sklearn.metrics import (
 from models.clip_input import feature_contract
 from models.extract_features import load_features, sha256_file
 from models.normalize import NORMALIZATION_VERSION
+from models.run_info import run_info
 
 
 def metrics(y: np.ndarray, probabilities: np.ndarray, binary_threshold: float) -> dict:
@@ -134,7 +136,6 @@ def train(
         model_hash + "\n", encoding="ascii"
     )
     report = {
-        "created_at": datetime.now(UTC).isoformat(),
         "dataset": {"version": dataset, "hash": manifest["labels_sha256"]},
         "model": {
             "version": feature_contract()["clip_model_id"] + "+LogisticRegression",
@@ -164,6 +165,8 @@ def train(
         "limitations": [
             "CIFAKE is a smoke test only",
             "Independent data QA required before release",
+            "Validation selected C; GenImage test remains unevaluated unless explicitly requested",
+            "File size, smoothness and JPEG history shortcuts remain possible; T027 not implemented",
         ],
     }
     for split in ["val", "test"] if evaluate_test else ["val"]:
@@ -184,6 +187,7 @@ def train(
         report[split + "_by_source"] = groups
         if split == "test":
             report["by_source"] = groups
+    report["created_at"] = datetime.now(UTC).isoformat()
     return report
 
 
@@ -202,6 +206,8 @@ def main() -> None:
     )
     parser.add_argument("--evaluate-test", action="store_true")
     args = parser.parse_args()
+    provenance = run_info("models.train")
+    started = perf_counter()
     report = train(
         args.labels,
         args.features,
@@ -210,6 +216,9 @@ def main() -> None:
         binary_threshold=args.binary_threshold,
         evaluate_test=args.evaluate_test,
     )
+    provenance["elapsed_seconds"] = perf_counter() - started
+    provenance["finished_at"] = report["created_at"]
+    report["run"] = provenance
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(
         json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False),

@@ -61,7 +61,8 @@ def dataset(tmp_path):
     return labels, feature_dir
 
 
-def test_normalize_matches_legacy_bytes_and_decoded_pixels():
+def test_normalize_matches_reimplemented_recipe_on_synthetic_pixels():
+    # This is not the independent old-script/real-baseline check in T012/T013.
     image = Image.effect_noise((400, 300), 70).convert("RGB")
     image.getexif()[274] = 6
     old = ImageOps.fit(
@@ -132,10 +133,13 @@ def test_labels_reordered_and_images_changed_are_rejected(dataset):
         load_features(labels, directory)
 
 
-def test_score_normalizes_once_and_matches_training_input(monkeypatch):
+@pytest.mark.parametrize("classes,expected", [([0, 1], 0.2), ([1, 0], 0.8)])
+def test_score_normalizes_once_and_matches_training_input(
+    monkeypatch, classes, expected
+):
     module = importlib.import_module("models.score")
     encoder = FakeEncoder()
-    probe = Mock(classes_=np.array([1, 0]), n_features_in_=512)
+    probe = Mock(classes_=np.array(classes), n_features_in_=512)
     probe.predict_proba.return_value = np.array([[0.8, 0.2]])
     scorer = module.Scorer(probe, encoder)
     raw = Image.new("RGB", (400, 300), "orange")
@@ -144,7 +148,7 @@ def test_score_normalizes_once_and_matches_training_input(monkeypatch):
         encoder.encode([processed], normalize_embeddings=True)
     spy = Mock(wraps=normalize_image)
     monkeypatch.setattr(module, "normalize_image", spy)
-    assert scorer(raw) == 0.8  # AI column follows classes_, not a hardcoded index.
+    assert scorer(raw) == expected  # AI column follows classes_, not a hardcoded index.
     spy.assert_called_once_with(raw)
     np.testing.assert_array_equal(encoder.inputs[0], encoder.inputs[1])
     with pytest.raises(ImageTooSmall):
@@ -249,3 +253,43 @@ def test_normalization_version_has_pinned_jpeg_fingerprint():
         hashlib.sha256(jpeg).hexdigest()
         == "6ce00bca2f8fe3e7bb338f93c81a8236715e2a70f4d6dfadfb4eb5c3c9ddcb23"
     )
+
+
+def test_train_cli_records_command_commit_and_artifact_hash(
+    dataset, tmp_path, monkeypatch
+):
+    import sys
+
+    from models.train import main
+
+    labels, features = dataset
+    output, report_path = tmp_path / "model.joblib", tmp_path / "run.json"
+    arguments = [
+        "--labels",
+        str(labels),
+        "--features",
+        str(features),
+        "--dataset",
+        "genimage",
+        "--output",
+        str(output),
+        "--report",
+        str(report_path),
+        "--binary-threshold",
+        "0.5",
+    ]
+    monkeypatch.setattr(sys, "argv", ["models.train", *arguments])
+    main()
+    report = json.loads(report_path.read_text())
+    assert report["run"]["command"] == [
+        sys.executable,
+        "-m",
+        "models.train",
+        *arguments,
+    ]
+    assert len(report["run"]["git_commit"]) == 40
+    assert isinstance(report["run"]["git_dirty"], bool)
+    assert report["run"]["elapsed_seconds"] > 0
+    assert report["run"]["finished_at"] == report["created_at"]
+    assert report["model"]["hash"] == hashlib.sha256(output.read_bytes()).hexdigest()
+    assert report["test"] is None

@@ -59,14 +59,27 @@ def process_one(item: tuple[str, str, str]) -> dict:
         with Image.open(raw_path) as im:
             width, height = im.size
             normalized = normalize_image(im, resize=rel.parts[0] != "cifake")
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_bytes(normalized.jpeg)
-            return {
-                "filepath": out.as_posix(),
-                "hash": hashlib.sha256(normalized.image.tobytes()).hexdigest(),
-            }
-    except (ImageTooSmall, OSError) as exc:
-        return {"width": width, "height": height, "reason": str(exc)}
+    except ImageTooSmall as exc:
+        return {
+            "rejection": "small",
+            "width": width,
+            "height": height,
+            "reason": str(exc),
+        }
+    except (OSError, Image.DecompressionBombError) as exc:
+        return {
+            "rejection": "invalid",
+            "width": width,
+            "height": height,
+            "reason": f"{type(exc).__name__}: {exc}",
+        }
+    # Output failures (e.g. disk full) must stop the run, not label an image invalid.
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(normalized.jpeg)
+    return {
+        "filepath": out.as_posix(),
+        "hash": hashlib.sha256(normalized.image.tobytes()).hexdigest(),
+    }
 
 
 def drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
@@ -107,7 +120,7 @@ def main() -> None:
         parser.error("--workers must be positive")
     RAW_DIR, PROCESSED_DIR, LABELS_CSV = args.raw_dir, args.output_dir, args.labels
     # A new output directory avoids overwriting the pre-migration data baseline.
-    if LABELS_CSV.exists() or any(PROCESSED_DIR.glob("**/*.jpg")):
+    if LABELS_CSV.exists() or (PROCESSED_DIR.exists() and any(PROCESSED_DIR.iterdir())):
         parser.error("Output already exists; use new --output-dir and --labels paths")
     df = collect_raw()
     if df.empty:
@@ -127,12 +140,13 @@ def main() -> None:
         if "reason" in result
     ]
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    rejected_df = pd.DataFrame(
-        rejected,
-        columns=["raw_path", "source", "width", "height", "reason", "norm_version"],
-    )
-    rejected_df.to_csv(PROCESSED_DIR / "rejected_small.csv", index=False)
-    print("Rejected images:", rejected_df.groupby("source").size().to_dict())
+    for kind in ("small", "invalid"):
+        rejected_df = pd.DataFrame(
+            [row for row in rejected if row["rejection"] == kind],
+            columns=["raw_path", "source", "width", "height", "reason", "norm_version"],
+        )
+        rejected_df.to_csv(PROCESSED_DIR / f"rejected_{kind}.csv", index=False)
+        print(f"Rejected {kind}:", rejected_df.groupby("source").size().to_dict())
     ok = ["filepath" in r for r in results]
     df = df[ok].assign(
         filepath=[r["filepath"] for r in results if "filepath" in r],

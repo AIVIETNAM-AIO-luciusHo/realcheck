@@ -13,6 +13,7 @@ Model nền đúng của nhóm là [`sentence-transformers/clip-ViT-B-32`](https
 | `extract_features.py` | Đọc ảnh processed, không nén lại; lưu `features.npy` và manifest chống cache cũ |
 | `train.py` | Fit trên train, chọn C trên validation, báo số đo và xuất bundle |
 | `score.py` | Nạp/warmup model lúc startup; `score(PIL.Image) -> float` |
+| `run_info.py` | Ghi UUID, lệnh CLI, commit, trạng thái dirty, Python và OS vào báo cáo train/verify |
 | `clip_probe.joblib` + `.sha256` | Bundle GenImage và checksum, sinh cục bộ, không commit |
 | `cifake_probe.joblib` + `.sha256` | Model chạy thử CIFAKE, không được dùng làm scorer Backend |
 
@@ -88,3 +89,5 @@ python -m pytest --cov=app --cov-fail-under=70
 ```
 
 Test CLIP dùng mock để CI không tải torch/trọng số. Kết quả với model/dữ liệu thật và giới hạn còn lại ghi riêng trong [bàn giao ML](../docs/ml-handoff.md).
+
+Hai báo cáo train cũ có timestamp trùng và thiếu provenance; xem [giải trình, lệnh và commit tái lập](../docs/ml-reproducibility.md). CLI hiện ghi thông tin run tự động; `created_at` không được dùng làm định danh duy nhất. GenImage validation đã dùng chọn C; shortcut dung lượng file/độ mịn/dấu vết JPEG chưa loại trừ, T027 chưa có.
