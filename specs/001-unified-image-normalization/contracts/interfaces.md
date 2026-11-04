@@ -62,9 +62,9 @@ Một hàm duy nhất cho cả bước trích đặc trưng huấn luyện (M3) 
 | 5 | Trả `verdict`, `score`, `exif`, `reason` theo schema đã có |
 | Cấm | API KHÔNG resize hoặc nén ảnh; không kiểm lại ngưỡng kích thước riêng |
 
-**Chưa chốt (chặn task phần này):**
-- Mã lỗi HTTP và định dạng lỗi cho ảnh không đọc được và ảnh quá nhỏ: `[CẦN CHỐT]`.
-- Giá trị máy đọc của `verdict` ngoài `likely_ai`: `[CẦN CHỐT]`.
+**Đề xuất, chờ nhóm duyệt (xem mục D05 trong [`docs/decisions/realcheck-baseline.md`](../../../docs/decisions/realcheck-baseline.md); chưa duyệt thì vẫn chặn task phần này):**
+- Mã lỗi HTTP và định dạng lỗi cho ảnh không đọc được và ảnh quá nhỏ: envelope `error`; `INVALID_IMAGE` (400), `IMAGE_TOO_SMALL` (422).
+- Giá trị máy đọc của `verdict`: `likely_real`, `uncertain`, `likely_ai`.
 
 ## C5. Hợp đồng dữ liệu của pipeline (`scripts/prepare_data.py`)
 
