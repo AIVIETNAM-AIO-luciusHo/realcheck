@@ -10,7 +10,7 @@ Kéo thả ảnh, hiện kết quả từ API. Hai trang: "Kiểm tra ảnh" và
 | `app.py` | Trang Kiểm tra ảnh và điều hướng |
 | `api_client.py` | Gọi `POST /v1/analyze`, kiểm tra phản hồi, đổi mã lỗi thành thông báo tiếng Việt |
 | `pages/1_Ket_qua_danh_gia.py` | Tab Mô hình đọc báo cáo đánh giá; tab Dữ liệu đọc `data/labels.csv` và `data/metadata_audit.json` |
-| `.streamlit/config.toml` | Giới hạn tải lên 5 MB, màu nút chính, ẩn nút Deploy khi demo |
+| `.streamlit/config.toml` | Giới hạn tải lên 5 MB, theme sáng và tối, ẩn nút Deploy khi demo |
 
 ## Cách chạy
 Từ thư mục gốc repo:
@@ -57,5 +57,6 @@ Schema đề xuất, sẽ chốt cùng `scripts/evaluate.py` (T013). `by_source`
 - Không có API hoặc báo cáo thì báo chưa sẵn sàng, không hiển thị số giả. Báo cáo sai định dạng cũng không hiển thị số nào.
 - Giá trị `verdict` và định dạng lỗi (D05) chưa chốt: `api_client.py` tạm nhận `likely_real`, `real`, `uncertain`, `likely_ai`.
 - Điểm AI không phải xác suất chắc chắn; EXIF không làm đổi kết luận.
+- Theme mặc định theo máy người dùng; đổi Sáng/Tối ở menu ⋮ góc trên bên phải (System, Light, Dark).
 - Thang điểm và thẻ giải thích vẽ theo ngưỡng 0.3 / 0.7 trong `app.py`; kết luận luôn lấy từ API. Đổi ngưỡng (D08) thì sửa hằng số này cho khớp.
 - Giới hạn tải lên trên giao diện là 5 MiB (`maxUploadSize`), API vẫn kiểm tra lại theo D06. Cảnh báo 256 px chỉ để báo sớm, API mới là nơi từ chối.

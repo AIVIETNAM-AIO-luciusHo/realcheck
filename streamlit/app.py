@@ -4,7 +4,6 @@ Cách chạy (từ thư mục gốc repo):
     streamlit run streamlit/app.py
 """
 
-import hashlib
 import html
 import io
 from dataclasses import dataclass
@@ -21,6 +20,11 @@ THRESHOLD_LOW, THRESHOLD_HIGH = 0.3, 0.7  # tạm, chờ D08; chỉ để vẽ t
 STYLE = """
 <style>
 [data-testid="stMainBlockContainer"] { max-width: 1120px; padding-top: 2.5rem; }
+/* Menu ⋮ chỉ giữ nút đổi theme; test id này theo Streamlit 1.66, nâng bản phải kiểm lại */
+[data-testid="stMainMenuDivider"],
+[data-testid="stMainMenuItem-print"],
+[data-testid="stMainMenuItem-recordScreencast"],
+[data-testid="stMainMenuList"] ~ * { display: none; }
 .rc-tagline { opacity: .75; margin: -.6rem 0 1rem; font-size: 1.05rem; }
 .rc-card { border-radius: 12px; padding: 1rem 1.1rem; height: 100%; }
 .rc-card b { display: block; font-size: 1.05rem; margin-bottom: .25rem; }
@@ -224,7 +228,8 @@ def check_image_page() -> None:
         return
 
     data = uploaded.getvalue()
-    fingerprint = hashlib.sha256(data).hexdigest()
+    # Theo từng lần tải lên, không theo nội dung: đổi file luôn xóa kết quả cũ
+    fingerprint = uploaded.file_id
     if state.get("fingerprint") != fingerprint:
         state.fingerprint, state.outcome, state.pending = fingerprint, None, False
 
