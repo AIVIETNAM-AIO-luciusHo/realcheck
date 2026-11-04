@@ -76,11 +76,31 @@ realcheck/
 
 ## Quy ước làm việc
 - Không commit thẳng `main`. Nhánh `ten/mo-ta-ngan`.
-- Mở Pull Request vào `main`; GitHub tự gán người review theo [CODEOWNERS](.github/CODEOWNERS); cần CI xanh (`ci-ok`) và ít nhất 1 approval.
 - Đổi cách dùng một thư mục thì cập nhật README thư mục đó trong cùng PR.
 - Commit tiếng Anh, tiền tố `feat:` `fix:` `docs:` `chore:` `test:`.
 - Việc cần làm và báo lỗi quản lý bằng Jira (Sprint 1 – Tuần 1).
 - Không commit dữ liệu, model nặng, secret (`.env`).
+
+## Quy trình Pull Request
+
+**Trước khi mở PR**
+- Mỗi PR gắn một mã Jira (`KAN-xx`) và mã task spec (`Txxx`) nếu có. Đặt tên nhánh `ten/mo-ta-ngan`.
+- Một PR một mục đích. PR lớn hơn khoảng 400 dòng code thay đổi (không tính dữ liệu và tài liệu sinh tự động) nên tách nhỏ.
+- Chưa xong thì mở **Draft PR**. Chỉ bấm Ready for review khi tự kiểm xong.
+- Chạy cục bộ: `ruff check .`, `ruff format --check .`, `pytest --cov=app --cov-fail-under=70`.
+
+**Viết thân PR** theo [mẫu](.github/pull_request_template.md)
+- Mục **Kết quả kiểm chứng** là bắt buộc: dán lệnh và số thật (số test chạy, coverage). CI xanh không thay thế mục này.
+- Mục **Giới hạn, rủi ro và việc chưa làm** nói thẳng điều chưa kiểm được. Không ghi "đạt" cho số liệu chưa được QA kiểm độc lập.
+- Tick checklist khi đã làm thật. Không áp dụng thì ghi N/A và lý do.
+
+**Review và merge**
+- Mở PR vào `main`. GitHub gán người review theo [CODEOWNERS](.github/CODEOWNERS). Cần `ci-ok` xanh và ít nhất 1 approval của Code Owner. Tác giả không tự duyệt PR của mình.
+- Người review đọc theo thứ tự: mô tả và phạm vi, so với spec và hợp đồng, **tự chạy lại** (không chỉ nhìn CI), rồi đọc diff theo rủi ro (xử lý lỗi, validate đầu vào, secret, dữ liệu).
+- Nhận xét ghi rõ mức: **BLOCKING** (phải sửa trước khi merge), **NON-BLOCKING** (nên sửa, có thể thành ticket) hoặc **NIT** (nhỏ).
+- Việc còn thiếu khi merge phải thành ticket Jira, không coi là đã xong.
+- PR sửa thay phần của người khác (ví dụ ML sửa `scripts/` của Data) phải gắn chủ phần đó review. QA độc lập vẫn kiểm riêng.
+- Thay đổi dữ liệu hoặc model cần bằng chứng tái lập (lệnh, commit sạch, seed) trước khi QA kiểm.
 
 ## Dữ liệu
 CIFAKE (Kaggle), GenImage (NeurIPS 2023); chỉ dùng cho học tập.
