@@ -9,7 +9,7 @@ import html
 import io
 from dataclasses import dataclass
 
-from api_client import API_URL, Analysis, ApiError, analyze, is_ready
+from api_client import API_URL, Analysis, ApiError, analyze, api_status
 from PIL import Image, ImageOps
 
 import streamlit as st
@@ -87,8 +87,8 @@ def make_preview(data: bytes) -> Preview | None:
 
 
 @st.cache_data(ttl=15, show_spinner=False)
-def api_ready() -> bool:
-    return is_ready()
+def cached_api_status() -> str:
+    return api_status()
 
 
 def request_analysis() -> None:
@@ -282,9 +282,13 @@ page = st.navigation(
     ]
 )
 with st.sidebar:
-    if api_ready():
+    status = cached_api_status()
+    if status == "ready":
         st.badge("Hệ thống sẵn sàng", icon=":material/check_circle:", color="green")
     else:
         st.badge("Hệ thống chưa sẵn sàng", icon=":material/error:", color="orange")
-        st.caption(f"Chưa kết nối được API tại `{API_URL}`.")
+        if status == "not_ready":
+            st.caption("API đã chạy nhưng mô hình chưa sẵn sàng.")
+        else:
+            st.caption(f"Chưa kết nối được API tại `{API_URL}`.")
 page.run()

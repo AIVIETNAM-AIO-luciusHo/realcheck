@@ -21,8 +21,8 @@ ERROR_MESSAGES = {
     503: "Hệ thống chưa sẵn sàng hoặc đang bận. Vui lòng thử lại sau.",
     504: "Hệ thống xử lý quá lâu. Vui lòng thử lại sau.",
 }
-# Các lỗi về nội dung ảnh: API nêu lý do cụ thể (vd. ảnh quá nhỏ) thì hiện lý do đó
-API_MESSAGE_STATUSES = {400, 415, 422}
+# Các lỗi về ảnh: API nêu lý do cụ thể (vd. ảnh quá nhỏ, quá nhiều pixel) thì hiện lý do đó
+API_MESSAGE_STATUSES = {400, 413, 415, 422}
 
 
 @dataclass(frozen=True)
@@ -118,9 +118,10 @@ def analyze(
     return analysis
 
 
-def is_ready() -> bool:
-    """GET /health: API chạy và model đã sẵn sàng."""
+def api_status() -> str:
+    """GET /health: "ready", "not_ready" (API chạy, model chưa sẵn sàng) hoặc "unreachable"."""
     try:
-        return httpx.get(f"{API_URL}/health", timeout=HEALTH_TIMEOUT_SECONDS).is_success
+        response = httpx.get(f"{API_URL}/health", timeout=HEALTH_TIMEOUT_SECONDS)
     except httpx.HTTPError:
-        return False
+        return "unreachable"
+    return "ready" if response.is_success else "not_ready"
