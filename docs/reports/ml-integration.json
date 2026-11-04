@@ -1,7 +1,30 @@
 {
+  "created_at": "2026-11-04T21:49:35.387519+00:00",
+  "run": {
+    "id": "f440860e-4d6a-441a-b0f9-afc009aca01c",
+    "started_at": "2026-11-04T21:49:01.965547+00:00",
+    "command": [
+      "C:\\Users\\TuanKiet\\Desktop\\AI\\conquer-mdl5\\realcheck\\.venv\\Scripts\\python.exe",
+      "-m",
+      "scripts.verify_ml",
+      "--labels",
+      ".cache/ml-run/labels.csv",
+      "--features",
+      "data/features",
+      "--model",
+      "models/clip_probe.joblib",
+      "--report",
+      "../outputs/realcheck-pr15-review/reports/ml-integration.json"
+    ],
+    "working_directory": "C:\\Users\\TuanKiet\\Desktop\\AI\\conquer-mdl5\\realcheck",
+    "git_commit": "58e45e9db8ce8ed5057af7e428e67eff02514e00",
+    "git_dirty": false,
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
   "model_sha256": "69810fd60940ddeed07af92d600c6bb0466641bf4144aec73554b44013ae7bdb",
   "labels_sha256": "72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5",
-  "startup_and_warmup_seconds": 27.861482099979185,
+  "startup_and_warmup_seconds": 31.57206730003236,
   "samples": [
     {
       "source": "genimage_glide",
@@ -11,7 +34,7 @@
       "cached_feature_score": 0.9907915592193604,
       "absolute_score_difference": 0.0,
       "tensor_exact_match": true,
-      "scoring_seconds": 0.09356220002518967
+      "scoring_seconds": 0.06487569998716936
     },
     {
       "source": "genimage_midjourney",
@@ -21,7 +44,7 @@
       "cached_feature_score": 0.6556752324104309,
       "absolute_score_difference": 1.7881393432617188e-07,
       "tensor_exact_match": true,
-      "scoring_seconds": 0.09435769997071475
+      "scoring_seconds": 0.09345720004057512
     },
     {
       "source": "genimage_real",
@@ -31,7 +54,7 @@
       "cached_feature_score": 0.07455321401357651,
       "absolute_score_difference": 3.3527612686157227e-07,
       "tensor_exact_match": true,
-      "scoring_seconds": 0.08834550000028685
+      "scoring_seconds": 0.08804040000541136
     },
     {
       "source": "genimage_sd14",
@@ -41,7 +64,7 @@
       "cached_feature_score": 0.9999181032180786,
       "absolute_score_difference": 0.0,
       "tensor_exact_match": true,
-      "scoring_seconds": 0.08765960001619533
+      "scoring_seconds": 0.08040450001135468
     }
   ],
   "synthetic_size_mode_smoke": {

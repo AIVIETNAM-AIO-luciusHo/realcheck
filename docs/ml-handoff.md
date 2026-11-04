@@ -62,7 +62,7 @@ Các source riêng chỉ có một lớp nên AUROC là `null`. Validation đã 
 - [Baseline dung lượng](reports/ml-filesize-baseline.json): chỉ dùng dung lượng file cũng đạt balanced accuracy LR=66,75% trên GenImage post và **84,54% ở real–GLIDE**. Phép kiểm metadata không đo dung lượng, pixel hay lịch sử nén trong pixel. Shortcut dung lượng/độ mịn/dấu vết JPEG vẫn còn là nguy cơ; T027 chưa có, chưa được kết luận mô hình đã học dấu vết AI tổng quát.
 - Model thật: chọn một ảnh validation mỗi source; JPEG chuẩn hóa trong bộ nhớ khớp byte file processed; tensor thực của CLIP bằng nhau từng phần tử giữa train/serve. Sai khác điểm lớn nhất giữa suy luận một ảnh và feature batch là `3,36e-7`, dưới mức kiểm thử `1e-5` của lần chạy (không phải cam kết mọi phần cứng).
 - Ảnh tổng hợp kích thước 4000×3000, grayscale và RGBA cho score hữu hạn; ảnh 32×32 bị `ImageTooSmall`. Đây là smoke test kích thước/mode, không phải đánh giá accuracy trên ảnh điện thoại thật.
-- Startup + warmup khoảng 27,86 giây; bốn lượt score sau warmup khoảng 0,088–0,094 giây/lượt trên máy local. Không suy ra p95/RPS hoặc SLO server từ bốn mẫu này.
+- Lần kiểm tra lại sau review: startup + warmup khoảng 31,57 giây; bốn lượt score sau warmup khoảng 0,065–0,093 giây/lượt trên máy local (lần ban đầu: 27,86 giây và 0,088–0,094 giây/lượt). Không suy ra p95/RPS hoặc SLO server từ bốn mẫu này.
 
 ## Chạy lại và bàn giao cho Quang
 

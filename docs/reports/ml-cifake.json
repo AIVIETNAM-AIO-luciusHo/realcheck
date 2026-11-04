@@ -1,5 +1,4 @@
 {
-  "created_at": "2026-11-04T11:52:01.449152+00:00",
   "dataset": {
     "version": "cifake",
     "hash": "72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5"
@@ -151,7 +150,9 @@
   ],
   "limitations": [
     "CIFAKE is a smoke test only",
-    "Independent data QA required before release"
+    "Independent data QA required before release",
+    "Validation selected C; GenImage test remains unevaluated unless explicitly requested",
+    "File size, smoothness and JPEG history shortcuts remain possible; T027 not implemented"
   ],
   "val": {
     "n": 300,
@@ -275,5 +276,35 @@
       "false_positive_rate": 0.076,
       "likely_ai_false_positive_rate": 0.034
     }
-  ]
+  ],
+  "created_at": "2026-11-04T21:48:33.187527+00:00",
+  "run": {
+    "id": "3b1d9e71-28d5-48cd-8bec-68ad56ff7519",
+    "started_at": "2026-11-04T21:48:28.596504+00:00",
+    "command": [
+      "C:\\Users\\TuanKiet\\Desktop\\AI\\conquer-mdl5\\realcheck\\.venv\\Scripts\\python.exe",
+      "-m",
+      "models.train",
+      "--labels",
+      ".cache/ml-run/labels.csv",
+      "--features",
+      "data/features",
+      "--dataset",
+      "cifake",
+      "--output",
+      "models/cifake_probe.joblib",
+      "--report",
+      "../outputs/realcheck-pr15-review/reports/ml-cifake.json",
+      "--binary-threshold",
+      "0.5",
+      "--evaluate-test"
+    ],
+    "working_directory": "C:\\Users\\TuanKiet\\Desktop\\AI\\conquer-mdl5\\realcheck",
+    "git_commit": "58e45e9db8ce8ed5057af7e428e67eff02514e00",
+    "git_dirty": false,
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "elapsed_seconds": 4.561743300000671,
+    "finished_at": "2026-11-04T21:48:33.187527+00:00"
+  }
 }

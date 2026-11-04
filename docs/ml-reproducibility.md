@@ -19,6 +19,16 @@ Vì thiếu provenance, không dùng timestamp cũ để chứng nhận nguồn 
 
 ## Lệnh tái lập từ commit cố định
 
+Lần chạy lại đã hoàn tất từ commit **`58e45e9db8ce8ed5057af7e428e67eff02514e00`**, cả ba báo cáo ghi `git_dirty=false`. Hai lần train mới khớp hoàn toàn model hash, lựa chọn C và metrics của báo cáo cũ; không sửa số đo thủ công.
+
+| Run | UUID | Thời gian tạo báo cáo UTC |
+|---|---|---|
+| CIFAKE | `3b1d9e71-28d5-48cd-8bec-68ad56ff7519` | `2026-11-04T21:48:33.187527+00:00` |
+| GenImage | `e78a1407-39e0-468b-b417-91b96263934b` | `2026-11-04T21:48:36.821981+00:00` |
+| Verify model thật | `f440860e-4d6a-441a-b0f9-afc009aca01c` | `2026-11-04T21:49:35.387519+00:00` |
+
+Các thời điểm trên tương ứng rạng sáng **05/11/2026 UTC+7**. `check_data --labels .cache/ml-run/labels.csv` sau sửa cũng đã chạy trên 9.708 ảnh thật: 0 lỗi, 0 cảnh báo. Verify mới khớp tensor từng phần tử; sai khác score tối đa `3,3527612686157227e-7`, dưới `1e-5`.
+
 Commit nguồn chính xác nằm trong `run.git_commit` của [CIFAKE](reports/ml-cifake.json), [GenImage](reports/ml-genimage.json) và [integration](reports/ml-integration.json). Checkout commit đó trong bản sao riêng, cài dependencies đã pin, rồi đặt dữ liệu/cache theo đường dẫn trong manifest. Lần chạy báo cáo phải bắt đầu khi working tree sạch; output report tạm ở ngoài repo để việc ghi báo cáo thứ nhất không làm lần thứ hai dirty.
 
 ```powershell
@@ -41,6 +51,8 @@ Lần verify ban đầu chạy trên Windows, Python 3.12.14, CLIP trên CPU v�
 
 Gói local gửi kèm bàn giao gồm `models/clip_probe.joblib`, `.sha256`, `.cache/ml-run/labels.csv`, `data/features/features.npy`, `manifest.json`, toàn bộ JPEG processed được hash trong manifest và các raw validation được verify sử dụng. CLIP weights tải/cache riêng đúng `sentence-transformers/clip-ViT-B-32` revision `327ab6726d33c0e22f920c83f2ff9e4bd38ca37f`. Gói có danh sách SHA256 để kiểm sau khi giải nén; không đưa ảnh, features hoặc joblib vào Git.
 
+Tên gói: `realcheck-qa-58e45e9.zip`, 191.794.046 bytes, 9.723 file; SHA256 `177e4f669abe1c8034da1954c75043891a930f25321c2e254f24ff31c4bcfdaf`. Gói được bàn giao ngoài Git cùng `QA_HANDOFF.md` và `SHA256SUMS.txt` bên trong, không phải attachment đã tự gửi tới tài khoản của Lực. CRC của toàn bộ ZIP đã được kiểm tra.
+
 Chỉ ba file joblib/checksum/labels không đủ cho `verify_ml.py`: loader còn đối chiếu toàn bộ processed/features, rồi so raw validation với processed. Gói này dành cho tái chạy ML, không phải toàn bộ raw data hoặc baseline của Loan để nghiệm thu T012/T013. Giải nén vào bản sao repo riêng, chạy lệnh verify ở trên; Lực ghi kết quả độc lập. Kiệt không tự đánh dấu T030 hoàn tất.
 
 ## Phạm vi phối hợp
@@ -50,3 +62,5 @@ Các sửa `prepare_data.py`/`check_data.py` là adapter cần cho bộ ML chạ
 ## Kiểm tra code sau review
 
 Ngày 05/11/2026, Windows/Python 3.12.14: `python -m pytest --cov=app --cov-fail-under=70` chạy **100 test đạt**, coverage `app/` **98,31%**. Ruff check/format đạt. Test script dùng ảnh tổng hợp và worker thật; test verify dùng encoder mock để kiểm hành vi của script. Đây là regression của tác giả PR, không phải QA độc lập T030. Kết quả model thật và commit nguồn được ghi riêng trong JSON `run`.
+
+Đã kiểm thử đột biến riêng trong bộ nhớ: ép `Scorer.ai_column=0` sau constructor khiến case `classes_=[0,1]` thất bại (trả 0,8 thay vì 0,2); case `[1,0]` vẫn qua. Đột biến không được ghi vào source. Test hiện phát hiện đúng lỗi reviewer nêu.
