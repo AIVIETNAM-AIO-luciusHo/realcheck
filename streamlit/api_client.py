@@ -124,4 +124,7 @@ def api_status() -> str:
         response = httpx.get(f"{API_URL}/health", timeout=HEALTH_TIMEOUT_SECONDS)
     except httpx.HTTPError:
         return "unreachable"
-    return "ready" if response.is_success else "not_ready"
+    if response.is_success:
+        return "ready"
+    # Chỉ 503 mới có nghĩa API chạy mà model chưa sẵn sàng; mã khác là không phải API này
+    return "not_ready" if response.status_code == 503 else "unreachable"
