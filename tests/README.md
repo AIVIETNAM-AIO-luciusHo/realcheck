@@ -38,3 +38,5 @@ Chạy riêng: `pytest tests/test_normalize.py tests/test_score_normalization.py
 - `test_run_info.py`: UUID phân biệt hai run dù đồng hồ trùng; không bịa commit nếu Git không có sẵn. CLI train cũng có test đối chiếu lệnh và hash artifact trong báo cáo.
 
 Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan vẫn phụ trách review và kiểm chứng độc lập theo spec 001. Các test này không tự nghiệm thu phần việc QA.
+
+- `test_inference.py`: kiểm `app/inference.py` (D11, D12; AC-20/21/22) bằng scorer giả điều khiển bằng Event: hết slot từ chối ngay, timeout giữ slot tới khi việc xong, hủy/lỗi không rò slot, không vượt số slot, event loop không bị chặn, loader lỗi, close(), không kéo torch. Một ca `xfail(strict=True)` ghi nhận giới hạn D12/FR-A04: process không thoát khi scorer treo vô hạn.
