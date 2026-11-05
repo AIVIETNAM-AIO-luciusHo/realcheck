@@ -23,6 +23,7 @@ Checker hiện yêu cầu manifest có sáu cột với `norm_version` ở cuố
 | `features/` | Kết quả CLIP (`.npy`) |
 | `labels.csv` | `filepath, label, source, split, raw_path` |
 | `metadata_audit.json` | Kết quả kiểm tra rò rỉ metadata (gate) |
+| `processed_baseline.sha256` | Metadata mã băm của dữ liệu chuẩn hóa trước khi đổi pipeline (T012), chỉ gồm sha256, **không chứa ảnh** |
 | `baseline_filesize.json` | Dung lượng file theo nguồn (chỉ tham khảo độ chi tiết ảnh) |
 
 Nguồn: CIFAKE (Kaggle), GenImage (NeurIPS 2023), ảnh nhóm tự chụp/tạo, ảnh qua Zalo.
