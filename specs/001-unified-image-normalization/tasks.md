@@ -40,11 +40,11 @@ Cập nhật KAN-37/39/44/51 ngày 05/11: PR #15 và bản sửa test #16 đã m
 - **[Story]**: US1 đến US5 theo `spec.md`
 - Quy ước chạy script: `python -m scripts.<tên>` từ gốc repo (research R2)
 
-## ⛔ Chưa triển khai khi còn `[CẦN CHỐT]`
+## Quyết định đã chốt và mục chờ xác nhận
 
-Hai mục sau còn mở và **chặn** các task đánh dấu `[CHẶN]`; KHÔNG được tự đặt giá trị:
-- Giá trị máy đọc của `verdict` ngoài `likely_ai`.
-- Mã lỗi cho ảnh không đọc được và ảnh quá nhỏ.
+Hai mục sau đã chốt tại D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md), nên T025 không còn bị chặn:
+- Giá trị máy đọc của `verdict`: `likely_real`, `uncertain`, `likely_ai`.
+- Mã lỗi: ảnh không đọc được `INVALID_IMAGE` (400), ảnh quá nhỏ `IMAGE_TOO_SMALL` (422).
 
 Hai điểm cần xác nhận trước khi làm task liên quan (research R8, R9): đổi `metadata_audit.py` từ cổng cứng sang cảnh báo (T026); phương pháp kiểm tra dấu vết nén (T027). Task đánh dấu `[CHỜ XÁC NHẬN]`.
 
@@ -135,7 +135,7 @@ Hai điểm cần xác nhận trước khi làm task liên quan (research R8, R9
 - [ ] T022 [US3] **Lực**: Mở rộng `scripts/check_normalization.py`: mỗi ảnh trong thư mục dữ liệu thô (`--raw-dir`) hoặc có mặt trong `labels.csv` hoặc có bản ghi trong `rejected_small.csv`, không ảnh nào ở cả hai nơi và không ảnh nào mất (SC-004). Kiểm chứng: `python -m scripts.check_normalization --raw-dir <thư mục dữ liệu thô>` thoát mã 0 (phụ thuộc T016, T021)
 - [ ] T023 [US3] **Loan**: Chạy lại `python -m scripts.prepare_data`, xác nhận ảnh bị loại và tổng số dòng `labels.csv`; cập nhật `data/README.md` (số ảnh bị loại, ghi rõ việc thay bù thuộc KAN-34, cảnh báo cân bằng lớp tới khi bù xong). Lưu ý phép chia `genimage_real` và `genimage_sd14` có thể đổi (research R11) nên đặc trưng và baseline cũ phải tạo lại. Kiểm chứng: `python -m scripts.check_data` (chấp nhận cảnh báo cân bằng) (phụ thuộc T021)
 - [ ] T024 [US3] **Kiệt**: Sau T023, báo cho nhóm đặc trưng CLIP (M3) và model (M4) tạo từ dữ liệu cũ không còn dùng được; trích lại đặc trưng bằng `python -m models.extract_features` (ghi `data/features/manifest.json`) và train lại bằng bước huấn luyện của Kiệt (M4, ngoài phạm vi tính năng này, không có script mới ở đây): bước đó PHẢI tải đặc trưng bằng hàm tải kiểm manifest của `models/extract_features.py`, và ghi `NORMALIZATION_VERSION` vào metadata của `models/clip_probe.joblib`. Kiểm chứng: nạp model, xác nhận `score()` chạy với version khớp và hàm tải đặc trưng từ chối manifest có version lệch (phụ thuộc T011, T023)
-- [ ] T025 [US3] [CHẶN] **Quang**: Trong `app/main.py`: bắt `ImageTooSmall` và từ chối ảnh quá nhỏ kèm thông báo nêu lý do và kích thước tối thiểu 256 px; từ chối ảnh không giải mã được. **Chỉ làm sau khi chốt mã lỗi** (mục `[CẦN CHỐT]`); không tự đặt mã. Viết kèm test API trong `tests/test_api_reject.py`. Kiểm chứng: `ruff check . && pytest tests/test_api_reject.py` (phụ thuộc T017 và quyết định mã lỗi)
+- [ ] T025 [US3] **Quang**: Trong `app/main.py`: bắt `ImageTooSmall` và từ chối ảnh quá nhỏ kèm thông báo nêu lý do và kích thước tối thiểu 256 px; từ chối ảnh không giải mã được. Dùng mã lỗi theo D05. Viết kèm test API trong `tests/test_api_reject.py`. Kiểm chứng: `ruff check . && pytest tests/test_api_reject.py` (phụ thuộc T017)
 
 **Checkpoint**: Ảnh quá nhỏ được xử lý có dấu vết; API từ chối chờ mã lỗi
 
@@ -190,7 +190,7 @@ Hai điểm cần xác nhận trước khi làm task liên quan (research R8, R9
 
 1. **Module chung** (Kiệt + Loan): T005
 2. Song song: **prepare_data** (Loan: T012 trước, rồi T014, T015, T021, T023) và **score() cùng trích đặc trưng** (Kiệt: T009, T010, T011)
-3. **API** (Quang): T017, rồi T025 sau khi chốt mã lỗi
+3. **API** (Quang): T017, rồi T025
 4. **Test và file tạm** (Lực): T001 đến T003 (CI), T006, T007, T008, T018, T020 viết trước; T013 (song song, cần tải dữ liệu thô) rồi T016, T022, T028 đến T030 sau
 
 ### Within Each User Story
@@ -243,5 +243,5 @@ Task: "scripts/prepare_data.py (Loan)"
 
 - `data/processed` và `labels.csv` đổi sau T014/T023; đặc trưng và model cũ phải tạo lại (T024)
 - Bước huấn luyện (M4) không thuộc tính năng này: chỉ ràng buộc dùng hàm tải đặc trưng kiểm manifest (T024)
-- Không implement các task `[CHẶN]` (T025) khi mã lỗi chưa chốt; không implement `[CHỜ XÁC NHẬN]` (T026, T027) khi nhóm chưa đồng ý
+- Không implement `[CHỜ XÁC NHẬN]` (T026, T027) khi nhóm chưa đồng ý
 - Mỗi PR cần một người khác tác giả review và CI xanh với pytest chạy thật (constitution)

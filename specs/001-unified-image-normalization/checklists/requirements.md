@@ -13,8 +13,8 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **CÓ CHỦ ĐÍCH**: còn 2 mục `[CẦN CHỐT]` (giá trị `verdict` ngoài `likely_ai`, và mã lỗi cho ảnh không đọc được/quá nhỏ); xem mục "Mục chưa chốt" trong spec. Các mục còn lại đã chốt trong Clarifications; cần chốt hai mục này trước khi triển khai task `[CHẶN]`
-- [x] Requirements are testable and unambiguous — các yêu cầu có giá trị chưa chốt được đánh dấu rõ, phần còn lại kiểm chứng được
+- [ ] No [NEEDS CLARIFICATION] markers remain — **CÓ CHỦ ĐÍCH**: còn 1 mục `[CẦN CHỐT]` tùy chọn (cách xử lý nền trong suốt, chỉ khi nhóm thấy cần). Giá trị `verdict` và mã lỗi cho ảnh không đọc được/quá nhỏ đã chốt tại D05 trong [`docs/decisions/realcheck-baseline.md`](../../../docs/decisions/realcheck-baseline.md)
+- [x] Requirements are testable and unambiguous — `verdict` và mã lỗi theo D05, mục tùy chọn còn mở được đánh dấu rõ, phần còn lại kiểm chứng được
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
 - [x] All acceptance scenarios are defined
@@ -31,6 +31,6 @@
 
 ## Notes
 
-- Một mục chưa đạt có chủ đích (2 `[CẦN CHỐT]`: `verdict` và mã lỗi); chỉ chặn task API tương ứng (T025), không chặn module chuẩn hóa.
+- Một mục chưa đạt có chủ đích (1 `[CẦN CHỐT]` tùy chọn về nền trong suốt); không chặn task nào. `verdict` và mã lỗi đã chốt tại D05 nên T025 không còn bị chặn.
 - FR-010 (dấu vết nén nhiều lần) chưa có ngưỡng đạt/không đạt; spec chỉ yêu cầu báo kết quả theo nguồn.
 - Đây là kết quả tự kiểm tra của người viết spec (một lượt), chưa được người khác review.

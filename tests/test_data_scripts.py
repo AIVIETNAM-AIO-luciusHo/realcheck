@@ -11,7 +11,7 @@ import pytest
 from PIL import Image
 
 from models.normalize import NORMALIZATION_VERSION
-from scripts import check_data, prepare_data
+from scripts import check_data, check_normalization, prepare_data
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -137,6 +137,69 @@ def test_prepare_duplicate_hashes_remove_conflicting_labels():
     )
     kept = prepare_data.drop_duplicates(df)
     assert kept.index.tolist() == [0, 4]
+
+
+def test_prepare_records_duplicates_and_leaves_no_lost_image(tmp_path):
+    raw, output, labels = (
+        tmp_path / "raw",
+        tmp_path / "processed",
+        tmp_path / "labels.csv",
+    )
+    real, sd14 = raw / "genimage/real", raw / "genimage/sd14"
+    for source, offset in ((real, 0), (sd14, 10)):
+        for n in range(4):
+            save_noise(source / f"{n}.png", (300, 280), offset + n)
+    # Trùng cùng nhãn (giữ a_first.png), và cùng ảnh mang hai nhãn (bỏ cả hai)
+    save_noise(real / "a_first.png", (300, 280), 50)
+    save_noise(real / "b_copy.png", (300, 280), 50)
+    save_noise(real / "conflict.png", (320, 290), 60)
+    save_noise(sd14 / "conflict.png", (320, 290), 60)
+    result = cli(
+        "scripts.prepare_data",
+        *("--raw-dir", raw, "--output-dir", output, "--labels", labels),
+        *("--workers", 1),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    records = pd.read_csv(output / "rejected_duplicate.csv")
+    assert records.columns.tolist() == prepare_data.REJECTED_COLUMNS
+    reasons = dict(zip(records.raw_path, records.reason))
+    first, copy = (real / "a_first.png").as_posix(), (real / "b_copy.png").as_posix()
+    assert first in reasons[copy]
+    for image in (real / "conflict.png", sd14 / "conflict.png"):
+        assert "different label" in reasons[image.as_posix()]
+    assert len(reasons) == 3
+    assert records[["width", "height"]].drop_duplicates().shape[0] == 2
+    assert records.norm_version.astype(str).eq(NORMALIZATION_VERSION).all()
+
+    df = pd.read_csv(labels, dtype={"norm_version": str})
+    assert first in set(df.raw_path) and set(df.raw_path).isdisjoint(reasons)
+    assert all(Path(path).is_file() for path in df.filepath)
+    assert not (output / "genimage/real/b_copy.jpg").exists()
+    assert not (output / "genimage/real/conflict.jpg").exists()
+    assert not (output / "genimage/sd14/conflict.jpg").exists()
+
+    rejected = records.astype(str).to_dict("records")
+    rows = df.astype(str).to_dict("records")
+    assert check_normalization.check_inventory(rows, rejected, raw) == []
+    # Chứng minh checker bắt lỗi nếu thiếu bản ghi, tức lỗi cũ sẽ bị phát hiện
+    errors = check_normalization.check_inventory(rows, [], raw)
+    assert sum(error.startswith("Lost") for error in errors) == 3
+
+
+def test_prepare_writes_empty_duplicate_file_when_no_duplicates(tmp_path):
+    raw, output = tmp_path / "raw", tmp_path / "processed"
+    for source, offset in (("real", 0), ("sd14", 10)):
+        for n in range(3):
+            save_noise(raw / "genimage" / source / f"{n}.png", (300, 280), offset + n)
+    result = cli(
+        "scripts.prepare_data",
+        *("--raw-dir", raw, "--output-dir", output),
+        *("--labels", tmp_path / "labels.csv", "--workers", 1),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    records = pd.read_csv(output / "rejected_duplicate.csv")
+    assert records.empty and records.columns.tolist() == prepare_data.REJECTED_COLUMNS
 
 
 @pytest.mark.parametrize("norm_version", [None, "old", ""])
