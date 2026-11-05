@@ -27,6 +27,7 @@ LABELS_CSV = Path("data/labels.csv")
 SEED = 42
 SPLIT_RATIO = (0.70, 0.15, 0.15)  # train / val / test cho GenImage
 CIFAKE_VAL_RATIO = 0.15  # phần CIFAKE train tách ra làm val; test giữ split gốc
+REJECTED_COLUMNS = ["raw_path", "source", "width", "height", "reason", "norm_version"]
 
 
 def collect_raw() -> pd.DataFrame:
@@ -79,6 +80,8 @@ def process_one(item: tuple[str, str, str]) -> dict:
     return {
         "filepath": out.as_posix(),
         "hash": hashlib.sha256(normalized.image.tobytes()).hexdigest(),
+        "width": width,
+        "height": height,
     }
 
 
@@ -88,6 +91,26 @@ def drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     kept = df[~mixed].drop_duplicates("hash")
     print(f"Loại {len(df) - len(kept)} ảnh trùng")
     return kept
+
+
+def duplicate_records(df: pd.DataFrame, kept: pd.DataFrame) -> pd.DataFrame:
+    """Bản ghi cho ảnh bị drop_duplicates bỏ, để mọi ảnh gốc đều truy được."""
+    dropped = df.drop(kept.index)
+    kept_path = dropped["hash"].map(kept.set_index("hash")["raw_path"])
+    reason = [
+        f"Same pixels as {path} after normalization"
+        if isinstance(path, str)
+        else "Same pixels as an image with a different label"
+        for path in kept_path
+    ]
+    return dropped.assign(reason=reason, norm_version=NORMALIZATION_VERSION)[
+        REJECTED_COLUMNS
+    ]
+
+
+def write_rejected(kind: str, records: pd.DataFrame) -> None:
+    records.to_csv(PROCESSED_DIR / f"rejected_{kind}.csv", index=False)
+    print(f"Rejected {kind}:", records.groupby("source").size().to_dict())
 
 
 def assign_splits(df: pd.DataFrame) -> pd.Series:
@@ -141,18 +164,21 @@ def main() -> None:
     ]
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     for kind in ("small", "invalid"):
-        rejected_df = pd.DataFrame(
-            [row for row in rejected if row["rejection"] == kind],
-            columns=["raw_path", "source", "width", "height", "reason", "norm_version"],
-        )
-        rejected_df.to_csv(PROCESSED_DIR / f"rejected_{kind}.csv", index=False)
-        print(f"Rejected {kind}:", rejected_df.groupby("source").size().to_dict())
+        rows = [row for row in rejected if row["rejection"] == kind]
+        write_rejected(kind, pd.DataFrame(rows, columns=REJECTED_COLUMNS))
     ok = ["filepath" in r for r in results]
     df = df[ok].assign(
         filepath=[r["filepath"] for r in results if "filepath" in r],
         hash=[r["hash"] for r in results if "hash" in r],
+        width=[r["width"] for r in results if "filepath" in r],
+        height=[r["height"] for r in results if "filepath" in r],
     )
-    df = drop_duplicates(df)
+    kept = drop_duplicates(df)
+    write_rejected("duplicate", duplicate_records(df, kept))
+    # Ảnh bị loại không được để lại JPEG trong processed; a.png và a.jpg dùng chung tệp
+    for path in set(df.drop(kept.index)["filepath"]) - set(kept["filepath"]):
+        Path(path).unlink()
+    df = kept
     df["split"] = assign_splits(df)
 
     df = df[["filepath", "label", "source", "split", "raw_path"]]
