@@ -3,7 +3,9 @@
 import os
 import subprocess
 import sys
+from contextlib import nullcontext
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -231,3 +233,183 @@ def test_check_images_reports_decompression_bomb(tmp_path, monkeypatch):
     )
     assert hashes == [None]
     assert check_data.failures
+
+
+@pytest.fixture
+def split_reference(tmp_path):
+    raw = tmp_path / "raw"
+    rows = []
+    for n, split in enumerate(("test", "train", "val", "test")):
+        path = raw / "genimage/real" / f"{n}.png"
+        save_noise(path, (255, 280) if n == 3 else (300, 280), n)
+        rows.append(
+            {
+                "filepath": f"data/processed/genimage/real/{n}.jpg",
+                "raw_path": f"data/raw/genimage/real/{n}.png",
+                "label": 0,
+                "source": "genimage_real",
+                "split": split,
+            }
+        )
+    reference = tmp_path / "old-labels.csv"
+    pd.DataFrame(rows).to_csv(reference, index=False)
+    return raw, reference
+
+
+def test_prepare_preserves_reference_splits_and_raw_files(split_reference, tmp_path):
+    raw, reference = split_reference
+    output, labels = tmp_path / "processed", tmp_path / "labels.csv"
+    before = {p: p.read_bytes() for p in raw.rglob("*.png")}
+    reference_bytes = reference.read_bytes()
+    result = cli(
+        "scripts.prepare_data",
+        "--raw-dir",
+        raw,
+        "--output-dir",
+        output,
+        "--labels",
+        labels,
+        "--split-from",
+        reference,
+        "--workers",
+        1,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    rows = pd.read_csv(labels)
+    assert dict(zip(rows.raw_path.map(lambda p: Path(p).stem), rows.split)) == {
+        "0": "test",
+        "1": "train",
+        "2": "val",
+    }
+    assert "Split reference sha256:" in result.stdout
+    rejected = pd.read_csv(output / "rejected_small.csv")
+    assert len(rejected) == 1 and Path(rejected.iloc[0].raw_path).stem == "3"
+    assert set(rows.raw_path).isdisjoint(rejected.raw_path)
+    assert len(rows) + len(rejected) == len(before)
+    assert not (output / "genimage/real/3.jpg").exists()
+    assert reference.read_bytes() == reference_bytes
+    assert {p: p.read_bytes() for p in raw.rglob("*.png")} == before
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "duplicate",
+        "missing",
+        "extra",
+        "label",
+        "source",
+        "split",
+        "empty",
+        "column",
+        "escape",
+    ],
+)
+def test_bad_split_reference_fails_before_writing(split_reference, tmp_path, bad):
+    raw, reference = split_reference
+    rows = pd.read_csv(reference).to_dict("records")
+    if bad == "duplicate":
+        rows.append(rows[0].copy())
+    elif bad == "missing":
+        rows.pop()
+    elif bad == "extra":
+        rows.append({**rows[0], "raw_path": "data/raw/genimage/real/extra.png"})
+    elif bad == "column":
+        for row in rows:
+            row.pop("split")
+    else:
+        key, value = {
+            "label": ("label", 1),
+            "source": ("source", "genimage_sd14"),
+            "split": ("split", "validation"),
+            "empty": ("raw_path", ""),
+            "escape": ("raw_path", "data/raw/../outside.png"),
+        }[bad]
+        rows[0][key] = value
+    pd.DataFrame(rows).to_csv(reference, index=False)
+    output, labels = tmp_path / "processed", tmp_path / "labels.csv"
+    result = cli(
+        "scripts.prepare_data",
+        "--raw-dir",
+        raw,
+        "--output-dir",
+        output,
+        "--labels",
+        labels,
+        "--split-from",
+        reference,
+    )
+    assert result.returncode == 2 and "split reference" in result.stderr.lower()
+    assert "Traceback" not in result.stderr
+    assert not output.exists() and not labels.exists()
+
+
+def test_reference_matches_raw_identity_not_row_order(split_reference, monkeypatch):
+    raw, reference = split_reference
+    rows = pd.read_csv(reference).iloc[::-1]
+    rows["raw_path"] = rows.raw_path.str.replace("/", "\\", regex=False)
+    rows.to_csv(reference, index=False)
+    monkeypatch.setattr(prepare_data, "RAW_DIR", raw)
+    frame = prepare_data.collect_raw()
+    prepare_data.preserve_splits(frame, reference)
+    assert frame.split.tolist() == ["test", "train", "val", "test"]
+
+
+@pytest.mark.parametrize("original,changed", [("test", "train"), ("train", "test")])
+def test_reference_cannot_move_cifake_original_test(
+    tmp_path, monkeypatch, original, changed
+):
+    raw = tmp_path / "raw"
+    save_noise(raw / f"cifake/{original}/real/a.png", (32, 32), 7)
+    reference = tmp_path / "old.csv"
+    pd.DataFrame(
+        [
+            {
+                "raw_path": f"data/raw/cifake/{original}/real/a.png",
+                "label": 0,
+                "source": "cifake_real",
+                "split": changed,
+            }
+        ]
+    ).to_csv(reference, index=False)
+    monkeypatch.setattr(prepare_data, "RAW_DIR", raw)
+    with pytest.raises(ValueError, match="CIFAKE original test"):
+        prepare_data.preserve_splits(prepare_data.collect_raw(), reference)
+
+
+def test_reference_changed_mid_run_does_not_publish_labels(
+    split_reference, tmp_path, monkeypatch
+):
+    raw, reference = split_reference
+    output, labels = tmp_path / "processed", tmp_path / "labels.csv"
+
+    def changed_map(function, items, **kwargs):
+        results = list(map(function, items))
+        reference.write_bytes(reference.read_bytes() + b"\n")
+        return results
+
+    monkeypatch.setattr(
+        prepare_data,
+        "ProcessPoolExecutor",
+        lambda **kwargs: nullcontext(SimpleNamespace(map=changed_map)),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare_data",
+            "--raw-dir",
+            str(raw),
+            "--output-dir",
+            str(output),
+            "--labels",
+            str(labels),
+            "--split-from",
+            str(reference),
+        ],
+    )
+    for name in ("RAW_DIR", "PROCESSED_DIR", "LABELS_CSV"):
+        monkeypatch.setattr(prepare_data, name, getattr(prepare_data, name))
+    with pytest.raises(ValueError, match="changed during processing"):
+        prepare_data.main()
+    assert not labels.exists()

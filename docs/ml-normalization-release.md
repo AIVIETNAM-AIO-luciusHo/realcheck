@@ -1,6 +1,6 @@
 # KAN-37, KAN-39, KAN-44 và KAN-51
 
-Nguồn đồng bộ: `origin/main` tại `9364fdb` (đã merge PR #15, #16, #17). Nhánh làm việc: `kiet/ml-normalization-release`. Ngày 05/11/2026, Kiệt xác nhận manifest chưa chốt: chuẩn bị code, chưa mở GenImage test.
+Nguồn đồng bộ ban đầu: `origin/main` tại `9364fdb`; cập nhật đến `c77603c` để nhận baseline/dedup của Loan và API của Quang. Nhánh làm việc: `kiet/ml-normalization-release`. Ngày 05/11/2026, Kiệt xác nhận manifest chưa chốt: chuẩn bị code, chưa mở GenImage test.
 
 **Còn chờ manifest:** nhánh này bàn giao code để review. KAN-44 chưa train lại trên manifest phát hành; KAN-51 chưa đánh giá GenImage test. Chỉ chạy các bước đó sau khi Loan/Lực chốt manifest, QA/audit/split và nhóm xác nhận ngưỡng/model đã khóa. Chưa đánh dấu hai task này hoàn thành.
 
@@ -24,7 +24,13 @@ Protocol ghi exact hash model, labels, features, manifest features, profile/vers
 - Manifest chính trên main: 10.000 ảnh, chưa có norm_version. Bộ thí nghiệm riêng: 9.708 ảnh, gồm 4.000 CIFAKE và 5.708 GenImage, loại 292 real ảnh nhỏ.
 - Bộ 9.708 có 856 GenImage test chưa chấm điểm. 1.702 ảnh còn lại đổi split so với manifest cũ; chưa tự xác nhận holdout độc lập đối với mọi lần train trước của cả nhóm.
 - Chưa thay data/labels.csv, không thay bù KAN-34, không tạo chứng nhận baseline thay Loan/Lực, không thay metadata gate.
-- Code của Lực ở nhánh QA được chạy kiểm chứng ngoài repo; không chép/merge phần checker/tests của Lực vào nhánh ML này. Không sửa prepare_data hay quyết định API của Quang.
+- Lần kiểm ban đầu chạy test của Lực ngoài repo. Bản main mới đã merge checker/test QA; đồng bộ main chỉ nhận lại phần đã merge. Theo đề nghị mới, bổ sung tùy chọn giữ split trong prepare_data, cần Loan/Lực review; không sửa quyết định API của Quang.
+
+### Cập nhật phương án giữ split cũ
+
+Phản hồi của Loan là giữ ảnh cũ và ghi riêng ảnh không dùng. Nhánh ML chuẩn bị chế độ `--split-from` để tạo bản ứng viên giữ nguyên split của ảnh còn hợp lệ; không coi tin nhắn này là phê duyệt toàn bộ manifest/QA/holdout. Raw 10.000 ảnh, manifest cũ và bộ QA 9.708 dùng cho model/báo cáo cũ giữ nguyên. Bản ứng viên riêng có 9.708 ảnh, 292 ảnh nhỏ ghi rejected; không ảnh hợp lệ nào đổi split so với bản 10.000.
+
+Baseline T012 của Loan đã có trên main (PR #24); 10.000 hash khớp tham chiếu code cũ đã tái lập, nhưng chưa thay việc review nghiệm thu T013. Manifest ứng viên mới không phải holdout chưa từng tiếp xúc: trong 849 GenImage test có 383 ảnh từng ở train và 82 ở validation của lần QA cũ. Chưa train lại hoặc chấm điểm test trên bản này. Chi tiết ở [ml-preserved-split.md](ml-preserved-split.md).
 
 ## Chạy và bàn giao
 

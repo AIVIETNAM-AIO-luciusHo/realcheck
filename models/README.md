@@ -79,7 +79,7 @@ Hoặc `scorer = load_scorer(path)` rồi tiêm vào `create_app(scorer=scorer)`
 
 Kiểm tra trực tiếp: `python -m models.score data/raw/genimage/sd14/<ten-anh-goc>.png`.
 
-Endpoint `/v1/analyze` chưa có trên main lúc đồng bộ; phần HTTP, giới hạn upload và executor thuộc Quang. Scorer sẵn để tích hợp, không đồng nghĩa endpoint đã hoàn thành.
+Endpoint `/v1/analyze` và inference service đã có trên main khi đồng bộ cập nhật lần này; phần HTTP, giới hạn upload và executor thuộc Quang. Kiểm parity local của ML không thay kiểm thử tích hợp HTTP.
 
 ## Kiểm chứng
 
@@ -96,6 +96,8 @@ Hai báo cáo train cũ có timestamp trùng và thiếu provenance; xem [giải
 ## KAN-44: chạy lại sau khi manifest được chốt
 
 Chọn đường dẫn manifest do Loan/Lực xác nhận, rồi trích feature và train vào thư mục phiên bản mới. Ví dụ dưới chỉ là mẫu sau khi nhóm đã tạo `data/labels-release.csv`; không tự đổi tên/gán version cho manifest cũ để chạy:
+
+Nếu chọn phương án giữ ảnh cũ, ghi riêng ảnh không dùng và giữ split cũ, tạo **bản ứng viên** bằng `scripts.prepare_data --split-from data/labels.csv` vào thư mục mới trước; lệnh đầy đủ và bằng chứng ở [ml-preserved-split.md](../docs/ml-preserved-split.md). Manifest 9.708 dòng này khác manifest 9.708 dòng từng train: giữ 0 thay đổi split so với các ảnh hợp lệ trong bản 10.000, nhưng đổi 1.702 split so với bản QA cũ. Không dùng lại features/model/report cũ cho manifest mới, không thay bản dùng tái lập báo cáo hiện tại. Đây chưa phải manifest phát hành đã được phê duyệt.
 
 ```bash
 python -m models.extract_features --labels data/labels-release.csv --output-dir .cache/ml-release/features

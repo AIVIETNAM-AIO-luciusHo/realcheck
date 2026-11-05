@@ -30,6 +30,15 @@ python -m scripts.check_data --labels .cache/ml-run/labels.csv
 
 `prepare_data` từ chối ghi đè output đã có; dùng đường dẫn mới khi chạy lại. `rejected_small.csv` chỉ chứa ảnh quá nhỏ; ảnh hỏng và `DecompressionBombError` vào `rejected_invalid.csv` riêng, ảnh trùng vào `rejected_duplicate.csv`, cùng các cột `raw_path,source,width,height,reason,norm_version` (kích thước là 0 nếu chưa đọc được). Lỗi ghi output phải làm lần chạy thất bại, không được coi là ảnh hỏng. `--workers` mặc định 2 để tránh tạo quá nhiều process trên Windows. Trước khi thay dữ liệu chuẩn chính của Loan vẫn cần baseline theo spec 001.
 
+Để giữ split cũ cho các ảnh còn hợp lệ, dùng manifest tham chiếu thay vì chia lại:
+
+```bash
+python -m scripts.prepare_data --split-from data/labels.csv --output-dir .cache/ml-preserve/processed --labels .cache/ml-preserve/labels.csv --workers 2
+python -m scripts.check_data --labels .cache/ml-preserve/labels.csv
+```
+
+`--split-from` ghép theo `raw_path` tương đối với `data/raw` hoặc `--raw-dir`, không theo thứ tự dòng. Manifest phải có `raw_path,label,source,split` cho đúng toàn bộ raw đang quét, kể cả ảnh sau đó bị loại; thiếu/trùng/khác cohort, sai nhãn/source/split hoặc chuyển ảnh CIFAKE qua test gốc đều bị từ chối trước khi ghi output. Hỗ trợ đường dẫn Windows, UTF-8 BOM và manifest cũ chưa có norm_version. Hash file tham chiếu được in vào log; nếu file đổi trong lúc xử lý thì không xuất labels mới. Không truyền cờ này thì vẫn chia theo seed 42 như trước. Script không sửa ảnh raw hoặc manifest tham chiếu; ảnh không dùng nằm trong các rejection CSV của output mới. Xem [bản ứng viên giữ split cũ](../docs/ml-preserved-split.md).
+
 `check_data` yêu cầu đủ sáu cột, bao gồm `norm_version` ở cuối và đúng version hiện hành. Manifest cũ thiếu version là lỗi (exit 1), không còn chỉ cảnh báo; không tự thêm version vào dữ liệu cũ. Ảnh processed hỏng hoặc decompression bomb được ghi FAIL, lần kiểm tra thoát mã 1. Lệnh train xem [`models/README.md`](../models/README.md).
 
 `verify_ml` chỉ lấy mẫu validation, từ chối nếu thiếu nguồn GenImage/ảnh validation, tensor lệch, score lệch, encoder chưa frozen hoặc ảnh nhỏ vẫn được chấp nhận. Báo cáo có UUID, lệnh gọi, commit, trạng thái dirty, Python và OS; test mock không thay thế lần chạy model thật. Xem [truy vết và tái lập](../docs/ml-reproducibility.md).

@@ -10,7 +10,9 @@ Cách chạy (từ thư mục gốc repo):
 """
 
 import argparse
+import csv
 import hashlib
+import io
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -131,6 +133,60 @@ def assign_splits(df: pd.DataFrame) -> pd.Series:
     return split
 
 
+def preserve_splits(df: pd.DataFrame, reference: Path) -> str:
+    """Reuse an exact raw cohort's split before filtering; never draw new splits."""
+    content = reference.read_bytes()
+    reader = csv.DictReader(io.StringIO(content.decode("utf-8-sig")), strict=True)
+    required = {"raw_path", "label", "source", "split"}
+    fields = reader.fieldnames or []
+    if not required.issubset(fields) or len(fields) != len(set(fields)):
+        raise ValueError("missing required or duplicate columns")
+    rows = list(reader)
+    if any(
+        None in row or any(not (row.get(key) or "").strip() for key in required)
+        for row in rows
+    ):
+        raise ValueError("empty or malformed CSV row")
+
+    def identity(value: str) -> str:
+        path = Path(value.replace("\\", "/"))
+        for prefix in (Path("data/raw"), RAW_DIR):
+            if path.is_relative_to(prefix):
+                path = path.relative_to(prefix)
+                break
+        if (
+            path.is_absolute()
+            or path.drive
+            or ".." in path.parts
+            or not path.parts
+            or path.parts[0] not in {"genimage", "cifake"}
+        ):
+            raise ValueError(f"invalid raw_path: {value}")
+        return path.as_posix()
+
+    indexed = {identity(row["raw_path"]): row for row in rows}
+    if len(indexed) != len(rows):
+        raise ValueError("duplicate raw_path")
+    keys = df["raw_path"].map(identity)
+    if set(keys) != set(indexed):
+        raise ValueError("raw cohort differs; every raw image needs one reference row")
+    splits = []
+    for key, row in zip(keys, df.itertuples()):
+        old = indexed[key]
+        split = old["split"]
+        if old["label"] != str(row.label) or old["source"] != row.source:
+            raise ValueError(f"label/source changed: {key}")
+        if split not in {"train", "val", "test"}:
+            raise ValueError(f"invalid split: {key}")
+        if row.source.startswith("cifake_") and (
+            (row.split == "test") != (split == "test")
+        ):
+            raise ValueError(f"CIFAKE original test membership changed: {key}")
+        splits.append(split)
+    df["split"] = splits
+    return hashlib.sha256(content).hexdigest()
+
+
 def main() -> None:
     global RAW_DIR, PROCESSED_DIR, LABELS_CSV
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -138,6 +194,11 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, default=PROCESSED_DIR)
     parser.add_argument("--labels", type=Path, default=LABELS_CSV)
     parser.add_argument("--workers", type=int, default=2)
+    parser.add_argument(
+        "--split-from",
+        type=Path,
+        help="Keep each raw image's split from an existing manifest; do not reshuffle",
+    )
     args = parser.parse_args()
     if args.workers < 1:
         parser.error("--workers must be positive")
@@ -148,6 +209,13 @@ def main() -> None:
     df = collect_raw()
     if df.empty:
         parser.error(f"No raw images under {RAW_DIR}")
+    split_hash = None
+    if args.split_from is not None:
+        try:
+            split_hash = preserve_splits(df, args.split_from)
+        except (OSError, UnicodeError, ValueError, csv.Error) as exc:
+            parser.error(f"Invalid split reference: {exc}")
+        print(f"Split reference sha256: {split_hash}")
     print(f"Tìm thấy {len(df)} ảnh gốc")
     items = [(p, str(RAW_DIR), str(PROCESSED_DIR)) for p in df["raw_path"]]
     with ProcessPoolExecutor(max_workers=args.workers) as ex:
@@ -179,7 +247,10 @@ def main() -> None:
     for path in set(df.drop(kept.index)["filepath"]) - set(kept["filepath"]):
         Path(path).unlink()
     df = kept
-    df["split"] = assign_splits(df)
+    if split_hash is None:
+        df["split"] = assign_splits(df)
+    elif hashlib.sha256(args.split_from.read_bytes()).hexdigest() != split_hash:
+        raise ValueError("Split reference changed during processing; no labels written")
 
     df = df[["filepath", "label", "source", "split", "raw_path"]]
     df["norm_version"] = NORMALIZATION_VERSION
