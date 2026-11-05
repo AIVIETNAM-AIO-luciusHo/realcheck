@@ -7,11 +7,12 @@ API nhận 1 ảnh, kiểm tra hợp lệ, gọi `score(image)` từ `models/`, 
 
 | File | Chức năng |
 |---|---|
-| `main.py` | `create_app(scorer, settings)`: tạo app, gắn middleware, lỗi, route |
+| `main.py` | `create_app(scorer, settings, loader)`: tạo app, gắn middleware, lỗi, route; lifespan nạp model |
 | `routes.py` | Khai báo endpoint |
 | `schemas.py` | Hợp đồng JSON: `verdict`, response, mã lỗi |
 | `verdict.py` | Ngưỡng và câu chữ `reason`; không lặp logic này ở nơi khác |
 | `errors.py` | Bảng mã lỗi, envelope lỗi dùng chung |
+| `inference.py` | `InferenceService`: chạy suy luận trên thread riêng, giới hạn slot và timeout |
 | `settings.py` | Cấu hình đọc từ biến môi trường |
 | `logging.py` | `X-Request-ID` và log có cấu trúc |
 
@@ -23,7 +24,9 @@ Từ thư mục gốc repo:
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
-Chưa có model thì `/health` trả 503; đây là hành vi đúng, không có chế độ model giả khi chạy server. Test tiêm scorer giả qua `create_app(scorer=...)`.
+Chưa có model thì `/health` trả 503; đây là hành vi đúng, không có chế độ model giả khi chạy server. Test tiêm scorer giả qua `create_app(scorer=...)`, hoặc hàm nạp qua `create_app(loader=...)`; `loader` chỉ chạy khi app đi qua lifespan. Nạp lỗi thì ghi log và `/health` trả 503.
+
+Giới hạn suy luận: hết slot trả 503 `SERVICE_BUSY`, quá giờ trả 504 `MODEL_TIMEOUT`. Thread không hủy được CLIP nên sau timeout slot vẫn bị giữ tới khi việc thật sự kết thúc; trong lúc đó request mới nhận 503.
 
 ## Cấu hình
 Biến môi trường, giá trị mặc định xem `settings.py`. Lý do chọn: [`docs/decisions/realcheck-baseline.md`](../docs/decisions/realcheck-baseline.md).
