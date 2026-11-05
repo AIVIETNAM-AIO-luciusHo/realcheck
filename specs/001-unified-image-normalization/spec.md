@@ -70,7 +70,7 @@ Là người làm dữ liệu, khi một ảnh gốc quá nhỏ để chuẩn h�
 **Acceptance Scenarios**:
 
 1. **Given** một ảnh GenImage có cạnh ngắn nhỏ hơn 256 px, **When** chuẩn hóa, **Then** ảnh không bị phóng to, được ghi vào file tạm kèm lý do, và không nằm trong dữ liệu đã chuẩn hóa.
-2. **Given** một ảnh gửi qua API có cạnh ngắn nhỏ hơn 256 px, **When** API xử lý, **Then** API từ chối kèm thông báo nêu rõ lý do (mã lỗi cụ thể `[CẦN CHỐT]`) và không chấm điểm ảnh đó.
+2. **Given** một ảnh gửi qua API có cạnh ngắn nhỏ hơn 256 px, **When** API xử lý, **Then** API từ chối kèm thông báo nêu rõ lý do (mã lỗi `IMAGE_TOO_SMALL`, HTTP 422, theo D05) và không chấm điểm ảnh đó.
 3. **Given** ảnh CIFAKE 32×32, **When** chạy luồng thử, **Then** ảnh được giữ nguyên 32×32 và không bị ngưỡng "quá nhỏ" loại bỏ.
 4. **Given** một lần chạy chuẩn hóa toàn bộ dữ liệu, **When** có ảnh bị tách do quá nhỏ, **Then** báo cáo của lần chạy nêu số ảnh bị tách và lý do; không có ảnh nào biến mất mà không có bản ghi.
 
@@ -111,7 +111,7 @@ Là QA, tôi cần biết dấu vết của các lần nén JPEG trước đó (
 - Ảnh có cạnh ngắn đúng bằng 256: đủ điều kiện (không phải "quá nhỏ"); ảnh 255 px trở xuống là quá nhỏ và không được phóng to.
 - Ảnh có tỷ lệ khung hình cực dài (ví dụ rất hẹp): cắt giữa có thể bỏ phần lớn nội dung; kết quả vẫn phải 256×256 nếu cạnh ngắn đạt 256 px, ngược lại bị coi là quá nhỏ.
 - Ảnh có thông tin hướng (orientation) trong metadata: được xoay theo hướng đó trước khi resize; huấn luyện và API làm giống nhau.
-- File không giải mã được thành ảnh: không đi vào chuẩn hóa; mã lỗi/phản hồi `[CẦN CHỐT]`.
+- File không giải mã được thành ảnh: không đi vào chuẩn hóa; trả mã lỗi `INVALID_IMAGE`, HTTP 400, theo D05.
 - Ảnh đã là 256×256 JPEG: vẫn đi qua đúng một lần nén theo quy trình chung, không được bỏ qua bước để "tiết kiệm".
 
 ## Requirements *(mandatory)*
@@ -129,7 +129,7 @@ Là QA, tôi cần biết dấu vết của các lần nén JPEG trước đó (
 - **FR-009**: Phải có phép kiểm tra metadata sau chuẩn hóa, báo AUROC cùng khoảng tin cậy; AUROC ≤ 0.55 là ngưỡng cảnh báo (vượt ngưỡng thì cảnh báo, không tự chặn).
 - **FR-010**: Phải có phép kiểm tra dấu vết nén JPEG nhiều lần còn trong pixel của ảnh đã chuẩn hóa, báo kết quả theo từng nguồn dữ liệu.
 - **FR-011**: Hàm chuẩn hóa MUST xoay ảnh theo thông tin hướng (orientation) trong EXIF trước khi resize, áp dụng giống nhau ở huấn luyện và API.
-- **FR-012**: `score(image)` MUST nhận ảnh gốc đã giải mã, chưa chuẩn hóa. API MUST giải mã ảnh một lần ở ranh giới, đọc EXIF từ chính ảnh đó, và từ chối ảnh không đọc được hoặc quá nhỏ trước khi gọi `score()`. Giá trị `verdict` ngoài `likely_ai` (`[CẦN CHỐT]`) và mã lỗi cho ảnh không đọc được/quá nhỏ (`[CẦN CHỐT]`) MUST được chốt trước khi triển khai phần liên quan; spec không tự đặt.
+- **FR-012**: `score(image)` MUST nhận ảnh gốc đã giải mã, chưa chuẩn hóa. API MUST giải mã ảnh một lần ở ranh giới, đọc EXIF từ chính ảnh đó, và từ chối ảnh không đọc được hoặc quá nhỏ trước khi gọi `score()`. Giá trị `verdict` và mã lỗi cho ảnh không đọc được/quá nhỏ MUST theo D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md).
 - **FR-013**: Tính năng MUST KHÔNG thay đổi dữ liệu nguồn (GenImage), mô hình hay phần hạ tầng; chỉ thay đổi xử lý ảnh.
 
 ### Key Entities *(include if feature involves data)*
@@ -155,12 +155,12 @@ Là QA, tôi cần biết dấu vết của các lần nén JPEG trước đó (
 
 ## Mục chưa chốt
 
-Các mục sau do nhóm chưa quyết định; KHÔNG được tự đặt khi triển khai. Phải chốt qua `/speckit-clarify` hoặc review của nhóm:
+Bảng ghi các mục từng để mở và trạng thái hiện tại. Mục còn mở KHÔNG được tự đặt khi triển khai; phải chốt qua `/speckit-clarify` hoặc review của nhóm:
 
 | # | Mục | Ảnh hưởng | Trạng thái |
 |---|---|---|---|
-| 1 | Giá trị `verdict` (ngoài `likely_ai`) | FR-012 | Đề xuất, chờ duyệt: D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md) |
-| 2 | Mã lỗi (ảnh không đọc được, ảnh quá nhỏ) | FR-003, FR-012 | Đề xuất, chờ duyệt: D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md) |
+| 1 | Giá trị `verdict` (ngoài `likely_ai`) | FR-012 | Đã chốt: D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md) |
+| 2 | Mã lỗi (ảnh không đọc được, ảnh quá nhỏ) | FR-003, FR-012 | Đã chốt: D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md) |
 
 Đã chốt (xem mục Clarifications): bộ lọc resize BICUBIC, chất lượng JPEG 95, xoay theo orientation, ngưỡng "quá nhỏ" (cạnh ngắn < 256 px), chủ sở hữu hàm chuẩn hóa chung, kiểu đầu vào của `score()`.
 

@@ -59,6 +59,6 @@ Mong đợi (ảnh tổng hợp bằng Pillow, mock CLIP, không cần dữ li�
 | `score()` | gọi hàm chuẩn hóa đúng một lần; không nhận cờ `resize` |
 | Cùng ảnh qua đường huấn luyện và đường API | đầu vào CLIP giống hệt (độ lệch 0) |
 
-## 6. Kiểm thử API (chờ quyết định mở)
+## 6. Kiểm thử API
 
-Các kiểm thử từ chối ảnh quá nhỏ và ảnh hỏng chỉ viết được sau khi chốt mã lỗi và `verdict`. Kịch bản: gửi ảnh 4000×3000 mong đợi kết quả hợp lệ; gửi ảnh 200×200 mong đợi từ chối kèm thông báo.
+Mã lỗi và `verdict` theo D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md). Kịch bản: gửi ảnh 4000×3000 mong đợi kết quả hợp lệ; gửi ảnh 200×200 mong đợi từ chối kèm thông báo.
