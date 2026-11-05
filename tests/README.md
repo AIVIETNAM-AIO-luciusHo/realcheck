@@ -31,6 +31,8 @@ Test chuẩn hóa spec 001 (ảnh tổng hợp + mock CLIP, không cần mạng,
 
 Chạy riêng: `pytest tests/test_normalize.py tests/test_score_normalization.py tests/test_extract_features.py tests/test_normalize_large.py tests/test_too_small.py`.
 
+Công cụ kiểm thử tích hợp KAN-29: `test_smoke_api.py` chạy `scripts/smoke_api.py` với server HTTP giả (stdlib, thread) cho kịch bản đúng hợp đồng (thoát 0), body/mã lỗi sai (thoát 1, nêu đúng ca), cổng đóng hoặc thiếu fixture (thoát 2); `test_make_fixtures.py` kiểm kích thước, EXIF, 0 byte, đúng 5.242.880 và +1 byte, sha256 giống nhau giữa hai lần sinh. Không cần mạng ngoài hay model; chưa thay thế lần smoke thật với `/v1/analyze` và model thật.
+
 - Cột AI được kiểm cho cả `classes_=[0,1]` và `[1,0]` với hai xác suất khác nhau; hardcode cột 0 hoặc 1 đều làm test thất bại.
 - Test recipe JPEG chỉ tái viết các lệnh Pillow trên ảnh tổng hợp. Chưa chạy code `prepare_data` cũ với baseline thật của Loan; T013 và lần chạy `check_normalization.py` trên raw độc lập (T016/T022/T030) vẫn chưa hoàn thành.
 - `test_data_scripts.py`: chạy CLI chuẩn hóa với worker thật trên ảnh tổng hợp; kiểm chia tập, giữ test CIFAKE, loại trùng, tách CSV ảnh nhỏ/hỏng, chống ghi đè, lỗi ghi file, decompression bomb và checker bắt buộc `norm_version`.
