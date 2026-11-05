@@ -25,6 +25,8 @@ streamlit run streamlit/app.py
 | `REALCHECK_API_TIMEOUT` | `60` | Thời gian chờ API (giây), tạm, chờ D11 |
 | `REALCHECK_EVAL_REPORT` | `artifacts/evaluation.json` | Đường dẫn báo cáo đánh giá |
 
+Kiểm thử: `pip install -r requirements.txt -r streamlit/requirements.txt`, rồi `pytest tests/test_ui.py -q`. Test dùng HTTP giả và FastAPI thật với scorer giả, chưa gồm Nginx và model thật.
+
 ## Input / Output
 - Input: ảnh JPEG/PNG người dùng kéo thả; báo cáo đánh giá JSON; `data/labels.csv`, `data/metadata_audit.json`.
 - Output: verdict, điểm, EXIF, lý do, thời gian xử lý, trạng thái hệ thống (`GET /health`); số đo mô hình và dữ liệu.
