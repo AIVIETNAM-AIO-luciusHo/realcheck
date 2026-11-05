@@ -21,6 +21,8 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 
 Thư viện cho các script dữ liệu: `pip install -r scripts/requirements-data.txt`. Thứ tự chạy xem [`data/README.md`](../data/README.md).
 
+`check_normalization` yêu cầu đủ cột manifest/rejection và `norm_version` hiện hành; CSV thiếu ô, dư ô hoặc trùng header là lỗi đầu vào (exit 2). Đường dẫn raw phải nằm trong `--raw-dir`. Dòng labels trùng hoặc mục baseline trùng là lỗi đối chiếu (exit 1), kể cả khi hash giống nhau. `rejected_invalid.csv`/`rejected_duplicate.csv` mặc định có thể vắng mặt khi không có ảnh loại tương ứng; nếu đã truyền đường dẫn bằng cờ `--rejected-invalid`/`--rejected-duplicate` thì file đó bắt buộc tồn tại. Checker chỉ đọc dữ liệu; không tự tạo baseline hoặc công nhận manifest phát hành.
+
 Chuẩn hóa mới dùng chung `models.normalize` với ML, không cần torch. Để giữ nguyên dữ liệu/manifest cũ:
 
 ```bash

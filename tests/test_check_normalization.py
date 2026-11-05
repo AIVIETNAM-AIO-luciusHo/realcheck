@@ -254,3 +254,80 @@ def test_image_in_labels_and_rejected_duplicate_is_error(world, capsys):
     _add_rejected(world, "duplicate", "data/raw/genimage/real/a.png", "duplicate")
     assert _run(world) == 1
     assert "both labels and rejected" in capsys.readouterr().err
+
+
+def test_duplicate_kept_record_is_error(world, capsys):
+    path = world / "labels.csv"
+    rows = list(csv.DictReader(path.open()))
+    _write_csv(path, rows + [rows[0]], rows[0])
+    assert _run(world) == 1
+    assert "more than one label" in capsys.readouterr().err
+
+
+def test_duplicate_baseline_entry_is_error(world, capsys):
+    path = world / "baseline.sha256"
+    content = path.read_text()
+    path.write_text(content + content.splitlines()[1] + "\n")
+    assert _run(world) == 1
+    assert "Duplicate baseline" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("filename", ["labels.csv", "processed/rejected_small.csv"])
+@pytest.mark.parametrize(
+    "bad", ["missing_column", "empty_cell", "extra_cell", "short_row", "version"]
+)
+def test_malformed_csv_is_input_error(world, capsys, filename, bad):
+    path = world / filename
+    rows = list(csv.DictReader(path.open()))
+    if bad == "missing_column":
+        for row in rows:
+            del row["raw_path"]
+    elif bad == "empty_cell":
+        rows[0]["raw_path"] = " "
+    elif bad == "version":
+        rows[0]["norm_version"] = "999"
+    _write_csv(path, rows, rows[0])
+    if bad == "extra_cell":
+        lines = path.read_text().splitlines()
+        lines[1] += ",unexpected"
+        path.write_text("\n".join(lines) + "\n")
+    elif bad == "short_row":
+        lines = path.read_text().splitlines()
+        lines[1] = lines[1].rsplit(",", 1)[0]
+        path.write_text("\n".join(lines) + "\n")
+    assert _run(world) == 2
+    assert str(path) in capsys.readouterr().err
+
+
+def test_explicit_missing_optional_rejection_file_is_input_error(world, capsys):
+    missing = world / "missing-invalid.csv"
+    assert (
+        main(
+            [
+                "--raw-dir",
+                str(world / "raw"),
+                "--labels",
+                str(world / "labels.csv"),
+                "--baseline",
+                str(world / "baseline.sha256"),
+                "--rejected-dir",
+                str(world / "processed"),
+                "--rejected-invalid",
+                str(missing),
+            ]
+        )
+        == 2
+    )
+    assert str(missing) in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "raw_path", ["../outside.png", "/outside.png", "C:/outside.png"]
+)
+def test_raw_path_outside_root_is_input_error(world, capsys, raw_path):
+    path = world / "labels.csv"
+    rows = list(csv.DictReader(path.open()))
+    rows[0]["raw_path"] = raw_path
+    _write_csv(path, rows, rows[0])
+    assert _run(world) == 2
+    assert "raw_path" in capsys.readouterr().err

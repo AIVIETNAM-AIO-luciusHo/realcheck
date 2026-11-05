@@ -21,15 +21,22 @@ import csv
 import hashlib
 import re
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from PIL import Image, ImageOps
 
-from models.normalize import MIN_SIDE, ImageTooSmall, normalize_image
+from models.normalize import (
+    MIN_SIDE,
+    NORMALIZATION_VERSION,
+    ImageTooSmall,
+    normalize_image,
+)
 
 DEFAULT_RAW = "data/raw"
 BASELINE_LINE = re.compile(r"([0-9a-f]{64})  (\S.*)")
 UNREADABLE = "Unreadable raw image"
+LABEL_COLUMNS = {"filepath", "label", "source", "split", "raw_path", "norm_version"}
+REJECTED_COLUMNS = {"raw_path", "source", "width", "height", "reason", "norm_version"}
 
 
 def _posix(path: str) -> PurePosixPath:
@@ -41,13 +48,32 @@ def _rel(raw_path: str, raw_dir: Path) -> PurePosixPath:
     path = _posix(raw_path)
     for prefix in (PurePosixPath(DEFAULT_RAW), PurePosixPath(raw_dir.as_posix())):
         if path.is_relative_to(prefix):
-            return path.relative_to(prefix)
+            path = path.relative_to(prefix)
+            break
+    if (
+        path.is_absolute()
+        or PureWindowsPath(path.as_posix()).drive
+        or not path.parts
+        or ".." in path.parts
+        or not (raw_dir / path).resolve().is_relative_to(raw_dir.resolve())
+    ):
+        raise ValueError(f"raw_path outside raw root: {raw_path!r}")
     return path
 
 
-def _read_csv(path: Path) -> list[dict[str, str]]:
+def _read_csv(path: Path, required: set[str]) -> list[dict[str, str]]:
     with path.open(encoding="utf-8-sig", newline="") as stream:
-        return list(csv.DictReader(stream))
+        reader = csv.DictReader(stream, strict=True)
+        fields = reader.fieldnames or []
+        if not required.issubset(fields) or len(fields) != len(set(fields)):
+            raise ValueError(f"{path}: missing required or duplicate CSV columns")
+        rows = list(reader)
+    for number, row in enumerate(rows, 2):
+        if None in row or any(not (row.get(key) or "").strip() for key in required):
+            raise ValueError(f"{path}: malformed or empty CSV cell at line {number}")
+        if row["norm_version"] != NORMALIZATION_VERSION:
+            raise ValueError(f"{path}: unsupported norm_version at line {number}")
+    return rows
 
 
 def read_baseline(path: Path) -> tuple[dict[str, str], list[str]]:
@@ -60,7 +86,10 @@ def read_baseline(path: Path) -> tuple[dict[str, str], list[str]]:
         if match is None:
             errors.append(f"Malformed baseline line {number}: {line!r}")
         else:
-            result[_posix(match[2]).as_posix()] = match[1]
+            key = _posix(match[2]).as_posix()
+            if key in result:
+                errors.append(f"Duplicate baseline entry at line {number}: {key}")
+            result[key] = match[1]
     return result, errors
 
 
@@ -126,7 +155,10 @@ def check_small_records(rejected_small, raw_dir) -> list[str]:
 
 def check_inventory(labels, rejected, raw_dir) -> list[str]:
     errors = []
-    kept = {_rel(row["raw_path"], raw_dir) for row in labels}
+    kept_paths = [_rel(row["raw_path"], raw_dir) for row in labels]
+    kept = set(kept_paths)
+    if len(kept_paths) != len(kept):
+        errors.append("An image has more than one label record")
     refused = [_rel(row["raw_path"], raw_dir) for row in rejected]
     refused_set = set(refused)
     if len(refused) != len(refused_set):
@@ -167,13 +199,29 @@ def main(argv: list[str] | None = None) -> int:
         for kind in ("small", "invalid", "duplicate")
     }
     needed = [args.raw_dir, args.labels, args.baseline, paths["small"]]
-    missing = [str(p) for p in needed if not p.exists()]
+    needed += [
+        paths[kind]
+        for kind in ("invalid", "duplicate")
+        if getattr(args, f"rejected_{kind}") is not None
+    ]
+    missing = [
+        str(p) for p in needed if not (p.is_dir() if p == args.raw_dir else p.is_file())
+    ]
     if missing:
         print("Missing required input, tried: " + ", ".join(missing), file=sys.stderr)
         return 2
-    records = {k: _read_csv(p) if p.exists() else [] for k, p in paths.items()}
-    labels = _read_csv(args.labels)
-    baseline, errors = read_baseline(args.baseline)
+    try:
+        records = {
+            k: _read_csv(p, REJECTED_COLUMNS) if p.exists() else []
+            for k, p in paths.items()
+        }
+        labels = _read_csv(args.labels, LABEL_COLUMNS)
+        for row in labels + [r for rows in records.values() for r in rows]:
+            _rel(row["raw_path"], args.raw_dir)
+        baseline, errors = read_baseline(args.baseline)
+    except (OSError, UnicodeError, ValueError, csv.Error) as exc:
+        print(f"Invalid input: {exc}", file=sys.stderr)
+        return 2
     rejected = [row for rows in records.values() for row in rows]
     errors += check_labels(labels, baseline, args.raw_dir)
     errors += check_small_records(records["small"], args.raw_dir)

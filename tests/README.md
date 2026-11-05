@@ -29,6 +29,8 @@ Test chuẩn hóa spec 001 (ảnh tổng hợp + mock CLIP, không cần mạng,
 | T020 | `test_too_small.py` | cạnh ngắn 255 bị `ImageTooSmall`, 256 qua; `resize=False` giữ 32×32; không phóng to |
 | T016/T022 | `test_check_normalization.py` | logic `scripts/check_normalization.py` trên dữ liệu tổng hợp; chưa thay thế lần chạy trên raw thật |
 
+KAN-41 bổ sung regression cho labels/baseline trùng, CSV thiếu cột/ô hoặc dư ô, version sai, đường dẫn vượt raw root và file rejection được chỉ định nhưng không tồn tại. Chạy riêng bằng `python -m pytest tests/test_check_normalization.py -v`; fixture mỗi test nằm trong `tmp_path`, không tải ảnh hay model. Kiệt thực hiện thay phần chạy KAN-41 theo phân công mới; kết quả vẫn cần Lực/Loan review.
+
 Chạy riêng: `pytest tests/test_normalize.py tests/test_score_normalization.py tests/test_extract_features.py tests/test_normalize_large.py tests/test_too_small.py`.
 
 - Cột AI được kiểm cho cả `classes_=[0,1]` và `[1,0]` với hai xác suất khác nhau; hardcode cột 0 hoặc 1 đều làm test thất bại.
