@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt -r streamlit/requirements.txt
       # Không còn bước bỏ qua: thiếu test thì pytest exit 5 và job fail
       - run: pytest --cov=app --cov-fail-under=70
 

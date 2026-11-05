@@ -25,12 +25,14 @@ streamlit run streamlit/app.py
 | `REALCHECK_API_TIMEOUT` | `60` | Thời gian chờ API (giây), tạm, chờ D11 |
 | `REALCHECK_EVAL_REPORT` | `artifacts/evaluation.json` | Đường dẫn báo cáo đánh giá |
 
+Kiểm thử: `pip install -r requirements.txt -r streamlit/requirements.txt`, rồi `pytest tests/test_ui.py -q`. Test dùng HTTP giả và FastAPI thật với scorer giả, chưa gồm Nginx và model thật.
+
 ## Input / Output
 - Input: ảnh JPEG/PNG người dùng kéo thả; báo cáo đánh giá JSON; `data/labels.csv`, `data/metadata_audit.json`.
 - Output: verdict, điểm, EXIF, lý do, thời gian xử lý, trạng thái hệ thống (`GET /health`); số đo mô hình và dữ liệu.
 
 ### Báo cáo đánh giá
-Schema đề xuất, sẽ chốt cùng `scripts/evaluate.py` (T013). `by_source` và `ood` là tùy chọn. Mảng `confusion_matrix` theo thứ tự `[real, ai]`, hàng là thực tế, cột là dự đoán.
+Do `scripts/evaluate.py` tạo (T013). `by_source` và `ood` là tùy chọn. `test: null` nghĩa là chưa đo tập test, trang sẽ hiện "Chưa đo trên tập test". Mảng `confusion_matrix` theo thứ tự `[real, ai]`, hàng là thực tế, cột là dự đoán.
 ```json
 {
   "dataset": {"version": "v1", "hash": "..."},

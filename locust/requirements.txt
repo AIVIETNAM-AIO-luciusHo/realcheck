@@ -1,0 +1,2 @@
+# Chỉ cho máy đo tải; không thêm vào requirements.txt gốc (CI nhẹ).
+locust==2.47.0

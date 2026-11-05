@@ -18,7 +18,7 @@ AUDIT_JSON = REPO_ROOT / "data" / "metadata_audit.json"
 
 ACCURACY_TARGET = 0.90
 LABELS = ["Ảnh thật", "Ảnh AI"]
-RATE_FIELDS = ("accuracy", "precision", "recall", "decided_accuracy")
+RATE_FIELDS = ("accuracy", "precision", "recall")
 SOURCE_NAMES = {
     "genimage_real": "Ảnh thật (ImageNet)",
     "genimage_sd14": "Stable Diffusion v1.4",
@@ -67,7 +67,11 @@ def valid_metrics(m: object) -> bool:
         and sum(map(sum, cm)) == m["n"]
     )
     uncertain_ok = is_count(m.get("uncertain_n")) and m["uncertain_n"] <= m["n"]
-    return cm_ok and uncertain_ok and all(is_rate(m.get(f)) for f in RATE_FIELDS)
+    # Không có ảnh nào được kết luận thì decided_accuracy là None
+    decided = m.get("decided_accuracy")
+    decided_ok = decided is None or is_rate(decided)
+    rates_ok = all(is_rate(m.get(f)) for f in RATE_FIELDS)
+    return cm_ok and uncertain_ok and decided_ok and rates_ok
 
 
 def valid_report(r: object) -> bool:
@@ -88,7 +92,9 @@ def valid_report(r: object) -> bool:
         isinstance(r.get(key, []), list) and all(map(valid_group, r.get(key, [])))
         for key in ("by_source", "ood")
     )
-    return versions_ok and thresholds_ok and valid_metrics(r.get("test")) and groups_ok
+    # test null: báo cáo hợp lệ nhưng chưa đo tập test
+    test_ok = "test" in r and (r["test"] is None or valid_metrics(r["test"]))
+    return versions_ok and thresholds_ok and test_ok and groups_ok
 
 
 def load_report() -> dict | None:
@@ -194,10 +200,16 @@ def show_metrics(m: dict) -> None:
             color="orange",
         )
     decided_n = m["n"] - m["uncertain_n"]
+    decided_text = (
+        "Không có ảnh nào được kết luận."
+        if m["decided_accuracy"] is None
+        else f"Riêng {count(decided_n)} ảnh đã có kết luận (độ phủ "
+        f"{percent(decided_n / m['n'])}): accuracy {percent(m['decided_accuracy'])}; "
+        "số này không thay thế accuracy toàn bộ."
+    )
     st.caption(
-        f"Tính trên toàn bộ {count(m['n'])} ảnh, gồm cả {count(m['uncertain_n'])} ảnh Chưa chắc. "
-        f"Riêng {count(decided_n)} ảnh đã có kết luận (độ phủ {percent(decided_n / m['n'])}): "
-        f"accuracy {percent(m['decided_accuracy'])}; số này không thay thế accuracy toàn bộ."
+        f"Tính trên toàn bộ {count(m['n'])} ảnh, gồm cả "
+        f"{count(m['uncertain_n'])} ảnh Chưa chắc. {decided_text}"
     )
 
 
@@ -226,6 +238,9 @@ def show_groups(groups: list[dict], first_column: str) -> None:
 
 
 def show_report(r: dict) -> None:
+    if r["test"] is None:
+        st.info("Chưa đo trên tập test.", icon=":material/info:")
+        return
     st.subheader("Kết quả trên tập test")
     show_metrics(r["test"])
 
