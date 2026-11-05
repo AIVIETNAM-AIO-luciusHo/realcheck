@@ -27,10 +27,28 @@ from models.normalize import NORMALIZATION_VERSION
 from models.run_info import run_info
 
 
-def metrics(y: np.ndarray, probabilities: np.ndarray, binary_threshold: float) -> dict:
+def metrics(
+    y: np.ndarray,
+    probabilities: np.ndarray,
+    binary_threshold: float,
+    low: float = 0.3,
+    high: float = 0.7,
+) -> dict:
     """Binary metrics use ALL samples; uncertainty is reported separately."""
+    y, probabilities = np.asarray(y), np.asarray(probabilities)
+    if (
+        y.ndim != 1
+        or not len(y)
+        or probabilities.shape != y.shape
+        or not np.isin(y, [0, 1]).all()
+        or not np.isfinite(probabilities).all()
+        or (probabilities < 0).any()
+        or (probabilities > 1).any()
+        or not (0 < binary_threshold < 1 and 0 <= low < high <= 1)
+    ):
+        raise ValueError("Invalid metric inputs or thresholds")
     prediction = (probabilities >= binary_threshold).astype(int)
-    uncertain = (probabilities >= 0.3) & (probabilities <= 0.7)
+    uncertain = (probabilities >= low) & (probabilities <= high)
     real = y == 0
     decided = ~uncertain
     return {
@@ -48,8 +66,9 @@ def metrics(y: np.ndarray, probabilities: np.ndarray, binary_threshold: float) -
         if decided.any()
         else None,
         "decided_n": int(decided.sum()),
+        "decided_coverage": float(decided.mean()),
         "false_positive_rate": float(prediction[real].mean()) if real.any() else None,
-        "likely_ai_false_positive_rate": float((probabilities[real] > 0.7).mean())
+        "likely_ai_false_positive_rate": float((probabilities[real] > high).mean())
         if real.any()
         else None,
     }
@@ -67,6 +86,8 @@ def train(
     """Persist probe + provenance + checksums; return measured evaluation only."""
     if dataset not in {"cifake", "genimage"}:
         raise ValueError("dataset must be cifake or genimage")
+    if dataset == "genimage" and evaluate_test:
+        raise ValueError("Use models.evaluate with an approved lock for GenImage test")
     if not 0 < binary_threshold < 1:
         raise ValueError("binary_threshold must be between 0 and 1")
     features, rows, manifest = load_features(labels, feature_dir)

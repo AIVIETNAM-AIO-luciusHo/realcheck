@@ -14,6 +14,7 @@ Model nền đúng của nhóm là [`sentence-transformers/clip-ViT-B-32`](https
 | `train.py` | Fit trên train, chọn C trên validation, báo số đo và xuất bundle |
 | `score.py` | Nạp/warmup model lúc startup; `score(PIL.Image) -> float` |
 | `run_info.py` | Ghi UUID, lệnh CLI, commit, trạng thái dirty, Python và OS vào báo cáo train/verify |
+| `evaluate.py` | Chuẩn bị protocol chờ duyệt, chấm GenImage test bằng probe đã khóa, lưu predictions/report; không train lại |
 | `clip_probe.joblib` + `.sha256` | Bundle GenImage và checksum, sinh cục bộ, không commit |
 | `cifake_probe.joblib` + `.sha256` | Model chạy thử CIFAKE, không được dùng làm scorer Backend |
 
@@ -51,13 +52,13 @@ python -m scripts.verify_ml --labels .cache/ml-run/labels.csv
 
 Chuẩn hóa từ chối ghi đè manifest/ảnh đã có. Để chạy lại bước đó, chọn thư mục output và tên CSV mới; các bước sau truyền cùng CSV. `data/labels.csv` đang track là manifest cũ, chưa có `norm_version`, không tự gán version mới cho dữ liệu cũ. Các lệnh trên tạo bộ chạy riêng, giữ nguyên manifest của Loan. Nếu cần chuyển dữ liệu chính, Loan chụp baseline trước theo spec 001.
 
-`train` mặc định chỉ đánh giá validation. Chỉ thêm `--evaluate-test` sau khi khóa protocol/model; không chọn lại C/ngưỡng theo kết quả test. `--binary-threshold 0.5` là lựa chọn công khai cho thí nghiệm ban đầu, chưa thay thế phê duyệt D08 của nhóm. C được chọn từ `[0.01, 0.1, 1, 10, 100]` bằng accuracy validation, hòa chọn C nhỏ hơn. Train không fit lên val/test.
+`train` mặc định chỉ đánh giá validation. `--evaluate-test` chỉ dành cho CIFAKE chạy thử; GenImage phải dùng `models.evaluate` với model đã khóa, không chạy lại train/grid search khi mở test. `--binary-threshold 0.5` là lựa chọn công khai cho thí nghiệm ban đầu, chưa thay thế phê duyệt D08 của nhóm. C được chọn từ `[0.01, 0.1, 1, 10, 100]` bằng accuracy validation, hòa chọn C nhỏ hơn. Train không fit lên val/test.
 
 Kiểm tra metadata hiện có vẫn là gate cứng; xem biên bản chạy trong [bàn giao ML](../docs/ml-handoff.md). QA độc lập của Lực vẫn cần trước nghiệm thu.
 
 ## Input / Output
 
-- `extract_features`: CSV đủ `filepath,label,source,split,raw_path,norm_version`, đường dẫn tính từ gốc repo. GenImage processed 256×256, CIFAKE processed 32×32. Loader kiểm model/revision, version, Pillow, row order, hash CSV/ảnh/array. Đổi dữ liệu/model thì trích lại và train lại.
+- `extract_features`: CSV đủ `filepath,label,source,split,raw_path,norm_version`, đường dẫn tính từ gốc repo. GenImage processed 256×256, CIFAKE processed 32×32. Loader kiểm model/revision, version, Pillow, row order, hash CSV/ảnh/array và vector float32 L2. `filepath` và `raw_path` phải khác nhau giữa các dòng kể cả alias `a/../b`; không yêu cầu raw có sẵn trên máy chỉ nạp features. Đổi dữ liệu/model thì trích lại và train lại. Kiểm path/hash không thay QA near-duplicate hoặc lineage độc lập.
 - `score`: **ảnh gốc đã giải mã**, còn EXIF, chưa resize/nén; cạnh ngắn ít nhất 256 px. `ImageTooSmall` giữ `width`, `height`; không nuốt lỗi hoặc trả điểm giả. CIFAKE chỉ được miễn ngưỡng ở bước chuẩn bị dữ liệu.
 - Kết quả là `float` hữu hạn trong `[0,1]`; cột xác suất AI lấy theo `probe.classes_`. Score chưa phải xác suất đã hiệu chuẩn.
 - Báo cáo gồm Accuracy, Precision, Recall, AUROC, confusion matrix `[real,ai]`, FPR, số/tỷ lệ Chưa chắc và kết quả theo source. Accuracy nhị phân dùng toàn bộ mẫu; AUROC của source chỉ có một lớp và accuracy khi không có ca đã kết luận được ghi `null`.
@@ -91,3 +92,36 @@ python -m pytest --cov=app --cov-fail-under=70
 Test CLIP dùng mock để CI không tải torch/trọng số. Kết quả với model/dữ liệu thật và giới hạn còn lại ghi riêng trong [bàn giao ML](../docs/ml-handoff.md).
 
 Hai báo cáo train cũ có timestamp trùng và thiếu provenance; xem [giải trình, lệnh và commit tái lập](../docs/ml-reproducibility.md). CLI hiện ghi thông tin run tự động; `created_at` không được dùng làm định danh duy nhất. GenImage validation đã dùng chọn C; shortcut dung lượng file/độ mịn/dấu vết JPEG chưa loại trừ, T027 chưa có.
+
+## KAN-44: chạy lại sau khi manifest được chốt
+
+Chọn đường dẫn manifest do Loan/Lực xác nhận, rồi trích feature và train vào thư mục phiên bản mới. Ví dụ dưới chỉ là mẫu sau khi nhóm đã tạo `data/labels-release.csv`; không tự đổi tên/gán version cho manifest cũ để chạy:
+
+```bash
+python -m models.extract_features --labels data/labels-release.csv --output-dir .cache/ml-release/features
+python -m models.train --labels data/labels-release.csv --features .cache/ml-release/features --dataset genimage --output .cache/ml-release/clip_probe.joblib --report .cache/ml-release/validation.json --binary-threshold 0.5
+```
+
+Lệnh train/extract vẫn có thể thay file output đang tồn tại: dùng thư mục mới cho mỗi candidate, không trỏ vào artifact đã khóa. Hash labels/features trong model phải khớp chính xác với dữ liệu evaluate; nếu đổi split/ảnh/nhãn thì không tái sử dụng model cũ. Đây chưa phải lệnh đã chạy trên manifest phát hành.
+
+## KAN-51: protocol và model-test
+
+Chuẩn bị protocol chỉ kiểm đầu vào/hashes, không gọi `predict_proba`, không mở điểm test:
+
+```bash
+python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-release/features --model .cache/ml-release/clip_probe.joblib --prepare-lock .cache/ml-release/protocol.json
+```
+
+File mới có `status: proposed`, `approved_by: []`, bốn tham chiếu `evidence` trống. Loan/Lực/Kiệt phải chốt manifest QA, metadata audit, lịch sử holdout và ngưỡng trước khi ghi reviewer/tham chiếu thật rồi chuyển `status` sang `approved`. Lệnh này chỉ ghi nhận xác nhận của nhóm, không tự kiểm thay audit hoặc chứng nhận người duyệt. Không điền thông tin giả để bỏ chặn.
+
+Khi đã duyệt, chạy đúng model/manifest đó vào thư mục output chưa tồn tại:
+
+```bash
+python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-release/features --model .cache/ml-release/clip_probe.joblib --lock .cache/ml-release/protocol.json --output-dir .cache/ml-release/test-result
+```
+
+Đầu ra: `evaluation.json` có các trường báo cáo UI, `predictions.csv` có row_index/source/label/score/hash ảnh để dựng lại bảng mà không chấm test lại, và bản sao `protocol.json`. Accuracy nhị phân dùng toàn bộ N; vùng Chưa chắc lấy ngưỡng đã khóa, decided-only/coverage ghi riêng; AUROC source một lớp là null. Nếu không có ca đã kết luận thì decided_accuracy=null; adapter UI của Loan cần xử lý trường hợp này (validator UI hiện chưa nhận null). Accuracy dưới 0,90 vẫn lưu kết quả thật và CLI exit 1; chưa có đủ gate khác thì không coi quality pass là MVP release pass.
+
+`protocol.json.used.json` được tạo độc quyền **trước** inference, kể cả lần lỗi; lần sau cùng protocol bị từ chối. Đây là chống chạy lại vô ý tại cùng đường dẫn, không phải registry toàn hệ thống. Không xóa marker hoặc copy protocol để lựa lần test đẹp hơn. Nếu lỗi kỹ thuật cần replay, giữ bằng chứng lần lỗi và xin reviewer thống nhất cách ghi nhận replay trước; không tune lại model/ngưỡng bằng test.
+
+Người dùng đã xác nhận ngày 05/11: manifest chưa chốt, chuẩn bị code và chưa mở GenImage test. Vì vậy KAN-44 còn chờ artifact trên manifest chính thức, KAN-51 còn chờ signoff và số đo thật. Xem [hồ sơ bốn task ML](../docs/ml-normalization-release.md).

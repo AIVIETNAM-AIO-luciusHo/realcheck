@@ -25,3 +25,5 @@ Từ 15 test trở lên cho API, model và dữ liệu. Test chống phá: ảnh
 - `test_run_info.py`: UUID phân biệt hai run dù đồng hồ trùng; không bịa commit nếu Git không có sẵn. CLI train cũng có test đối chiếu lệnh và hash artifact trong báo cáo.
 
 Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan vẫn phụ trách review và kiểm chứng độc lập theo spec 001. Các test này không tự nghiệm thu phần việc QA.
+
+`test_ml_release.py` kiểm phần bổ sung cho KAN-39/44/51 bằng ảnh tổng hợp và mock CLIP: raw_path rỗng/trùng/alias, cache sai dtype/L2 dù checksum khớp, model không khớp manifest, protocol chưa duyệt hoặc bị đổi hash/ngưỡng, đánh giá không fit lại, dự đoán/metric theo source, marker ngăn replay và giữ lần lỗi. CLI chuẩn bị protocol không gọi predict. Không dùng GenImage test thật trong pytest.

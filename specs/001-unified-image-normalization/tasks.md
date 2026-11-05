@@ -32,6 +32,8 @@ PR ML KAN-16..20 có phần tích hợp liên quan spec 001. Bảng này ghi b�
 
 Chi tiết phạm vi chồng lấn và bằng chứng: [bàn giao ML](../../docs/ml-handoff.md), [truy vết thí nghiệm](../../docs/ml-reproducibility.md).
 
+Cập nhật KAN-37/39/44/51 ngày 05/11: PR #15 và bản sửa test #16 đã merge. Đã rà soát module chuẩn hóa/score, bổ sung kiểm raw identity và embedding cache; có công cụ đánh giá GenImage bằng model khóa tại `models.evaluate`. Theo xác nhận của Kiệt, manifest phát hành chưa chốt, chưa mở model-test và chưa nghiệm thu T024. Xem [hồ sơ task ML](../../docs/ml-normalization-release.md). Các checkbox QA/baseline bên dưới không tự chuyển thành hoàn thành.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: có thể chạy song song (khác file, không phụ thuộc task chưa xong)

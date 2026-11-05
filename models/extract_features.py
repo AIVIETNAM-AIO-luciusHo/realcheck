@@ -31,7 +31,10 @@ def read_labels(path: Path) -> list[dict[str, str]]:
     if not rows:
         raise ValueError("Empty labels manifest")
     seen = set()
+    raw_seen = set()
     for row in rows:
+        if None in row or any(row.get(key) is None for key in required):
+            raise ValueError("Malformed labels row")
         source = row["source"]
         if source not in {
             "cifake_real",
@@ -48,9 +51,14 @@ def read_labels(path: Path) -> list[dict[str, str]]:
             raise ValueError("Unknown split")
         if row["norm_version"] != NORMALIZATION_VERSION:
             raise ValueError("Stale normalization version in labels")
-        if not row["filepath"] or row["filepath"] in seen:
+        filepath = Path(row["filepath"]).resolve()
+        if not row["filepath"].strip() or filepath in seen:
             raise ValueError("Empty or duplicate image path in labels")
-        seen.add(row["filepath"])
+        seen.add(filepath)
+        raw_path = Path(row["raw_path"]).resolve()
+        if not row["raw_path"].strip() or raw_path in raw_seen:
+            raise ValueError("Empty or duplicate raw_path in labels")
+        raw_seen.add(raw_path)
     return rows
 
 
@@ -60,6 +68,7 @@ def extract_features(
     """Write features.npy then manifest.json; incomplete output is never reusable."""
     if batch_size < 1:
         raise ValueError("batch_size must be positive")
+    labels_hash = sha256_file(labels)
     rows = read_labels(labels)
     for row in rows:
         if not Path(row["filepath"]).is_file():
@@ -93,6 +102,8 @@ def extract_features(
             images.append(pixels)
         features[start : start + len(images)] = encode_images(images, encoder)
         print(f"CLIP: {start + len(images)}/{len(rows)}", flush=True)
+    if sha256_file(labels) != labels_hash:
+        raise ValueError("Labels changed during extraction; discard this run")
     output_dir.mkdir(parents=True, exist_ok=True)
     feature_path = output_dir / "features.npy"
     with (output_dir / "features.tmp").open("wb") as stream:
@@ -104,7 +115,7 @@ def extract_features(
         "labels_norm_version": NORMALIZATION_VERSION,
         "rows": len(rows),
         "order": [row["filepath"] for row in rows],
-        "labels_sha256": sha256_file(labels),
+        "labels_sha256": labels_hash,
         "image_sha256": image_hashes,
         "features_sha256": sha256_file(feature_path),
     }
@@ -134,7 +145,12 @@ def load_features(
         if manifest.get(key) != value:
             raise ValueError(f"Stale or corrupt features: {key}; extract again")
     features = np.load(feature_dir / "features.npy", allow_pickle=False)
-    if features.shape != (len(rows), FEATURE_DIM) or not np.isfinite(features).all():
+    if (
+        features.shape != (len(rows), FEATURE_DIM)
+        or features.dtype != np.float32
+        or not np.isfinite(features).all()
+        or not np.allclose(np.linalg.norm(features, axis=1), 1.0, atol=1e-5)
+    ):
         raise ValueError("Invalid feature array")
     return features, rows, manifest
 
