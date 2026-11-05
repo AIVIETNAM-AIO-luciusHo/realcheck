@@ -63,3 +63,9 @@ Lệnh test trên là lịch sử lần chạy đã hoàn thành, không phải 
 - Full suite trước phần bổ sung metadata authorization: 393 passed, 1 skip (Locust tùy chọn), app coverage 92,64%; thêm hai test liên quan report/CLI đã pass sau bổ sung. Ruff đạt. Các lần chạy real extract/train/verify/test đều exit 0.
 
 Phần thực thi tương ứng KAN-44 đã có model/features/validation mới; KAN-51 đã có một kết quả test đã khóa theo yêu cầu người dùng. Nghiệm thu release, QA độc lập và triển khai model vào Backend vẫn là trạng thái riêng; không tự tick tất cả gate vì accuracy đạt.
+
+## Kiểm tra trước khi push nhánh ML
+
+Đã đồng bộ main đến `c87042d`, nhận test inference/UI đã merge của nhóm và xử lý xung đột README giữ cả hai phía. Dependency UI cài đúng `streamlit/requirements.txt`; `pip check` đạt. Tại commit `1e6325c`, `python -m pytest --cov=app --cov-fail-under=70 -q -ra` đạt **471 passed, 1 skipped, 1 xfailed**, app coverage **98,47%**; Ruff check/format đạt.
+
+Skip là test Locust thật do dependency tải riêng chưa cài. Xfail strict là test shutdown khi scorer treo vô hạn, giới hạn D12/FR-A04 đã có trên main; không phải lỗi test ML bị bỏ qua. Lần kiểm này không train/chấm lại 384 ảnh; model và số liệu thực nghiệm vẫn thuộc commit `4a87e4a` phía trên. File dữ liệu, model, features, cache, ZIP và OpenCode giữ ngoài Git.

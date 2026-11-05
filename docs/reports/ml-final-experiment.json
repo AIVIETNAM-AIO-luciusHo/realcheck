@@ -259,5 +259,21 @@
     "Only 384 history-filtered test images, including 65 real and 19 SD1.4; not the full 849-image test cohort",
     "User authorized execution while independent data QA/audit review remained pending",
     "No hyperparameter or threshold changes after test; these test results must not be used to tune another claimed untouched evaluation"
-  ]
+  ],
+  "pre_push_verification": {
+    "source_commit": "1e6325c7e06597794b91ae998e626ef3463a95cb",
+    "synced_main": "c87042d",
+    "passed": 471,
+    "failed": 0,
+    "skipped": 1,
+    "xfailed": 1,
+    "app_coverage_percent": 98.47,
+    "skip_reason": "Optional Locust dependency not installed",
+    "xfail_reason": "Existing main D12/FR-A04 worker shutdown limitation",
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "pip_check": "passed",
+    "log_sha256": "7ac9543d4962ba5feece6e8b52a4176e50e22a4b045e8d1e70b9bfb5db18c6de",
+    "model_test_rerun": false
+  }
 }

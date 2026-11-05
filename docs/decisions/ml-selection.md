@@ -71,4 +71,4 @@ Phần chuẩn bị ban đầu chỉ chọn dữ liệu/kiểm code. Sau chỉ d
 
 Windows/Python 3.12.14: Ruff check và format đạt. `python -m pytest --cov=app --cov-fail-under=70 -q -rs`: **393 passed, 1 skipped**, coverage app **92,64%**. Test bị skip là `test_locustfile_voi_locust_that`, vì chưa cài dependency tùy chọn `locust/requirements.txt`; các test chọn holdout/ML không bị skip. Không trình bày kết quả local này thành CI Linux hoặc nghiệm thu QA độc lập.
 
-Manifest lựa chọn không bị ghi đè, model/features/report cũ giữ nguyên. [Bằng chứng kiểm code ban đầu](../reports/ml-selection-verification.json) ghi đúng `git_dirty=true` ở giai đoạn đó. Các lần extract/train/verify/test thật sau chỉ dẫn mới chạy từ commit sạch `4a87e4a`; xem [biên bản thực thi](../ml-final-experiment.md). Chưa push cập nhật lần này.
+Manifest lựa chọn không bị ghi đè, model/features/report cũ giữ nguyên. [Bằng chứng kiểm code ban đầu](../reports/ml-selection-verification.json) ghi đúng `git_dirty=true` ở giai đoạn đó. Các lần extract/train/verify/test thật sau chỉ dẫn mới chạy từ commit sạch `4a87e4a`; xem [biên bản thực thi và kiểm tra trước push](../ml-final-experiment.md).
