@@ -16,6 +16,9 @@ import streamlit as st
 PREVIEW_SIZE = (700, 700)
 MIN_SHORT_SIDE = 256
 THRESHOLD_LOW, THRESHOLD_HIGH = 0.3, 0.7  # tạm, chờ D08; chỉ để vẽ thang điểm
+LEAN_THRESHOLD = (
+    0.5  # tách "Chưa chắc" theo hướng nghiêng, cùng ngưỡng accuracy khi train
+)
 
 STYLE = """
 <style>
@@ -32,14 +35,20 @@ STYLE = """
 .rc-verdict { border-left: 5px solid; margin-bottom: .4rem; }
 .rc-verdict b { font-size: 1.45rem; }
 .rc-real { background: rgba(34, 160, 90, .14); border-color: rgb(34, 160, 90); }
-.rc-uncertain { background: rgba(42, 120, 214, .14); border-color: rgb(42, 120, 214); }
+.rc-lean-real { background: rgba(34, 160, 90, .06); border-color: rgba(34, 160, 90, .5); }
+.rc-lean-ai { background: rgba(230, 130, 30, .07); border-color: rgba(230, 130, 30, .5); }
 .rc-ai { background: rgba(230, 130, 30, .16); border-color: rgb(230, 130, 30); }
 .rc-score { display: flex; align-items: baseline; gap: .5rem; margin-top: .9rem; }
 .rc-score strong { font-size: 2.3rem; line-height: 1.1; }
 .rc-gauge { position: relative; display: flex; gap: 2px; margin: 1.1rem 0 .25rem; }
-.rc-gauge div.rc-zone { padding: .3rem 0; text-align: center; font-size: .8rem; }
-.rc-zone:first-child { border-radius: 8px 0 0 8px; }
-.rc-zone:nth-last-child(2) { border-radius: 0 8px 8px 0; }
+.rc-gauge div.rc-zone { padding: .3rem .1rem; text-align: center; font-size: .75rem;
+  line-height: 1.15; display: flex; align-items: center; justify-content: center; }
+.rc-gauge > .rc-real { background: rgba(34, 160, 90, .55); border-radius: 8px 0 0 8px; }
+.rc-gauge > .rc-lean-real { background: rgba(34, 160, 90, .25); }
+.rc-gauge > .rc-lean-ai { background: rgba(230, 130, 30, .28); }
+.rc-gauge > .rc-ai { background: rgba(230, 130, 30, .6); border-radius: 0 8px 8px 0; }
+.rc-gauge-large { margin-bottom: .4rem; }
+.rc-gauge-large .rc-gauge div.rc-zone { padding: .35rem .2rem; font-size: .8rem; font-weight: 600; }
 .rc-pin { position: absolute; top: -.6rem; width: 0; height: 0;
   transform: translateX(-50%); border-left: .42rem solid transparent;
   border-right: .42rem solid transparent; border-top: .55rem solid currentColor; }
@@ -49,24 +58,20 @@ STYLE = """
 .rc-ticks span:last-child { transform: translateX(-100%); }
 </style>
 """
-VERDICT_CARDS = {
-    "likely_real": (
-        "rc-real",
-        "Ảnh thật",
-        "Ảnh có nhiều đặc điểm giống ảnh chụp thật.",
-    ),
-    "uncertain": (
-        "rc-uncertain",
-        "Chưa chắc",
-        "Mô hình chưa đủ cơ sở để kết luận. Đây là kết quả bình thường, không phải lỗi.",
-    ),
-    "likely_ai": (
-        "rc-ai",
-        "Ảnh AI",
-        "Ảnh có nhiều đặc điểm giống ảnh do AI tạo.",
-    ),
-}
-VERDICT_CARDS["real"] = VERDICT_CARDS["likely_real"]  # giá trị verdict chờ D05
+LOW_CONFIDENCE = (
+    "Phân loại: Chưa chắc. Độ chắc chắn thấp, nên đối chiếu thêm nguồn ảnh."
+)
+LEVEL_REAL = ("rc-real", "Ảnh thật", "Ảnh có nhiều đặc điểm giống ảnh chụp thật.")
+LEVEL_LEAN_REAL = ("rc-lean-real", "Dự đoán thật", LOW_CONFIDENCE)
+LEVEL_LEAN_AI = ("rc-lean-ai", "Dự đoán AI", LOW_CONFIDENCE)
+LEVEL_AI = ("rc-ai", "Ảnh AI", "Ảnh có nhiều đặc điểm giống ảnh do AI tạo.")
+
+
+def display_level(result: Analysis) -> tuple[str, str, str]:
+    """Hiển thị 4 mức; API vẫn trả 3 verdict, chỉ "uncertain" được tách theo điểm."""
+    if result.verdict == "uncertain":
+        return LEVEL_LEAN_AI if result.score >= LEAN_THRESHOLD else LEVEL_LEAN_REAL
+    return LEVEL_AI if result.verdict == "likely_ai" else LEVEL_REAL
 
 
 @dataclass(frozen=True)
@@ -101,44 +106,39 @@ def request_analysis() -> None:
         st.session_state.pending = True
 
 
-def card(css_class: str, title: str, body: str) -> None:
-    """Thẻ màu; nội dung được escape vì có thể đến từ API hoặc tên file."""
-    st.html(
-        f'<div class="rc-card {css_class}"><b>{html.escape(title)}</b>'
-        f"<span>{html.escape(body)}</span></div>"
+def score_scale(labels: tuple[str, ...], pin: str = "") -> str:
+    """Thanh 4 vùng theo ngưỡng, mốc hiển thị theo %."""
+    edges = (0, THRESHOLD_LOW, LEAN_THRESHOLD, THRESHOLD_HIGH, 1)
+    levels = (LEVEL_REAL, LEVEL_LEAN_REAL, LEVEL_LEAN_AI, LEVEL_AI)
+    zones = "".join(
+        f'<div class="rc-zone {level[0]}" style="width:{(end - start) * 100}%">{label}</div>'
+        for level, label, start, end in zip(levels, labels, edges, edges[1:])
+    )
+    ticks = "".join(f'<span style="left:{e * 100}%">{e:.0%}</span>' for e in edges)
+    return (
+        '<div class="rc-gauge" role="img" aria-label="Thang điểm AI">'
+        f'{zones}{pin}</div><div class="rc-ticks">{ticks}</div>'
     )
 
 
 def show_score_gauge(score: float) -> None:
-    low, high = THRESHOLD_LOW * 100, THRESHOLD_HIGH * 100
+    pin = f'<div class="rc-pin" style="left:{score * 100}%"></div>'
+    labels = ("Thật", LEVEL_LEAN_REAL[1], LEVEL_LEAN_AI[1], "AI")
     st.html(
-        f"""
-        <div class="rc-score"><strong>{score:.2f}</strong><span>Điểm AI</span></div>
-        <div class="rc-gauge" role="img" aria-label="Điểm AI {score:.2f} trên thang 0 đến 1">
-          <div class="rc-zone rc-real" style="width:{low}%">Thật</div>
-          <div class="rc-zone rc-uncertain" style="width:{high - low}%">Chưa chắc</div>
-          <div class="rc-zone rc-ai" style="width:{100 - high}%">AI</div>
-          <div class="rc-pin" style="left:{score * 100}%"></div>
-        </div>
-        <div class="rc-ticks">
-          <span style="left:0">0</span>
-          <span style="left:{low}%">{THRESHOLD_LOW}</span>
-          <span style="left:{high}%">{THRESHOLD_HIGH}</span>
-          <span style="left:100%">1</span>
-        </div>
-        """
+        f'<div class="rc-score"><strong>{score:.0%}</strong><span>Điểm AI</span></div>'
+        + score_scale(labels, pin)
     )
 
 
 def show_analysis(result: Analysis) -> None:
-    css_class, label, meaning = VERDICT_CARDS[result.verdict]
+    css_class, label, meaning = display_level(result)
     st.html(
-        f'<div class="rc-card rc-verdict {css_class}"><b>Kết luận: {label}</b>'
+        f'<div class="rc-card rc-verdict {css_class}"><b>{label}</b>'
         f"<span>{meaning}</span></div>"
     )
     show_score_gauge(result.score)
     st.caption(
-        "Càng gần 1 càng giống ảnh AI. Đây không phải xác suất chắc chắn ảnh là giả."
+        "Càng gần 100% càng giống ảnh AI. Đây không phải xác suất chắc chắn ảnh là giả."
     )
 
     with st.container(border=True):
@@ -166,18 +166,10 @@ def show_error(error: ApiError) -> None:
 
 
 def show_intro() -> None:
-    st.markdown("##### Ba kết luận có thể nhận được")
-    real, uncertain, ai = st.columns(3)
-    with real:
-        card("rc-real", "Ảnh thật", f"Điểm AI dưới {THRESHOLD_LOW}.")
-    with uncertain:
-        card(
-            "rc-uncertain",
-            "Chưa chắc",
-            f"Điểm AI từ {THRESHOLD_LOW} đến {THRESHOLD_HIGH}.",
-        )
-    with ai:
-        card("rc-ai", "Ảnh AI", f"Điểm AI trên {THRESHOLD_HIGH}.")
+    labels = tuple(
+        level[1] for level in (LEVEL_REAL, LEVEL_LEAN_REAL, LEVEL_LEAN_AI, LEVEL_AI)
+    )
+    st.html(f'<div class="rc-gauge-large">{score_scale(labels)}</div>')
     st.markdown("##### Cách hoạt động")
     upload, analyze_step, read = st.columns(3)
     upload.markdown(
@@ -186,15 +178,11 @@ def show_intro() -> None:
     )
     analyze_step.markdown(
         "**:material/psychology: 2. Phân tích**  \nCLIP đọc đặc trưng ảnh, "
-        "Logistic Regression cho điểm từ 0 đến 1."
+        "Logistic Regression cho điểm từ 0% đến 100%."
     )
     read.markdown(
         "**:material/fact_check: 3. Đọc kết quả**  \nXem kết luận, điểm AI, lý do "
         "và thông tin máy chụp."
-    )
-    st.caption(
-        "Thiếu EXIF không có nghĩa là ảnh AI: ảnh chụp màn hình hoặc ảnh gửi qua "
-        "mạng xã hội thường mất EXIF."
     )
 
 
