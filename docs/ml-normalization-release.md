@@ -1,15 +1,15 @@
 # KAN-37, KAN-39, KAN-44 và KAN-51
 
-Nguồn đồng bộ ban đầu: `origin/main` tại `9364fdb`; cập nhật đến `0c1bdc4` để nhận baseline/dedup/evaluation của Loan và API/contract tests của nhóm. Nhánh làm việc: `kiet/ml-normalization-release`. Ban đầu ngày 05/11/2026 Kiệt xác nhận chưa chốt manifest; sau đó đã chọn candidate giữ split cũ, vẫn chưa mở GenImage test.
+Nguồn đồng bộ ban đầu: `origin/main` tại `9364fdb`; cập nhật đến `0c1bdc4` để nhận baseline/dedup/evaluation của Loan và API/contract tests của nhóm. Nhánh làm việc: `kiet/ml-normalization-release`. Ngày 05/11/2026 Kiệt chọn candidate giữ split cũ, rồi yêu cầu chạy train/test khi đã biết QA độc lập còn chờ; lần chạy thật dùng commit `4a87e4a`.
 
-**Candidate đã chọn, còn chờ QA và xác nhận phát hành:** nhánh này bàn giao code để review. KAN-44 chưa train lại trên manifest phát hành; KAN-51 chưa đánh giá GenImage test. Chỉ chạy các bước đó sau khi Loan/Lực review dữ liệu/QA/audit/holdout và nhóm xác nhận model/ngưỡng đã khóa. Chưa đánh dấu hai task này hoàn thành.
+**Đã chạy thử nghiệm theo yêu cầu của Kiệt; chưa nghiệm thu release:** sau khi được thông báo QA độc lập còn chờ, người dùng yêu cầu train/test ngay. KAN-44 đã trích features và train model mới; KAN-51 đã chấm một lần trên holdout lọc lịch sử, đạt **94,53%/384 ảnh**. Protocol ghi đúng user authorization và QA độc lập chưa duyệt. Xem [biên bản kết quả thật](ml-final-experiment.md); không chuyển các gate release khác thành approved.
 
 | Jira | Phần thực hiện | Điều kiện còn lại |
 |---|---|---|
 | [KAN-37](https://quangtadang4206.atlassian.net/browse/KAN-37) | T005/T019 spec 001: rà soát normalize hiện có, kiểm JPEG95 một lần, EXIF trước resize, 4000×3000, 255/256 và CIFAKE. Không đổi tham số/version 1. | Loan/Lực review theo phân công; baseline thật T012/T013 là task dữ liệu/QA riêng. |
 | [KAN-39](https://quangtadang4206.atlassian.net/browse/KAN-39) | T009-T011: cùng encode CLIP cố định, score chuẩn hóa một lần; siết raw_path và cache float32 L2; dùng chung kiểm cột AI/xác suất cho serve và evaluate. | Quang/Lực xác nhận hợp đồng PIL Image và QA tích hợp HTTP ở ticket Backend/Q5. |
-| [KAN-44](https://quangtadang4206.atlassian.net/browse/KAN-44) | T024: pipeline extract/train và kiểm model-labels-features đã có; chuẩn bị quy trình dùng output phiên bản mới. | Chờ Loan/Lực chốt manifest, QA/audit/split trước trích/train artifact phát hành. Không ghi nhận lần train cũ 9.708 ảnh là task này đã nghiệm thu. |
-| [KAN-51](https://quangtadang4206.atlassian.net/browse/KAN-51) | MVP-04: thêm models.evaluate; protocol hashes/thresholds, dữ liệu xác nhận, evaluate frozen probe, predictions/report, chống chạy lại vô ý. | Chờ model/manifest/ngưỡng khóa và xác nhận QA/holdout. GenImage test chưa được chấm điểm. |
+| [KAN-44](https://quangtadang4206.atlassian.net/browse/KAN-44) | T024: đã extract lại 9.708 ảnh và train C=10 theo candidate giữ split, validation 97,24%/871 ảnh; artifact mới riêng. | Phần thực thi đã có bằng chứng; Loan/Lực review QA và nghiệm thu artifact phát hành còn riêng. |
+| [KAN-51](https://quangtadang4206.atlassian.net/browse/KAN-51) | MVP-04: protocol đã khóa, test một lần 384 ảnh theo user authorization; accuracy 94,53%, đủ predictions/report theo source. | QA độc lập/release chưa duyệt; không tiếp tục tune bằng bộ test đã mở hoặc coi chất lượng pass là toàn bộ MVP pass. |
 
 ## Vì sao bổ sung
 

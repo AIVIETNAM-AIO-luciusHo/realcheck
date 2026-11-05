@@ -38,6 +38,8 @@ Theo đề nghị tiếp theo, nhánh ML có thêm `prepare_data --split-from` �
 
 Kiệt đã xác nhận chọn chính candidate giữ split nói trên, binary metric 0.5 và API/UI 0.3/0.5/0.7. Selector theo các lịch sử hiện có còn 384 GenImage test không trùng raw/pixel với train/val; chưa dự đoán. Phần lịch sử được khóa cùng protocol, QA/audit/review nhóm chưa tự được phê duyệt. Quyết định triển khai và điều kiện chạy tiếp nằm ở [ml-selection.md](../../docs/decisions/ml-selection.md); không tick T024/KAN-51 bằng unit test hoặc lựa chọn manifest đơn thuần.
 
+Sau đó Kiệt yêu cầu trực tiếp train/chấm test dù QA độc lập chưa duyệt. Đã thực hiện từ commit sạch `4a87e4a`: extract 9.708 ảnh, train C=10, val accuracy 97,24%/871; test một lần 94,53%/384 với ngưỡng đã khóa, có predictions và log/protocol/used marker. Đây là `user_authorized_experiment`, không phải Loan/Lực đã nghiệm thu QA/release. Xem [biên bản lần chạy](../../docs/ml-final-experiment.md); không xóa marker/tune rồi dùng lại 384 ảnh làm test mới.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: có thể chạy song song (khác file, không phụ thuộc task chưa xong)

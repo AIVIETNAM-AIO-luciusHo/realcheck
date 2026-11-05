@@ -96,6 +96,8 @@ Hai báo cáo train cũ có timestamp trùng và thiếu provenance; xem [giải
 
 ## KAN-44: chạy lại sau khi manifest được chốt
 
+Đã có một lần chạy thật theo user authorization trên candidate giữ split: model mới, validation 97,24%/871 và test subset 94,53%/384; [kết quả và artifact](../docs/ml-final-experiment.md). Model mặc định cũ không bị ghi đè. Các lệnh mẫu bên dưới dùng cho quy trình nghiệm thu tiếp theo, không phải chỉ dẫn chấm lại test đã mở.
+
 Chọn đường dẫn manifest do Loan/Lực xác nhận, rồi trích feature và train vào thư mục phiên bản mới. Ví dụ dưới chỉ là mẫu sau khi nhóm đã tạo `data/labels-release.csv`; không tự đổi tên/gán version cho manifest cũ để chạy:
 
 Nếu chọn phương án giữ ảnh cũ, ghi riêng ảnh không dùng và giữ split cũ, tạo **bản ứng viên** bằng `scripts.prepare_data --split-from data/labels.csv` vào thư mục mới trước; lệnh đầy đủ và bằng chứng ở [ml-preserved-split.md](../docs/ml-preserved-split.md). Manifest 9.708 dòng này khác manifest 9.708 dòng từng train: giữ 0 thay đổi split so với các ảnh hợp lệ trong bản 10.000, nhưng đổi 1.702 split so với bản QA cũ. Không dùng lại features/model/report cũ cho manifest mới, không thay bản dùng tái lập báo cáo hiện tại. Đây chưa phải manifest phát hành đã được phê duyệt.
@@ -129,4 +131,4 @@ python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-
 
 `protocol.json.used.json` được tạo độc quyền **trước** inference, kể cả lần lỗi; lần sau cùng protocol bị từ chối. Đây là chống chạy lại vô ý tại cùng đường dẫn, không phải registry toàn hệ thống. Không xóa marker hoặc copy protocol để lựa lần test đẹp hơn. Nếu lỗi kỹ thuật cần replay, giữ bằng chứng lần lỗi và xin reviewer thống nhất cách ghi nhận replay trước; không tune lại model/ngưỡng bằng test.
 
-Ban đầu người dùng xác nhận chưa chốt manifest và chưa mở GenImage test. Cập nhật 05/11: Kiệt đã chọn candidate giữ split từ bản 10.000, cùng bảng ngưỡng đã ghi; QA/audit/holdout độc lập chưa được xác nhận đầy đủ. KAN-44 còn chờ xác nhận dữ liệu để tạo artifact mới, KAN-51 còn chờ protocol được duyệt và số đo thật. Xem [hồ sơ bốn task ML](../docs/ml-normalization-release.md).
+Ban đầu người dùng xác nhận chưa chốt manifest và chưa mở GenImage test. Sau khi chọn candidate giữ split từ bản 10.000 và ngưỡng đã ghi, Kiệt yêu cầu train/test ngay dù QA độc lập còn chờ. Lần thử nghiệm đã có artifact và số đo thật; chưa thay xác nhận release. Xem [hồ sơ bốn task ML](../docs/ml-normalization-release.md) và [kết quả lần chạy](../docs/ml-final-experiment.md).

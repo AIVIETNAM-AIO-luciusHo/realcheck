@@ -2,6 +2,8 @@
 
 ## Phạm vi và trạng thái
 
+**Trạng thái mới nhất:** Kiệt đã yêu cầu chạy train/test dù QA độc lập còn chờ; lần thử nghiệm đã hoàn tất, test accuracy 94,53% trên subset 384 ảnh. Xem [biên bản model và kết quả](ml-final-experiment.md). Các câu chưa chạy/chờ mở test bên dưới là hồ sơ giai đoạn tạo candidate trước lần chạy này; QA/release vẫn chưa tự được phê duyệt.
+
 **Cập nhật lựa chọn:** Kiệt đã xác nhận dùng chính bản giữ split của manifest 10.000, không chọn bản QA 9.708 cũ. Để đánh giá, lọc ảnh đã từng nằm trong train/val theo lịch sử; còn 384 ảnh trong tập test, chờ QA/audit và review nhóm trước khi chấm model. Ngưỡng và quy trình thực hiện nằm tại [ml-selection.md](decisions/ml-selection.md). Phần dưới giữ bằng chứng lần tạo candidate trước khi có lựa chọn này.
 
 Kiệt bổ sung trên nhánh `kiet/ml-normalization-release` theo hướng đã đề xuất: giữ ảnh gốc, giữ split của ảnh còn hợp lệ theo manifest 10.000 dòng và ghi riêng ảnh không dùng. Loan phản hồi giữ ảnh cũ và ghi riêng ảnh không dùng; tùy chọn giữ split được chuẩn bị để Loan/Lực review, chưa tự coi là quyết định manifest phát hành đã được phê duyệt. Phần này liên quan dữ liệu đầu vào KAN-44/T024; KAN-37/KAN-39 giữ nguyên hợp đồng chuẩn hóa/CLIP, KAN-51 chưa chạy model-test.

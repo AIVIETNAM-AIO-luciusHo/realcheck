@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-**Cập nhật chỉ dẫn của Kiệt:** sau khi biết QA độc lập chưa được duyệt, người dùng yêu cầu trực tiếp “hãy làm đi” đối với việc train và chấm GenImage test. Thực hiện một lần đánh giá thử nghiệm theo cho phép này, giữ nguyên manifest/holdout/ngưỡng đã chọn. Protocol ghi `authorization_scope=user_authorized_experiment`, người cho phép là Kiệt và `independent_qa_approved=false`; không điền Loan/Lực đã duyệt và không coi đây là nghiệm thu release. Kết quả thật và commit/lệnh sẽ ghi sau khi hoàn tất, không chọn lại model/ngưỡng bằng test.
+**Cập nhật chỉ dẫn và kết quả:** sau khi biết QA độc lập chưa được duyệt, Kiệt yêu cầu trực tiếp “hãy làm đi” đối với việc train và chấm GenImage test. Đã thực hiện một lần thử nghiệm, giữ nguyên manifest/holdout/ngưỡng đã chọn: **test accuracy 94,53% trên 384 ảnh**. Protocol ghi `authorization_scope=user_authorized_experiment`, người cho phép là Kiệt và `independent_qa_approved=false`; không điền Loan/Lực đã duyệt và không coi đây là nghiệm thu release. Không chọn lại model/ngưỡng bằng test. Xem [kết quả, commit và lệnh thật](../ml-final-experiment.md).
 
 Kiệt đã xác nhận lựa chọn để triển khai qua chat: **bản mới 9.708 ảnh giữ split của manifest 10.000**; test chỉ lấy ảnh chưa dùng train; dùng bảng ngưỡng dưới đây. Đây là lựa chọn của người phụ trách ML, không thay xác nhận độc lập về dữ liệu/audit hoặc phê duyệt release của nhóm. Reviewer dữ liệu/holdout: Loan/Lực theo phân công trong spec 001 và spec 000.
 
@@ -65,10 +65,10 @@ Accuracy/precision/recall/confusion matrix binary vẫn tính toàn bộ holdout
 
 CLI `models.evaluate` bắt buộc truyền `--history-labels` khi chuẩn bị hoặc sử dụng lock. Không có cờ này thì dừng trước khi đọc model; không ngầm đánh giá cả 849 ảnh khi quên cung cấp lịch sử. Lịch sử khác hoặc bị bỏ qua so với protocol đã khóa bị từ chối trước prediction.
 
-Lần triển khai này chỉ chọn dữ liệu/kiểm code. Chưa fit model candidate, chưa tính score/accuracy GenImage test và chưa ghi KAN-44/KAN-51 hoàn thành.
+Phần chuẩn bị ban đầu chỉ chọn dữ liệu/kiểm code. Sau chỉ dẫn tiếp theo của người dùng, phần chạy KAN-44/KAN-51 đã có kết quả thử nghiệm thật tại commit `4a87e4a`; QA độc lập/release vẫn chưa được ghi approved. Tập 384 này nay đã mở, không được tune rồi gọi lại là holdout chưa tiếp xúc.
 
 ## Kiểm chứng local
 
 Windows/Python 3.12.14: Ruff check và format đạt. `python -m pytest --cov=app --cov-fail-under=70 -q -rs`: **393 passed, 1 skipped**, coverage app **92,64%**. Test bị skip là `test_locustfile_voi_locust_that`, vì chưa cài dependency tùy chọn `locust/requirements.txt`; các test chọn holdout/ML không bị skip. Không trình bày kết quả local này thành CI Linux hoặc nghiệm thu QA độc lập.
 
-Manifest lựa chọn không bị ghi đè, model/features/report cũ giữ nguyên. Bản chọn holdout và [bằng chứng kiểm code](../reports/ml-selection-verification.json) lưu hash đầu vào/code; working tree còn sửa đổi khi kiểm (`git_dirty=true`), chưa phải run release từ commit sạch. Chưa push cập nhật lần này.
+Manifest lựa chọn không bị ghi đè, model/features/report cũ giữ nguyên. [Bằng chứng kiểm code ban đầu](../reports/ml-selection-verification.json) ghi đúng `git_dirty=true` ở giai đoạn đó. Các lần extract/train/verify/test thật sau chỉ dẫn mới chạy từ commit sạch `4a87e4a`; xem [biên bản thực thi](../ml-final-experiment.md). Chưa push cập nhật lần này.
