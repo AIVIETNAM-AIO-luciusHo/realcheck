@@ -56,7 +56,8 @@ Schema đề xuất, sẽ chốt cùng `scripts/evaluate.py` (T013). `by_source`
 - Mỗi lần bấm chỉ gửi một request, không tự thử lại; đổi ảnh thì xóa kết quả cũ. Ảnh và kết quả chỉ nằm trong phiên của người dùng.
 - Không có API hoặc báo cáo thì báo chưa sẵn sàng, không hiển thị số giả. Báo cáo sai định dạng cũng không hiển thị số nào.
 - Giá trị `verdict` và định dạng lỗi (D05) chưa chốt: `api_client.py` tạm nhận `likely_real`, `real`, `uncertain`, `likely_ai`.
-- Điểm AI không phải xác suất chắc chắn; EXIF không làm đổi kết luận.
+- Điểm AI hiển thị theo % (API vẫn trả số 0–1); đây không phải xác suất chắc chắn; EXIF không làm đổi kết luận.
 - Theme mặc định theo máy người dùng; đổi Sáng/Tối ở menu ⋮ góc trên bên phải (System, Light, Dark).
-- Thang điểm và thẻ giải thích vẽ theo ngưỡng 0.3 / 0.7 trong `app.py`; kết luận luôn lấy từ API. Đổi ngưỡng (D08) thì sửa hằng số này cho khớp.
+- Giao diện hiện 4 mức (Ảnh thật, Dự đoán thật, Dự đoán AI, Ảnh AI), API và báo cáo vẫn dùng 3 kết luận: hai mức "Dự đoán" chính là `uncertain`/"Chưa chắc", tách theo điểm so với 0.5.
+- Thang điểm vẽ theo ngưỡng 0.3 / 0.7 trong `app.py`; kết luận luôn lấy từ `verdict` của API. Đổi ngưỡng (D08) thì sửa hằng số này cho khớp.
 - Giới hạn tải lên trên giao diện là 5 MiB (`maxUploadSize`), API vẫn kiểm tra lại theo D06. Cảnh báo 256 px chỉ để báo sớm, API mới là nơi từ chối.

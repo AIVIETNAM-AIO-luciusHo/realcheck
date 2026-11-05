@@ -283,10 +283,6 @@ def show_model_tab() -> None:
         return
     if report is None:
         st.info("Chưa có số đo: mô hình chưa được đánh giá.", icon=":material/info:")
-        st.caption(
-            f"Mục tiêu dự án: accuracy từ {ACCURACY_TARGET:.0%} trên tập test GenImage. "
-            "Đây là mục tiêu, chưa phải kết quả."
-        )
         return
     show_report(report)
 
