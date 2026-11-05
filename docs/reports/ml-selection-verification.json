@@ -1,0 +1,35 @@
+{
+  "manifest_choice": "preserve_splits_from_10000_selected_by_Kiet",
+  "candidate_labels_sha256": "4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad",
+  "holdout_selection_sha256": "ee2cd345984779501b7f8773d6daaa445b5f547aae13b68ea62887b9f53a11af",
+  "selected_test_rows": 384,
+  "excluded_test_rows": 465,
+  "thresholds": {
+    "low": 0.3,
+    "binary": 0.5,
+    "high": 0.7
+  },
+  "python": "3.12.14",
+  "platform": "Windows",
+  "git_dirty": true,
+  "synced_main_commit": "0c1bdc4",
+  "tests": {
+    "passed": 393,
+    "failed": 0,
+    "skipped": 1,
+    "skip_reason": "Optional Locust dependency not installed",
+    "app_coverage_percent": 92.64
+  },
+  "ruff_check": "passed",
+  "ruff_format_check": "passed",
+  "source_sha256": {
+    "models/holdout.py": "7c8e85a8b0afbb4fad185656d4b9cc55f6541f57bfe6db8f4529073b54992813",
+    "models/evaluate.py": "272244c883805ae0b0cd8d8b0f294e47ad5603783bad91eebc10e2f88941f5ca",
+    "scripts/evaluate.py": "389434a144c70a0450f4b51e0e72910aef2a2234180701e2c49250297a030066",
+    "scripts/prepare_data.py": "551332146ea9d6a1e424a496183d71e9c76d5ca772f98983f4b42c31d4af1ae5"
+  },
+  "old_model_sha256_unchanged": "69810fd60940ddeed07af92d600c6bb0466641bf4144aec73554b44013ae7bdb",
+  "independent_data_QA_approved": false,
+  "model_trained": false,
+  "GenImage_model_test_evaluated": false
+}

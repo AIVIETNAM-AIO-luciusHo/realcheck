@@ -15,6 +15,7 @@ Model nền đúng của nhóm là [`sentence-transformers/clip-ViT-B-32`](https
 | `score.py` | Nạp/warmup model lúc startup; `score(PIL.Image) -> float` |
 | `run_info.py` | Ghi UUID, lệnh CLI, commit, trạng thái dirty, Python và OS vào báo cáo train/verify |
 | `evaluate.py` | Chuẩn bị protocol chờ duyệt, chấm GenImage test bằng probe đã khóa, lưu predictions/report; không train lại |
+| `holdout.py` | Chọn test không trùng raw/pixel với các lịch sử train/val được cung cấp; không dự đoán |
 | `clip_probe.joblib` + `.sha256` | Bundle GenImage và checksum, sinh cục bộ, không commit |
 | `cifake_probe.joblib` + `.sha256` | Model chạy thử CIFAKE, không được dùng làm scorer Backend |
 
@@ -108,10 +109,12 @@ Lệnh train/extract vẫn có thể thay file output đang tồn tại: dùng t
 
 ## KAN-51: protocol và model-test
 
+Kiệt đã chọn candidate giữ split cũ và ngưỡng 0.3/0.5/0.7; xem [quyết định triển khai và trạng thái review](../docs/decisions/ml-selection.md). Dùng `models.holdout` trước khi mở test để lọc lịch sử; trên cohort hiện tại còn 384/849 ảnh test đủ điều kiện theo lịch sử được cung cấp. Cần báo rõ subset, N từng source và giới hạn, không gọi đây là test của toàn bộ 849 ảnh.
+
 Chuẩn bị protocol chỉ kiểm đầu vào/hashes, không gọi `predict_proba`, không mở điểm test:
 
 ```bash
-python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-release/features --model .cache/ml-release/clip_probe.joblib --prepare-lock .cache/ml-release/protocol.json
+python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-release/features --model .cache/ml-release/clip_probe.joblib --history-labels .cache/ml-run/labels.csv --prepare-lock .cache/ml-release/protocol.json
 ```
 
 File mới có `status: proposed`, `approved_by: []`, bốn tham chiếu `evidence` trống. Loan/Lực/Kiệt phải chốt manifest QA, metadata audit, lịch sử holdout và ngưỡng trước khi ghi reviewer/tham chiếu thật rồi chuyển `status` sang `approved`. Lệnh này chỉ ghi nhận xác nhận của nhóm, không tự kiểm thay audit hoặc chứng nhận người duyệt. Không điền thông tin giả để bỏ chặn.
@@ -119,11 +122,11 @@ File mới có `status: proposed`, `approved_by: []`, bốn tham chiếu `eviden
 Khi đã duyệt, chạy đúng model/manifest đó vào thư mục output chưa tồn tại:
 
 ```bash
-python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-release/features --model .cache/ml-release/clip_probe.joblib --lock .cache/ml-release/protocol.json --output-dir .cache/ml-release/test-result
+python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-release/features --model .cache/ml-release/clip_probe.joblib --history-labels .cache/ml-run/labels.csv --lock .cache/ml-release/protocol.json --output-dir .cache/ml-release/test-result
 ```
 
 Đầu ra: `evaluation.json` có các trường báo cáo UI, `predictions.csv` có row_index/source/label/score/hash ảnh để dựng lại bảng mà không chấm test lại, và bản sao `protocol.json`. Accuracy nhị phân dùng toàn bộ N; vùng Chưa chắc lấy ngưỡng đã khóa, decided-only/coverage ghi riêng; AUROC source một lớp là null. Nếu không có ca đã kết luận thì decided_accuracy=null; adapter UI của Loan cần xử lý trường hợp này (validator UI hiện chưa nhận null). Accuracy dưới 0,90 vẫn lưu kết quả thật và CLI exit 1; chưa có đủ gate khác thì không coi quality pass là MVP release pass.
 
 `protocol.json.used.json` được tạo độc quyền **trước** inference, kể cả lần lỗi; lần sau cùng protocol bị từ chối. Đây là chống chạy lại vô ý tại cùng đường dẫn, không phải registry toàn hệ thống. Không xóa marker hoặc copy protocol để lựa lần test đẹp hơn. Nếu lỗi kỹ thuật cần replay, giữ bằng chứng lần lỗi và xin reviewer thống nhất cách ghi nhận replay trước; không tune lại model/ngưỡng bằng test.
 
-Người dùng đã xác nhận ngày 05/11: manifest chưa chốt, chuẩn bị code và chưa mở GenImage test. Vì vậy KAN-44 còn chờ artifact trên manifest chính thức, KAN-51 còn chờ signoff và số đo thật. Xem [hồ sơ bốn task ML](../docs/ml-normalization-release.md).
+Ban đầu người dùng xác nhận chưa chốt manifest và chưa mở GenImage test. Cập nhật 05/11: Kiệt đã chọn candidate giữ split từ bản 10.000, cùng bảng ngưỡng đã ghi; QA/audit/holdout độc lập chưa được xác nhận đầy đủ. KAN-44 còn chờ xác nhận dữ liệu để tạo artifact mới, KAN-51 còn chờ protocol được duyệt và số đo thật. Xem [hồ sơ bốn task ML](../docs/ml-normalization-release.md).

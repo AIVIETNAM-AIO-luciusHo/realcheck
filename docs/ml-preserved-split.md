@@ -2,6 +2,8 @@
 
 ## Phạm vi và trạng thái
 
+**Cập nhật lựa chọn:** Kiệt đã xác nhận dùng chính bản giữ split của manifest 10.000, không chọn bản QA 9.708 cũ. Để đánh giá, lọc ảnh đã từng nằm trong train/val theo lịch sử; còn 384 ảnh trong tập test, chờ QA/audit và review nhóm trước khi chấm model. Ngưỡng và quy trình thực hiện nằm tại [ml-selection.md](decisions/ml-selection.md). Phần dưới giữ bằng chứng lần tạo candidate trước khi có lựa chọn này.
+
 Kiệt bổ sung trên nhánh `kiet/ml-normalization-release` theo hướng đã đề xuất: giữ ảnh gốc, giữ split của ảnh còn hợp lệ theo manifest 10.000 dòng và ghi riêng ảnh không dùng. Loan phản hồi giữ ảnh cũ và ghi riêng ảnh không dùng; tùy chọn giữ split được chuẩn bị để Loan/Lực review, chưa tự coi là quyết định manifest phát hành đã được phê duyệt. Phần này liên quan dữ liệu đầu vào KAN-44/T024; KAN-37/KAN-39 giữ nguyên hợp đồng chuẩn hóa/CLIP, KAN-51 chưa chạy model-test.
 
 Main đã được đồng bộ đến `c77603c`, nhận baseline T012 (PR #24), rejected_duplicate (PR #25) và API của Quang. KAN-41 làm giúp Lực vẫn ở nhánh riêng; không đưa các thay đổi chưa merge của nhánh đó vào nhánh ML.

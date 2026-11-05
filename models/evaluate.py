@@ -11,16 +11,16 @@ import numpy as np
 
 from models.clip_input import feature_contract
 from models.extract_features import load_features, sha256_file
+from models.holdout import SOURCES, select_holdout
 from models.normalize import NORMALIZATION_VERSION
 from models.run_info import run_info
 from models.score import Scorer, load_bundle
 from models.train import metrics
 
-SOURCES = {"genimage_real", "genimage_sd14", "genimage_midjourney", "genimage_glide"}
 EVIDENCE = ("data_qa", "metadata_audit", "holdout_review", "thresholds")
 
 
-def _inputs(labels: Path, feature_dir: Path, model: Path):
+def _inputs(labels: Path, feature_dir: Path, model: Path, history_labels=None):
     features, rows, manifest = load_features(labels, feature_dir)
     bundle = load_bundle(model)
     for key in ("labels_sha256", "features_sha256"):
@@ -33,6 +33,9 @@ def _inputs(labels: Path, feature_dir: Path, model: Path):
     ]
     if {rows[i]["source"] for i in indices} != SOURCES:
         raise ValueError("GenImage test must contain all four registered sources")
+    holdout = None
+    if history_labels is not None:
+        indices, holdout = select_holdout(rows, history_labels)
     identity = {
         "schema_version": 1,
         "dataset": "genimage",
@@ -46,6 +49,7 @@ def _inputs(labels: Path, feature_dir: Path, model: Path):
         "profile": {**feature_contract(), "norm_version": NORMALIZATION_VERSION},
         "thresholds": bundle["thresholds"],
         "test_rows": len(indices),
+        "holdout": holdout,
     }
     return features, rows, manifest, bundle, indices, identity
 
@@ -56,9 +60,11 @@ def _write_json(path: Path, value: dict) -> None:
         stream.write("\n")
 
 
-def prepare_lock(labels: Path, features: Path, model: Path, lock: Path) -> dict:
+def prepare_lock(
+    labels: Path, features: Path, model: Path, lock: Path, *, history_labels=None
+) -> dict:
     """Prepare a proposed identity snapshot; never predict or assert QA approval."""
-    *_, identity = _inputs(labels, features, model)
+    *_, identity = _inputs(labels, features, model, history_labels)
     proposed = {
         **identity,
         "status": "proposed",
@@ -71,7 +77,13 @@ def prepare_lock(labels: Path, features: Path, model: Path, lock: Path) -> dict:
 
 
 def evaluate(
-    labels: Path, features: Path, model: Path, lock: Path, output: Path
+    labels: Path,
+    features: Path,
+    model: Path,
+    lock: Path,
+    output: Path,
+    *,
+    history_labels=None,
 ) -> dict:
     """No fit, threshold search, CLIP download or mutation of the trained probe."""
     protocol = json.loads(lock.read_text(encoding="utf-8"))
@@ -93,7 +105,9 @@ def evaluate(
         raise ValueError(
             "Test protocol needs actual approval and all QA evidence references"
         )
-    x, rows, manifest, bundle, indices, identity = _inputs(labels, features, model)
+    x, rows, manifest, bundle, indices, identity = _inputs(
+        labels, features, model, history_labels
+    )
     for key, expected in identity.items():
         if protocol.get(key) != expected:
             raise ValueError(f"Locked {key} differs from current inputs")
@@ -175,6 +189,12 @@ def evaluate(
         },
         "thresholds": thresholds,
         "lock_sha256": lock_hash,
+        "holdout": identity["holdout"],
+        "authorization": {
+            "scope": protocol.get("authorization_scope", "protocol_approval"),
+            "approved_by": protocol["approved_by"],
+            "independent_qa_approved": protocol.get("independent_qa_approved", False),
+        },
         "test": scores,
         "by_source": by_source,
         "quality": {
@@ -202,17 +222,29 @@ def main() -> None:
     action.add_argument("--prepare-lock", type=Path)
     action.add_argument("--lock", type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--history-labels", type=Path, action="append", required=True)
     args = parser.parse_args()
     if args.prepare_lock:
         if args.output_dir:
             parser.error("--output-dir is only used with --lock")
-        prepare_lock(args.labels, args.features, args.model, args.prepare_lock)
+        prepare_lock(
+            args.labels,
+            args.features,
+            args.model,
+            args.prepare_lock,
+            history_labels=args.history_labels,
+        )
         print("Proposed protocol saved; test was not evaluated")
     else:
         if not args.output_dir:
             parser.error("--output-dir is required with --lock")
         report = evaluate(
-            args.labels, args.features, args.model, args.lock, args.output_dir
+            args.labels,
+            args.features,
+            args.model,
+            args.lock,
+            args.output_dir,
+            history_labels=args.history_labels,
         )
         print(
             json.dumps({"test": report["test"], "quality": report["quality"]}, indent=2)

@@ -36,6 +36,8 @@ Cập nhật KAN-37/39/44/51 ngày 05/11: PR #15 và bản sửa test #16 đã m
 
 Theo đề nghị tiếp theo, nhánh ML có thêm `prepare_data --split-from` để giữ split của ảnh hợp lệ theo manifest 10.000, giữ raw và ghi riêng ảnh bị loại. Candidate 9.708 ảnh được tạo ngoài dữ liệu chính, 0 split lệch tham chiếu và 9.708 hash khớp baseline Loan mới merge. Candidate khác bộ QA dùng train trước đây và có lịch sử tiếp xúc holdout, nên T024/KAN-51 vẫn chờ chốt manifest/QA/audit/holdout. Loan/Lực review thay đổi tùy chọn split; chi tiết ở [ml-preserved-split.md](../../docs/ml-preserved-split.md).
 
+Kiệt đã xác nhận chọn chính candidate giữ split nói trên, binary metric 0.5 và API/UI 0.3/0.5/0.7. Selector theo các lịch sử hiện có còn 384 GenImage test không trùng raw/pixel với train/val; chưa dự đoán. Phần lịch sử được khóa cùng protocol, QA/audit/review nhóm chưa tự được phê duyệt. Quyết định triển khai và điều kiện chạy tiếp nằm ở [ml-selection.md](../../docs/decisions/ml-selection.md); không tick T024/KAN-51 bằng unit test hoặc lựa chọn manifest đơn thuần.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: có thể chạy song song (khác file, không phụ thuộc task chưa xong)

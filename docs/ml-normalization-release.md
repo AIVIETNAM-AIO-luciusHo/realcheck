@@ -1,8 +1,8 @@
 # KAN-37, KAN-39, KAN-44 và KAN-51
 
-Nguồn đồng bộ ban đầu: `origin/main` tại `9364fdb`; cập nhật đến `c77603c` để nhận baseline/dedup của Loan và API của Quang. Nhánh làm việc: `kiet/ml-normalization-release`. Ngày 05/11/2026, Kiệt xác nhận manifest chưa chốt: chuẩn bị code, chưa mở GenImage test.
+Nguồn đồng bộ ban đầu: `origin/main` tại `9364fdb`; cập nhật đến `0c1bdc4` để nhận baseline/dedup/evaluation của Loan và API/contract tests của nhóm. Nhánh làm việc: `kiet/ml-normalization-release`. Ban đầu ngày 05/11/2026 Kiệt xác nhận chưa chốt manifest; sau đó đã chọn candidate giữ split cũ, vẫn chưa mở GenImage test.
 
-**Còn chờ manifest:** nhánh này bàn giao code để review. KAN-44 chưa train lại trên manifest phát hành; KAN-51 chưa đánh giá GenImage test. Chỉ chạy các bước đó sau khi Loan/Lực chốt manifest, QA/audit/split và nhóm xác nhận ngưỡng/model đã khóa. Chưa đánh dấu hai task này hoàn thành.
+**Candidate đã chọn, còn chờ QA và xác nhận phát hành:** nhánh này bàn giao code để review. KAN-44 chưa train lại trên manifest phát hành; KAN-51 chưa đánh giá GenImage test. Chỉ chạy các bước đó sau khi Loan/Lực review dữ liệu/QA/audit/holdout và nhóm xác nhận model/ngưỡng đã khóa. Chưa đánh dấu hai task này hoàn thành.
 
 | Jira | Phần thực hiện | Điều kiện còn lại |
 |---|---|---|
@@ -20,6 +20,8 @@ Trước đây `train --evaluate-test` vừa chọn C/train vừa chấm test. V
 Protocol ghi exact hash model, labels, features, manifest features, profile/version/Pillow/CLIP revision, thresholds và N test. Cần tham chiếu xác nhận thật về data QA, metadata audit, holdout review và thresholds; công cụ không thực hiện audit độc lập thay Lực. Report đạt accuracy không đồng nghĩa các gate release khác đã đạt. CLI quality fail vẫn lưu báo cáo và thoát 1.
 
 ## Manifest và test đang giữ nguyên
+
+Cập nhật quyết định của Kiệt: chọn candidate giữ split từ bản 10.000. Bộ 9.708 cũ vẫn giữ để tái lập, không phải manifest mới đã chọn. Holdout lọc lịch sử còn 384 ảnh; chưa tính score model. Xem [manifest/ngưỡng/holdout đã chọn](decisions/ml-selection.md). Các số 856 dưới đây thuộc bộ QA cũ, không dùng làm N test của candidate mới.
 
 - Manifest chính trên main: 10.000 ảnh, chưa có norm_version. Bộ thí nghiệm riêng: 9.708 ảnh, gồm 4.000 CIFAKE và 5.708 GenImage, loại 292 real ảnh nhỏ.
 - Bộ 9.708 có 856 GenImage test chưa chấm điểm. 1.702 ảnh còn lại đổi split so với manifest cũ; chưa tự xác nhận holdout độc lập đối với mọi lần train trước của cả nhóm.

@@ -114,6 +114,12 @@ def test_evaluation_uses_frozen_probe_once_and_matches_saved_predictions(
     original_hash = sha256_file(model)
     prepare_lock(labels, features, model, lock)
     approve(lock)
+    protocol = json.loads(lock.read_text())
+    protocol.update(
+        authorization_scope="synthetic_user_authorized_experiment",
+        independent_qa_approved=False,
+    )
+    lock.write_text(json.dumps(protocol))
     monkeypatch.setattr(
         LogisticRegression,
         "fit",
@@ -129,6 +135,8 @@ def test_evaluation_uses_frozen_probe_once_and_matches_saved_predictions(
     monkeypatch.setattr(LogisticRegression, "predict_proba", predict)
     report = evaluate(labels, features, model, lock, output)
     assert calls == [4]
+    assert report["authorization"]["scope"] == "synthetic_user_authorized_experiment"
+    assert report["authorization"]["independent_qa_approved"] is False
     assert sha256_file(model) == original_hash
     predictions = list(csv.DictReader((output / "predictions.csv").open()))
     assert report["test"]["n"] == len(predictions) == 4
@@ -265,6 +273,8 @@ def test_cli_prepare_lock_does_not_predict_or_overwrite(
             str(model),
             "--prepare-lock",
             str(lock),
+            "--history-labels",
+            str(labels),
         ],
     )
     predict = Mock(side_effect=AssertionError("Do not open test during preparation"))
@@ -289,7 +299,7 @@ def test_cli_quality_failure_keeps_honest_report(candidate, tmp_path, monkeypatc
     joblib.dump(bundle, model)
     model.with_suffix(".joblib.sha256").write_text(sha256_file(model))
     lock, output = tmp_path / "lock.json", tmp_path / "result"
-    prepare_lock(labels, features, model, lock)
+    prepare_lock(labels, features, model, lock, history_labels=[labels])
     approve(lock)
     monkeypatch.setattr(
         sys,
@@ -306,6 +316,8 @@ def test_cli_quality_failure_keeps_honest_report(candidate, tmp_path, monkeypatc
             str(lock),
             "--output-dir",
             str(output),
+            "--history-labels",
+            str(labels),
         ],
     )
     with pytest.raises(SystemExit) as error:
@@ -316,6 +328,36 @@ def test_cli_quality_failure_keeps_honest_report(candidate, tmp_path, monkeypatc
     assert report["test"]["uncertain_n"] == 4
     assert report["test"]["decided_accuracy"] is None
     assert report["quality"]["status"] == "fail"
+
+
+def test_cli_rejects_missing_history_before_reading_model(tmp_path, monkeypatch):
+    import sys
+
+    from models import evaluate as module
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "evaluate",
+            "--labels",
+            "not-read.csv",
+            "--features",
+            "not-read",
+            "--model",
+            "not-read.joblib",
+            "--prepare-lock",
+            str(tmp_path / "lock.json"),
+        ],
+    )
+    inputs = Mock(
+        side_effect=AssertionError("No inputs or predictions without history")
+    )
+    monkeypatch.setattr(module, "_inputs", inputs)
+    with pytest.raises(SystemExit) as error:
+        module.main()
+    assert error.value.code == 2
+    inputs.assert_not_called()
 
 
 def test_extract_does_not_publish_cache_if_labels_change_mid_run(
@@ -334,3 +376,30 @@ def test_extract_does_not_publish_cache_if_labels_change_mid_run(
     with pytest.raises(ValueError, match="Labels changed"):
         extract_features(labels, output, encoder=Mock(encode=encode))
     assert not output.exists()
+
+
+@pytest.mark.parametrize("change", ["omitted", "modified"])
+def test_locked_holdout_history_cannot_be_omitted_or_changed(
+    candidate, tmp_path, monkeypatch, change
+):
+    from sklearn.linear_model import LogisticRegression
+
+    from models.evaluate import evaluate, prepare_lock
+
+    labels, features, model = candidate
+    history = tmp_path / "history.csv"
+    history.write_bytes(labels.read_bytes())
+    lock = tmp_path / "protocol.json"
+    prepare_lock(labels, features, model, lock, history_labels=[history])
+    approve(lock)
+    histories = None
+    if change == "modified":
+        history.write_bytes(history.read_bytes() + b"\n")
+        histories = [history]
+    predict = Mock(side_effect=AssertionError("Do not open test with changed history"))
+    monkeypatch.setattr(LogisticRegression, "predict_proba", predict)
+    with pytest.raises(ValueError, match="holdout"):
+        evaluate(
+            labels, features, model, lock, tmp_path / "result", history_labels=histories
+        )
+    predict.assert_not_called()

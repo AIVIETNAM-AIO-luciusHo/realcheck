@@ -263,6 +263,7 @@ Mỗi D-ID dưới đây có owner quyết định; kết quả ghi vào `docs/d
 
 - **D02 [NEEDS CLARIFICATION - Chờ chốt buổi họp]**: geometry target 224×224 / 256×256 / 512×512 trước JPEG. Phương án center-crop rồi resize, resize ngắn cạnh rồi center-crop, hoặc resize giữ tỷ lệ + padding cố định. Chọn một thứ tự cố định trước encode; CLIP tensor cuối vẫn 224×224. QF gợi ý 90 / 95 / 100; subsampling 4:4:4 hoặc 4:2:0. Chốt interpolation/alpha background/ICC, benchmark ảnh nhỏ và 4000px; không dùng random serving crop.
 - **D08 [NEEDS CLARIFICATION - Chờ chốt buổi họp]**: binary threshold metric cố định 0.5 hoặc tối ưu trên validation rồi khóa; vùng Chưa chắc giữ 0.3/0.7 hoặc tune trên validation với mục tiêu false-positive/coverage đã công bố. Không tune theo test.
+- **Cập nhật triển khai 05/11/2026:** Kiệt chọn binary 0.5, low/high 0.3/0.7; UI chia uncertain tại 0.5. Bảng mốc và manifest/holdout ở [ml-selection.md](../../docs/decisions/ml-selection.md). Lựa chọn đã ghi để triển khai; QA/audit và review release của nhóm vẫn cần xác nhận, không tự chuyển các gate khác thành approved.
 - Kiệt phối hợp Lực xác nhận tolerance score test model thật: cùng tensor/worker với CPU deterministic tolerance 1e-6 hoặc 1e-5; tensor cùng runtime vẫn yêu cầu exact equality ở AC-05. Chọn phương án tại D02, không dùng score equality giữa JPEG và PNG khác pixels.
 
 ### Loan — Data & Evaluation
