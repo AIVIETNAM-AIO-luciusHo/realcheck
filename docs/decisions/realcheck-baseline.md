@@ -1,6 +1,6 @@
 # Quyết định kỹ thuật RealCheck
 
-Ghi các mục D01–D14 của `specs/000-realcheck-system-baseline/spec.md`. File này hiện chỉ có phần do Quang phụ trách; các mục khác do người phụ trách bổ sung.
+Ghi các mục D01–D14 của `specs/000-realcheck-system-baseline/spec.md`. Phần API do Quang phụ trách; lựa chọn D08 của Kiệt được liên kết bên dưới. Các mục khác do người phụ trách bổ sung.
 
 Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã duyệt) hoặc `approved tạm` (đã duyệt để dùng, xem lại sau benchmark). Mục `proposed` có thể đổi khi review PR.
 
@@ -11,6 +11,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D07 Số pixel | approved | Quang | Lực | 2026-11-04 |
 | D11 Timeout | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 |
 | D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 |
+| D08 Ngưỡng score/hiển thị | proposed; Kiệt chọn 0.3/0.5/0.7 để triển khai, chờ review release | Kiệt | Lực/Loan | 2026-11-05 |
 | Hợp đồng `score` | proposed | Quang | Chờ Kiệt, Lực | 2026-11-04 |
 
 ## D05. Enum `verdict` và lỗi
@@ -87,6 +88,8 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 **Lưu ý:** spec yêu cầu chọn sau benchmark CPU/RAM; xem lại khi có model thật.
 
 ## Hợp đồng `score`
+
+Ngưỡng D08 và lựa chọn manifest/holdout mới được ghi tại [ml-selection.md](ml-selection.md). Bảng API/UI hiện có khớp các mốc Kiệt chọn; việc đó không thay thế xác nhận QA hoặc kết quả model-test.
 
 **Lựa chọn:** theo spec 001: `models/score.py`, `score(image) -> float`, `image` là PIL Image gốc đã giải mã, chưa chuẩn hóa. API giải mã một lần, đọc EXIF, gọi `score` và bắt `ImageTooSmall`.
 

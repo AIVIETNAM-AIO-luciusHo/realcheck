@@ -30,18 +30,25 @@ class Scorer:
         """Normalize once; propagate ImageTooSmall and all inference failures."""
         normalized = normalize_image(image)
         features = encode_images([normalized.image], self.encoder)
+        return float(self.predict_features(features)[0])
+
+    def predict_features(self, features: np.ndarray) -> np.ndarray:
+        """Use the same AI column and probability checks for offline evaluation."""
         probabilities = np.asarray(self.probe.predict_proba(features))
-        if probabilities.shape != (1, 2) or not np.isfinite(probabilities).all():
+        if (
+            probabilities.shape != (len(features), 2)
+            or not np.isfinite(probabilities).all()
+        ):
             raise ValueError("Probe returned invalid probabilities")
         if (probabilities < 0).any() or (probabilities > 1).any():
             raise ValueError("Probe probabilities must be in [0, 1]")
-        if not np.isclose(probabilities.sum(), 1):
+        if not np.allclose(probabilities.sum(axis=1), 1):
             raise ValueError("Probe probabilities must sum to 1")
-        return float(probabilities[0, self.ai_column])
+        return probabilities[:, self.ai_column]
 
 
-def load_scorer(path: Path = DEFAULT_MODEL_PATH, device: str = "cpu") -> Scorer:
-    """Load a trusted local joblib at startup; reject incompatible bundles.
+def load_bundle(path: Path) -> dict:
+    """Validate a trusted local probe bundle without loading the CLIP encoder.
 
     Never call with a user-uploaded artifact: joblib deserialization executes code.
     """
@@ -65,7 +72,21 @@ def load_scorer(path: Path = DEFAULT_MODEL_PATH, device: str = "cpu") -> Scorer:
     for key, value in expected.items():
         if metadata.get(key) != value:
             raise ValueError(f"Incompatible model: {key}; retrain before serving")
-    # Validate the probe before downloading/loading the heavier encoder.
+    thresholds = bundle.get("thresholds", {})
+    try:
+        binary, low, high = (thresholds[key] for key in ("binary", "low", "high"))
+        valid = 0 < binary < 1 and 0 <= low < high <= 1
+    except (KeyError, TypeError):
+        valid = False
+    if not valid:
+        raise ValueError("Invalid model thresholds")
+    Scorer(bundle["probe"], None)
+    return bundle
+
+
+def load_scorer(path: Path = DEFAULT_MODEL_PATH, device: str = "cpu") -> Scorer:
+    """Validate the bundle, then load and warm up CLIP once at startup."""
+    bundle = load_bundle(path)
     scorer = Scorer(bundle["probe"], None)
     scorer.encoder = load_encoder(device)
     scorer(Image.new("RGB", (256, 256)))

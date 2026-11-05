@@ -21,7 +21,7 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 | `smoke_api.py` | Lực | `python -m scripts.smoke_api --base-url http://localhost:8000 --fixtures <thư mục> [--real ảnh] [--ai ảnh] [--out json]`: kiểm `/health`, `/docs`, `/openapi.json`, schema `/v1/analyze` và mã lỗi D05 qua HTTP thật (không import `app/`). Thoát 0 đạt, 1 có ca lỗi, 2 không kết nối, timeout (dừng ngay ở request đầu tiên quá `--timeout`, mặc định 60 s, dài hơn timeout model 10 s của D11; Nginx/UI cũng phải dài hơn 10 s) hoặc thiếu fixture. `--real/--ai` chỉ ghi nhận verdict/score. `X-Request-ID` phải là UUID (theo `app/logging.py`) và khác nhau giữa các request. `--no-docs` bỏ `/docs`, `/openapi.json` (bảng ghi `bỏ qua`, không phải `đạt`; mặc định vẫn kiểm vì AC1 của KAN-29 cần `/docs`). Ca `Đúng 5.242.880 byte (cần xác nhận)` dùng JPEG đệm byte 0 sau EOI: D06 nói tối đa, bằng thì phải qua, nhưng API/gateway chặt hơn có thể từ chối; ca lỗi thì kiểm cách API tính dung lượng và overhead multipart trước khi kết luận API sai; `--skip-size-boundary` bỏ ca này. JSON bằng chứng ẩn `user:pass@` trong `base_url` Mẫu biên bản: `docs/qa/integration-report-template.md` |
 | `baseline_filesize.py` | Loan | Dung lượng file theo nguồn, chỉ tham khảo độ chi tiết ảnh (không phải gate) |
 | `metadata_audit.py` | Loan | Đoán thật/AI chỉ từ metadata, raw và post; gate post `A_eff <= 0.55`, không đạt thì thoát mã 1 (bản nháp T007) |
-| `evaluate.py` | Loan | `python -m scripts.evaluate --split val\|test --output <file>`: đánh giá model đã khóa, xuất báo cáo cho trang Kết quả đánh giá, theo từng nguồn; ngưỡng lấy từ model, không ghi đè báo cáo đã có. Tập test chỉ chạy một lần sau khi khóa model và ngưỡng |
+| `evaluate.py` | Loan | `python -m scripts.evaluate --split val --output <file>`: báo cáo validation theo source, ngưỡng lấy từ model, không ghi đè output. GenImage test dùng `models.evaluate` với protocol đã duyệt và lịch sử holdout; `--split test` ở script này chỉ dùng cho CIFAKE smoke test |
 | `verify_ml.py` | Kiệt | Model thật: parity tensor train/serve, score từ raw so feature cache, ảnh lớn/mode ảnh/ảnh nhỏ; chỉ lấy mẫu validation |
 
 Thư viện cho các script dữ liệu: `pip install -r scripts/requirements-data.txt`. Thứ tự chạy xem [`data/README.md`](../data/README.md).
@@ -34,6 +34,15 @@ python -m scripts.check_data --labels .cache/ml-run/labels.csv
 ```
 
 `prepare_data` từ chối ghi đè output đã có; dùng đường dẫn mới khi chạy lại. `rejected_small.csv` chỉ chứa ảnh quá nhỏ; ảnh hỏng và `DecompressionBombError` vào `rejected_invalid.csv` riêng, ảnh trùng vào `rejected_duplicate.csv`, cùng các cột `raw_path,source,width,height,reason,norm_version` (kích thước là 0 nếu chưa đọc được). Lỗi ghi output phải làm lần chạy thất bại, không được coi là ảnh hỏng. `--workers` mặc định 2 để tránh tạo quá nhiều process trên Windows. Trước khi thay dữ liệu chuẩn chính của Loan vẫn cần baseline theo spec 001.
+
+Để giữ split cũ cho các ảnh còn hợp lệ, dùng manifest tham chiếu thay vì chia lại:
+
+```bash
+python -m scripts.prepare_data --split-from data/labels.csv --output-dir .cache/ml-preserve/processed --labels .cache/ml-preserve/labels.csv --workers 2
+python -m scripts.check_data --labels .cache/ml-preserve/labels.csv
+```
+
+`--split-from` ghép theo `raw_path` tương đối với `data/raw` hoặc `--raw-dir`, không theo thứ tự dòng. Manifest phải có `raw_path,label,source,split` cho đúng toàn bộ raw đang quét, kể cả ảnh sau đó bị loại; thiếu/trùng/khác cohort, sai nhãn/source/split hoặc chuyển ảnh CIFAKE qua test gốc đều bị từ chối trước khi ghi output. Hỗ trợ đường dẫn Windows, UTF-8 BOM và manifest cũ chưa có norm_version. Hash file tham chiếu được in vào log; nếu file đổi trong lúc xử lý thì không xuất labels mới. Không truyền cờ này thì vẫn chia theo seed 42 như trước. Script không sửa ảnh raw hoặc manifest tham chiếu; ảnh không dùng nằm trong các rejection CSV của output mới. Xem [bản ứng viên giữ split cũ](../docs/ml-preserved-split.md).
 
 `check_data` yêu cầu đủ sáu cột, bao gồm `norm_version` ở cuối và đúng version hiện hành. Manifest cũ thiếu version là lỗi (exit 1), không còn chỉ cảnh báo; không tự thêm version vào dữ liệu cũ. Ảnh processed hỏng hoặc decompression bomb được ghi FAIL, lần kiểm tra thoát mã 1. Lệnh train xem [`models/README.md`](../models/README.md).
 

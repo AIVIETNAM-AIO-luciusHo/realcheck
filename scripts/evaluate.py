@@ -6,7 +6,7 @@ sau khi đã khóa model và ngưỡng, không ghi đè báo cáo đã có.
 
 Cách chạy (từ thư mục gốc repo):
     python -m scripts.evaluate --split val --output artifacts/evaluation-val.json
-    python -m scripts.evaluate --split test --output artifacts/evaluation.json
+    # GenImage test: use models.evaluate with its approved protocol.
 """
 
 import argparse
@@ -26,8 +26,6 @@ from models.score import Scorer
 from models.train import metrics
 
 ACCURACY_TARGET = 0.90
-# models.train.metrics đang cố định vùng Chưa chắc ở các ngưỡng này
-METRIC_UNCERTAIN_RANGE = {"low": 0.3, "high": 0.7}
 
 
 def load_locked_model(path: Path, manifest: dict) -> tuple[dict, str]:
@@ -47,8 +45,11 @@ def load_locked_model(path: Path, manifest: dict) -> tuple[dict, str]:
         if bundle["metadata"].get(key) != value:
             raise ValueError(f"Model does not match this data: {key}; retrain first")
     thresholds = bundle["thresholds"]
-    if any(thresholds[key] != value for key, value in METRIC_UNCERTAIN_RANGE.items()):
-        raise ValueError("Model thresholds differ from models.train.metrics")
+    if not (
+        0 < thresholds["binary"] < 1
+        and 0 <= thresholds["low"] < thresholds["high"] <= 1
+    ):
+        raise ValueError("Invalid model thresholds")
     return bundle, model_hash
 
 
@@ -56,6 +57,8 @@ def evaluate(labels: Path, feature_dir: Path, model_path: Path, split: str) -> d
     features, rows, manifest = load_features(labels, feature_dir)
     bundle, model_hash = load_locked_model(model_path, manifest)
     dataset = bundle["metadata"]["dataset"]
+    if dataset == "genimage" and split == "test":
+        raise ValueError("Use models.evaluate with an approved lock for GenImage test")
     keep = np.array(
         [
             row["source"].startswith(f"{dataset}_") and row["split"] == split
@@ -67,14 +70,15 @@ def evaluate(labels: Path, feature_dir: Path, model_path: Path, split: str) -> d
     if set(y.tolist()) != {0, 1}:
         raise ValueError(f"{dataset}/{split} needs both classes")
     sources = np.array([row["source"] for row in selected])
-    ai_column = Scorer(bundle["probe"], None).ai_column
-    scores = bundle["probe"].predict_proba(features[keep])[:, ai_column]
-    binary = bundle["thresholds"]["binary"]
-    overall = metrics(y, scores, binary)
+    scores = Scorer(bundle["probe"], None).predict_features(features[keep])
+    binary, low, high = (bundle["thresholds"][key] for key in ("binary", "low", "high"))
+    overall = metrics(y, scores, binary, low, high)
     by_source = [
         {
             "name": source,
-            **metrics(y[sources == source], scores[sources == source], binary),
+            **metrics(
+                y[sources == source], scores[sources == source], binary, low, high
+            ),
         }
         for source in sorted(set(sources.tolist()))
     ]

@@ -1,0 +1,102 @@
+{
+  "status": "candidate_pending_Loan_Luc_review",
+  "reference_labels_sha256": "7a83b1c7c5be7f09463e34cc02254db1c4eeb8b4efbacbb2ca1c7783beabe3ee",
+  "candidate_labels_sha256": "4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad",
+  "source_baseline_sha256": "125ce374f7be93b47265f28b8e8828854724a4a7f70b801c36d4523fc53795d3",
+  "raw_count": 10000,
+  "kept": 9708,
+  "rejected": {
+    "small": 292,
+    "invalid": 0,
+    "duplicate": 0
+  },
+  "changed_split_vs_old_10000": 0,
+  "changed_split_vs_existing_9708": 1702,
+  "processed_bytes_compared": 9708,
+  "processed_bytes_mismatched": 0,
+  "by_source_split": {
+    "cifake_ai": {
+      "test": 1000,
+      "train": 850,
+      "val": 150
+    },
+    "cifake_real": {
+      "test": 1000,
+      "train": 850,
+      "val": 150
+    },
+    "genimage_glide": {
+      "test": 150,
+      "train": 700,
+      "val": 150
+    },
+    "genimage_midjourney": {
+      "test": 150,
+      "train": 700,
+      "val": 150
+    },
+    "genimage_real": {
+      "test": 399,
+      "train": 1888,
+      "val": 421
+    },
+    "genimage_sd14": {
+      "test": 150,
+      "train": 700,
+      "val": 150
+    }
+  },
+  "rejected_original_split": {
+    "val": 29,
+    "test": 51,
+    "train": 212
+  },
+  "model_trained": false,
+  "GenImage_model_test_evaluated": false,
+  "GenImage_test_previous_QA_assignments": {
+    "genimage_glide": {
+      "test": 150,
+      "train": 0,
+      "val": 0
+    },
+    "genimage_midjourney": {
+      "test": 150,
+      "train": 0,
+      "val": 0
+    },
+    "genimage_real": {
+      "test": 65,
+      "train": 275,
+      "val": 59
+    },
+    "genimage_sd14": {
+      "test": 19,
+      "train": 108,
+      "val": 23
+    }
+  },
+  "GenImage_test_previous_QA_train": 383,
+  "GenImage_test_previous_QA_validation": 82,
+  "verification": {
+    "pytest_passed": 192,
+    "pytest_failed": 0,
+    "pytest_skipped": 0,
+    "app_coverage_percent": 72.09,
+    "data_script_tests_passed": 24,
+    "ruff_check": "passed",
+    "ruff_format_files": 77,
+    "git_dirty": true,
+    "prepare_data_sha256": "551332146ea9d6a1e424a496183d71e9c76d5ca772f98983f4b42c31d4af1ae5"
+  },
+  "old_QA_artifact_sha256": {
+    ".cache/ml-run/labels.csv": "72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5",
+    "models/clip_probe.joblib": "69810fd60940ddeed07af92d600c6bb0466641bf4144aec73554b44013ae7bdb",
+    "data/features/features.npy": "1a08a1005c3ea3f6daf2172f944b97d51a6d3d33f73ec812558840d2cedfa217",
+    "data/features/manifest.json": "fb10954a0cc944148197510dd41651785af4325b78f7800cc91491a8bbb0acef"
+  },
+  "GenImage_train_val_test": {
+    "test": 849,
+    "train": 3988,
+    "val": 871
+  }
+}

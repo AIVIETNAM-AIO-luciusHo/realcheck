@@ -56,9 +56,7 @@ def locked(tmp_path):
     features = tmp_path / "features"
     extract_features(labels, features, batch_size=5, encoder=Encoder())
     model = tmp_path / "probe.joblib"
-    trained = train(
-        labels, features, "genimage", model, binary_threshold=0.5, evaluate_test=True
-    )
+    trained = train(labels, features, "genimage", model, binary_threshold=0.5)
     return labels, features, model, trained
 
 
@@ -103,19 +101,19 @@ def test_metrics_all_uncertain_has_no_decided_accuracy():
     assert result["uncertain_rate"] == 1 and result["decided_accuracy"] is None
 
 
-def test_evaluate_test_matches_training_report_and_page_fields(locked):
+def test_evaluate_val_matches_training_report_and_page_fields(locked):
     labels, features, model, trained = locked
-    report = ev.evaluate(labels, features, model, "test")
-    assert report["test"] == trained["test"]
-    assert report["by_source"] == trained["by_source"]
+    report = ev.evaluate(labels, features, model, "val")
+    assert report["val"] == trained["val"]
+    assert report["val_by_source"] == trained["val_by_source"]
     assert report["model"] == trained["model"]
     assert report["profile"] == trained["profile"]
     assert report["dataset"] == trained["dataset"]
     assert report["thresholds"] == {"binary": 0.5, "low": 0.3, "high": 0.7}
-    assert report["accuracy_target"]["value"] == 0.90
-    names = [group["name"] for group in report["by_source"]]
+    assert report["test"] is None
+    names = [group["name"] for group in report["val_by_source"]]
     assert names == ["genimage_real", "genimage_sd14"]
-    assert sum(group["n"] for group in report["by_source"]) == report["test"]["n"]
+    assert sum(group["n"] for group in report["val_by_source"]) == report["val"]["n"]
 
 
 def test_evaluate_val_never_reports_test(locked):
@@ -167,16 +165,24 @@ def test_evaluate_rejects_model_trained_on_other_data(locked, key):
 
 def test_evaluate_rejects_thresholds_metrics_cannot_apply(locked):
     labels, features, model, _ = locked
-    rewrite_bundle(model, lambda bundle: bundle["thresholds"].update({"low": 0.4}))
+    rewrite_bundle(model, lambda bundle: bundle["thresholds"].update({"low": 0.8}))
     with pytest.raises(ValueError, match="thresholds"):
         ev.evaluate(labels, features, model, "test")
 
 
-def test_accuracy_below_target_is_recorded_not_hidden(locked, monkeypatch):
+def test_genimage_test_requires_approved_protocol_before_prediction(
+    locked, monkeypatch
+):
     labels, features, model, _ = locked
-    monkeypatch.setattr(ev, "ACCURACY_TARGET", 1.01)
-    report = ev.evaluate(labels, features, model, "test")
-    assert report["accuracy_target"] == {"value": 1.01, "passed": False}
+    from unittest.mock import Mock
+
+    from sklearn.linear_model import LogisticRegression
+
+    predict = Mock(side_effect=AssertionError("Test must not be opened"))
+    monkeypatch.setattr(LogisticRegression, "predict_proba", predict)
+    with pytest.raises(ValueError, match="approved lock"):
+        ev.evaluate(labels, features, model, "test")
+    predict.assert_not_called()
 
 
 def test_cli_requires_split(locked, tmp_path):

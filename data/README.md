@@ -12,7 +12,9 @@ python -m scripts.prepare_data --output-dir .cache/ml-run/processed-v1 --labels 
 python -m scripts.check_data --labels .cache/ml-run/labels.csv
 ```
 
-Output đã tồn tại thì chọn đường dẫn mới. `data/labels.csv` và số đo cũ bên dưới giữ làm tham chiếu, không phải kết quả sau loại ảnh nhỏ. Lần chạy mới có 9.708 ảnh (4.000 CIFAKE + 5.708 GenImage), loại 292 ảnh thật quá nhỏ; chi tiết trong [`models/README.md`](../models/README.md), [`docs/ml-handoff.md`](../docs/ml-handoff.md). Chưa đối chiếu baseline trên máy Loan; không đánh dấu T012/T013 hoàn thành.
+Output đã tồn tại thì chọn đường dẫn mới. `data/labels.csv` và số đo cũ bên dưới giữ làm tham chiếu, không phải kết quả sau loại ảnh nhỏ. Lần chạy mới có 9.708 ảnh (4.000 CIFAKE + 5.708 GenImage), loại 292 ảnh thật quá nhỏ; chi tiết trong [`models/README.md`](../models/README.md), [`docs/ml-handoff.md`](../docs/ml-handoff.md). Baseline T012 đã có trên main qua PR #24; nghiệm thu đối chiếu độc lập T013 vẫn cần nhóm review.
+
+Muốn giữ split của những ảnh còn hợp lệ theo manifest cũ, dùng `scripts.prepare_data --split-from data/labels.csv` cùng output/labels mới, không ghi đè bộ dùng tái lập model cũ. Raw giữ nguyên, ảnh không dùng ghi riêng trong rejection CSV. Đây là chế độ tạo candidate để review; xem [bản ứng viên giữ split](../docs/ml-preserved-split.md), gồm cảnh báo lịch sử holdout và kết quả kiểm chứng.
 
 Checker hiện yêu cầu manifest có sáu cột với `norm_version` ở cuối và đúng version hiện hành; manifest cũ thiếu version sẽ FAIL, không tự nâng version. `prepare_data` ghi riêng ảnh quá nhỏ vào `rejected_small.csv`, ảnh hỏng/decompression bomb vào `rejected_invalid.csv` và ảnh trùng vào `rejected_duplicate.csv`, trong thư mục output. Cả ba danh sách giữ đường dẫn, source, kích thước, lý do và version để QA đối chiếu.
 

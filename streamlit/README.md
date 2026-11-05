@@ -32,7 +32,7 @@ Kiểm thử: `pip install -r requirements.txt -r streamlit/requirements.txt`, r
 - Output: verdict, điểm, EXIF, lý do, thời gian xử lý, trạng thái hệ thống (`GET /health`); số đo mô hình và dữ liệu.
 
 ### Báo cáo đánh giá
-Do `scripts/evaluate.py` tạo (T013). `by_source` và `ood` là tùy chọn. `test: null` nghĩa là chưa đo tập test, trang sẽ hiện "Chưa đo trên tập test". Mảng `confusion_matrix` theo thứ tự `[real, ai]`, hàng là thực tế, cột là dự đoán.
+Do `scripts/evaluate.py` tạo cho validation (T013), hoặc `models.evaluate` cho GenImage test theo protocol đã duyệt. `by_source` và `ood` là tùy chọn. `test: null` nghĩa là chưa đo tập test, trang sẽ hiện "Chưa đo trên tập test". Mảng `confusion_matrix` theo thứ tự `[real, ai]`, hàng là thực tế, cột là dự đoán. Nếu holdout là subset đã lọc lịch sử thì N báo cáo chỉ tính subset đó; xem [lựa chọn ML](../docs/decisions/ml-selection.md).
 ```json
 {
   "dataset": {"version": "v1", "hash": "..."},

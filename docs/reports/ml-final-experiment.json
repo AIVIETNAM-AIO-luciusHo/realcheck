@@ -1,0 +1,279 @@
+{
+  "status": "user_authorized_experiment_completed",
+  "release_approved": false,
+  "independent_qa_approved": false,
+  "authorization": {
+    "scope": "user_authorized_experiment",
+    "approved_by": [
+      "Ki?t (user via chat; experimental execution only)"
+    ],
+    "independent_qa_approved": false
+  },
+  "source_commit": "4a87e4ac3f14d34e0501303d47e25a02828363ce",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "dataset": {
+    "version": "genimage",
+    "hash": "4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad"
+  },
+  "model": {
+    "version": "sentence-transformers/clip-ViT-B-32+LogisticRegression",
+    "hash": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494"
+  },
+  "profile": {
+    "version": "1",
+    "hash": "6fd24bb91d169eb72db1d0fd7beb1f010f78d3a30ba0132d17fdec7a2d58daec",
+    "contract": {
+      "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+      "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+      "feature_dim": 512,
+      "normalize_embeddings": true,
+      "pillow_version": "13.0.0",
+      "norm_version": "1"
+    }
+  },
+  "thresholds": {
+    "binary": 0.5,
+    "low": 0.3,
+    "high": 0.7
+  },
+  "training": {
+    "C": 10.0,
+    "seed": 42,
+    "split_counts": {
+      "train": 3988,
+      "val": 871,
+      "test": 849
+    },
+    "validation": {
+      "n": 871,
+      "accuracy": 0.9724454649827784,
+      "precision": 0.9797297297297297,
+      "recall": 0.9666666666666667,
+      "auroc": 0.9957614146212721,
+      "confusion_matrix": [
+        [
+          412,
+          9
+        ],
+        [
+          15,
+          435
+        ]
+      ],
+      "uncertain_n": 49,
+      "uncertain_rate": 0.05625717566016074,
+      "decided_accuracy": 0.98661800486618,
+      "decided_n": 822,
+      "decided_coverage": 0.9437428243398392,
+      "false_positive_rate": 0.021377672209026127,
+      "likely_ai_false_positive_rate": 0.009501187648456057
+    }
+  },
+  "test": {
+    "n": 384,
+    "accuracy": 0.9453125,
+    "precision": 0.9966666666666667,
+    "recall": 0.9373040752351097,
+    "auroc": 0.9908849770918735,
+    "confusion_matrix": [
+      [
+        64,
+        1
+      ],
+      [
+        20,
+        299
+      ]
+    ],
+    "uncertain_n": 35,
+    "uncertain_rate": 0.09114583333333333,
+    "decided_accuracy": 0.9770773638968482,
+    "decided_n": 349,
+    "decided_coverage": 0.9088541666666666,
+    "false_positive_rate": 0.015384615384615385,
+    "likely_ai_false_positive_rate": 0.015384615384615385
+  },
+  "by_source": [
+    {
+      "name": "genimage_glide",
+      "n": 150,
+      "accuracy": 0.9466666666666667,
+      "precision": 1.0,
+      "recall": 0.9466666666666667,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          8,
+          142
+        ]
+      ],
+      "uncertain_n": 11,
+      "uncertain_rate": 0.07333333333333333,
+      "decided_accuracy": 0.9928057553956835,
+      "decided_n": 139,
+      "decided_coverage": 0.9266666666666666,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "genimage_midjourney",
+      "n": 150,
+      "accuracy": 0.92,
+      "precision": 1.0,
+      "recall": 0.92,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          12,
+          138
+        ]
+      ],
+      "uncertain_n": 15,
+      "uncertain_rate": 0.1,
+      "decided_accuracy": 0.9555555555555556,
+      "decided_n": 135,
+      "decided_coverage": 0.9,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "genimage_real",
+      "n": 65,
+      "accuracy": 0.9846153846153847,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          64,
+          1
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "uncertain_n": 8,
+      "uncertain_rate": 0.12307692307692308,
+      "decided_accuracy": 0.9824561403508771,
+      "decided_n": 57,
+      "decided_coverage": 0.8769230769230769,
+      "false_positive_rate": 0.015384615384615385,
+      "likely_ai_false_positive_rate": 0.015384615384615385
+    },
+    {
+      "name": "genimage_sd14",
+      "n": 19,
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          19
+        ]
+      ],
+      "uncertain_n": 1,
+      "uncertain_rate": 0.05263157894736842,
+      "decided_accuracy": 1.0,
+      "decided_n": 18,
+      "decided_coverage": 0.9473684210526315,
+      "false_positive_rate": null,
+      "likely_ai_false_positive_rate": null
+    }
+  ],
+  "quality": {
+    "target_accuracy": 0.9,
+    "status": "pass"
+  },
+  "holdout": {
+    "before_filter": 849,
+    "selected": 384,
+    "excluded": 465,
+    "by_source": {
+      "genimage_glide": 150,
+      "genimage_midjourney": 150,
+      "genimage_real": 65,
+      "genimage_sd14": 19
+    }
+  },
+  "parity": {
+    "max_score_difference": 2.8312206268310547e-07,
+    "tolerance": 1e-05,
+    "tensor_exact_match": true,
+    "small_image_rejected": true,
+    "clip_eval_and_frozen": true
+  },
+  "predictions_independently_recounted": true,
+  "runs": {
+    "train": {
+      "id": "a3ee0028-4201-4d82-a83f-9c03a0f627d2",
+      "git_commit": "4a87e4ac3f14d34e0501303d47e25a02828363ce",
+      "git_dirty": false,
+      "started_at": "2026-11-05T09:46:57.629572+00:00"
+    },
+    "verify": {
+      "id": "c9e5432e-6d3d-4a56-bc69-591571c035d0",
+      "git_commit": "4a87e4ac3f14d34e0501303d47e25a02828363ce",
+      "git_dirty": false,
+      "started_at": "2026-11-05T09:47:44.835808+00:00"
+    },
+    "test": {
+      "id": "4ae546d7-2665-4a71-b274-a0c83aae96fe",
+      "git_commit": "4a87e4ac3f14d34e0501303d47e25a02828363ce",
+      "git_dirty": false,
+      "started_at": "2026-11-05T09:50:34.780834+00:00"
+    }
+  },
+  "original_reports_sha256": {
+    "extract-run.json": "8301752fc961b869767228121a85132ef4fb453b950017e7b24cdd713b9ab35a",
+    "validation.json": "2a2e28e5b18df965392f71fd0a658fdde549ca2ed5db7fa2dd743e93dea0f1c4",
+    "verification.json": "2784b655b454ab973049a9c0cf728196d9bf6d15446fd21b387d5f103ab523ee",
+    "metadata-audit.json": "d4ae1079f4abbf96cf77ab2abb1e80574df65eb14c9eddf360290bb54f3114e8",
+    "test-result/evaluation.json": "b225990de9d4a8961ac27ada4e62fdfaf333fd17409bf164efe868099ce46362",
+    "test-result/predictions.csv": "ccd7c6717c3658ff9048865a32be5753c9e8b7d12af4d587cd3a22300f763bdc",
+    "protocol.user-authorized.json": "8afa0d291c77b2986c5414a6f894a4706ce01065526a6853e3f51baeb28eb4b5",
+    "protocol.user-authorized.json.used.json": "74e035df19666003ffa4905d8c287f1dc446b0bd92ea55853b193af466982067"
+  },
+  "limitations": [
+    "Quality status is not full MVP release approval",
+    "Protocol references record human signoff; this command does not perform independent data/audit QA",
+    "File-size, smoothness and JPEG shortcuts remain possible; constant post metadata is not proof of their absence",
+    "Historical real-GLIDE file-size accuracy 84.54% is not a measurement on this locked cohort",
+    "Only 384 history-filtered test images, including 65 real and 19 SD1.4; not the full 849-image test cohort",
+    "User authorized execution while independent data QA/audit review remained pending",
+    "No hyperparameter or threshold changes after test; these test results must not be used to tune another claimed untouched evaluation"
+  ],
+  "pre_push_verification": {
+    "source_commit": "1e6325c7e06597794b91ae998e626ef3463a95cb",
+    "synced_main": "c87042d",
+    "passed": 471,
+    "failed": 0,
+    "skipped": 1,
+    "xfailed": 1,
+    "app_coverage_percent": 98.47,
+    "skip_reason": "Optional Locust dependency not installed",
+    "xfail_reason": "Existing main D12/FR-A04 worker shutdown limitation",
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "pip_check": "passed",
+    "log_sha256": "7ac9543d4962ba5feece6e8b52a4176e50e22a4b045e8d1e70b9bfb5db18c6de",
+    "model_test_rerun": false
+  }
+}

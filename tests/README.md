@@ -43,6 +43,11 @@ Công cụ kiểm thử tích hợp KAN-29: `test_smoke_api.py` chạy `scripts/
 
 Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan vẫn phụ trách review và kiểm chứng độc lập theo spec 001. Các test này không tự nghiệm thu phần việc QA.
 
+`test_data_scripts.py` có thêm 14 ca cho `--split-from`: giữ nguyên split của ảnh hợp lệ và raw/reference bytes, kiểm kê ảnh nhỏ, ghép theo identity thay vì thứ tự dòng, đường dẫn Windows, manifest thiếu/trùng/cohort hoặc nhãn/source/split sai, không chuyển test gốc CIFAKE và không xuất labels nếu reference đổi giữa lúc chạy. Kiệt sửa phần lựa chọn split theo yêu cầu mới; Loan/Lực review thay đổi pipeline này.
+
+`test_ml_release.py` kiểm phần bổ sung cho KAN-39/44/51 bằng ảnh tổng hợp và mock CLIP: raw_path rỗng/trùng/alias, cache sai dtype/L2 dù checksum khớp, model không khớp manifest, protocol chưa duyệt hoặc bị đổi hash/ngưỡng, đánh giá không fit lại, dự đoán/metric theo source, marker ngăn replay và giữ lần lỗi. CLI chuẩn bị protocol không gọi predict. Không dùng GenImage test thật trong pytest.
+
+`test_holdout.py` kiểm loại train/val theo lịch sử hoặc pixel dù đổi tên/metadata JPEG, loại bản trùng test, không mất source âm thầm, phát hiện lịch sử thay đổi và CLI không gọi model. Protocol trong `test_ml_release.py` không cho bỏ/đổi lịch sử đã khóa. `test_evaluate.py` dùng validation cho GenImage; test chặn đường `scripts.evaluate --split test` trước predict để không bỏ qua gate của `models.evaluate`. Chất lượng pass/fail trên test được kiểm bằng fixture tổng hợp trong `test_ml_release.py`.
 
 - `test_inference.py`: kiểm `app/inference.py` (D11, D12; AC-20/21/22) bằng scorer giả điều khiển bằng Event: hết slot từ chối ngay, timeout giữ slot tới khi việc xong, hủy/lỗi không rò slot, không vượt số slot, event loop không bị chặn, loader lỗi, close(), không kéo torch. Một ca `xfail(strict=True)` ghi nhận giới hạn D12/FR-A04: process không thoát khi scorer treo vô hạn.
 

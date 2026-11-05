@@ -32,6 +32,14 @@ PR ML KAN-16..20 có phần tích hợp liên quan spec 001. Bảng này ghi b�
 
 Chi tiết phạm vi chồng lấn và bằng chứng: [bàn giao ML](../../docs/ml-handoff.md), [truy vết thí nghiệm](../../docs/ml-reproducibility.md).
 
+Cập nhật KAN-37/39/44/51 ngày 05/11: PR #15 và bản sửa test #16 đã merge. Đã rà soát module chuẩn hóa/score, bổ sung kiểm raw identity và embedding cache; có công cụ đánh giá GenImage bằng model khóa tại `models.evaluate`. Theo xác nhận của Kiệt, manifest phát hành chưa chốt, chưa mở model-test và chưa nghiệm thu T024. Xem [hồ sơ task ML](../../docs/ml-normalization-release.md). Các checkbox QA/baseline bên dưới không tự chuyển thành hoàn thành.
+
+Theo đề nghị tiếp theo, nhánh ML có thêm `prepare_data --split-from` để giữ split của ảnh hợp lệ theo manifest 10.000, giữ raw và ghi riêng ảnh bị loại. Candidate 9.708 ảnh được tạo ngoài dữ liệu chính, 0 split lệch tham chiếu và 9.708 hash khớp baseline Loan mới merge. Candidate khác bộ QA dùng train trước đây và có lịch sử tiếp xúc holdout, nên T024/KAN-51 vẫn chờ chốt manifest/QA/audit/holdout. Loan/Lực review thay đổi tùy chọn split; chi tiết ở [ml-preserved-split.md](../../docs/ml-preserved-split.md).
+
+Kiệt đã xác nhận chọn chính candidate giữ split nói trên, binary metric 0.5 và API/UI 0.3/0.5/0.7. Selector theo các lịch sử hiện có còn 384 GenImage test không trùng raw/pixel với train/val; chưa dự đoán. Phần lịch sử được khóa cùng protocol, QA/audit/review nhóm chưa tự được phê duyệt. Quyết định triển khai và điều kiện chạy tiếp nằm ở [ml-selection.md](../../docs/decisions/ml-selection.md); không tick T024/KAN-51 bằng unit test hoặc lựa chọn manifest đơn thuần.
+
+Sau đó Kiệt yêu cầu trực tiếp train/chấm test dù QA độc lập chưa duyệt. Đã thực hiện từ commit sạch `4a87e4a`: extract 9.708 ảnh, train C=10, val accuracy 97,24%/871; test một lần 94,53%/384 với ngưỡng đã khóa, có predictions và log/protocol/used marker. Đây là `user_authorized_experiment`, không phải Loan/Lực đã nghiệm thu QA/release. Xem [biên bản lần chạy](../../docs/ml-final-experiment.md); không xóa marker/tune rồi dùng lại 384 ảnh làm test mới.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: có thể chạy song song (khác file, không phụ thuộc task chưa xong)
