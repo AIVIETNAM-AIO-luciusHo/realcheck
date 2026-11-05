@@ -40,3 +40,5 @@ Công cụ kiểm thử tích hợp KAN-29: `test_smoke_api.py` chạy `scripts/
 - `test_run_info.py`: UUID phân biệt hai run dù đồng hồ trùng; không bịa commit nếu Git không có sẵn. CLI train cũng có test đối chiếu lệnh và hash artifact trong báo cáo.
 
 Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan vẫn phụ trách review và kiểm chứng độc lập theo spec 001. Các test này không tự nghiệm thu phần việc QA.
+
+`test_performance_reporting.py` (KAN-56): parser `scripts/perf_report.py` và `scripts/check_performance.py` trên sidecar tổng hợp. Kiểm percentile chỉ trên 200, 429 không vào RPS thành công, ca chỉ 429, loại warmup (giây, số request, từ meta), sidecar rỗng/hỏng, thiếu SLO hoặc thiếu trường thì thoát khác 0. Không cần locust hay mạng; chưa thay thế lần đo thật qua `/v1/analyze`.
