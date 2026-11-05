@@ -243,3 +243,7 @@ Task: "scripts/prepare_data.py (Loan)"
 - Bước huấn luyện (M4) không thuộc tính năng này: chỉ ràng buộc dùng hàm tải đặc trưng kiểm manifest (T024)
 - Không implement các task `[CHẶN]` (T025) khi mã lỗi chưa chốt; không implement `[CHỜ XÁC NHẬN]` (T026, T027) khi nhóm chưa đồng ý
 - Mỗi PR cần một người khác tác giả review và CI xanh với pytest chạy thật (constitution)
+
+### Cập nhật KAN-41 ngày 05/11/2026
+
+Kiệt thực hiện thay phần chạy QA theo đề nghị nhóm. Checker của Lực đã merge ở PR #18; bổ sung kiểm CSV/path/dòng trùng và chạy raw tải lại trong thư mục riêng. Code cũ `43caa16` tái tạo 10.000 dòng khớp main; pipeline mới giữ 9.708, loại 292 ảnh nhỏ, kiểm kê không thất lạc. 9.708/9.708 JPEG khớp tham chiếu tái dựng từ code cũ. **Chưa có baseline T012 của Loan, chưa xác nhận manifest chính thức và chưa có review độc lập**: không tick T013/T016/T030 hoặc mở KAN-44/KAN-51 chỉ từ lần chạy này. T022 có bằng chứng trên cohort đang kiểm, chờ review. Xem [biên bản KAN-41](../../docs/kan41-normalization-qa.md); bảng PR 15 phía trên là trạng thái lịch sử.

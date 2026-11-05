@@ -34,7 +34,7 @@ KAN-41 bổ sung regression cho labels/baseline trùng, CSV thiếu cột/ô ho�
 Chạy riêng: `pytest tests/test_normalize.py tests/test_score_normalization.py tests/test_extract_features.py tests/test_normalize_large.py tests/test_too_small.py`.
 
 - Cột AI được kiểm cho cả `classes_=[0,1]` và `[1,0]` với hai xác suất khác nhau; hardcode cột 0 hoặc 1 đều làm test thất bại.
-- Test recipe JPEG chỉ tái viết các lệnh Pillow trên ảnh tổng hợp. Chưa chạy code `prepare_data` cũ với baseline thật của Loan; T013 và lần chạy `check_normalization.py` trên raw độc lập (T016/T022/T030) vẫn chưa hoàn thành.
+- Test recipe JPEG chỉ tái viết các lệnh Pillow trên ảnh tổng hợp. Lần chạy thật KAN-41 đã tải lại raw và chạy nguyên code cũ; 9.708 ảnh giữ lại khớp tham chiếu tái dựng. Baseline thật T012 của Loan và review độc lập vẫn thiếu, nên chưa nghiệm thu T013/T016/T030. Chi tiết và kết quả kiểm kê T022 ở [biên bản KAN-41](../docs/kan41-normalization-qa.md).
 - `test_data_scripts.py`: chạy CLI chuẩn hóa với worker thật trên ảnh tổng hợp; kiểm chia tập, giữ test CIFAKE, loại trùng, tách CSV ảnh nhỏ/hỏng, chống ghi đè, lỗi ghi file, decompression bomb và checker bắt buộc `norm_version`.
 - `test_verify_ml.py`: kiểm chính script audit bằng mock; chỉ chọn validation, ghi môi trường, fail khi byte JPEG/tensor/score sai hoặc encoder không frozen. Không tải torch hay weights trên CI.
 - `test_run_info.py`: UUID phân biệt hai run dù đồng hồ trùng; không bịa commit nếu Git không có sẵn. CLI train cũng có test đối chiếu lệnh và hash artifact trong báo cáo.

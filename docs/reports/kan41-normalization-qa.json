@@ -1,0 +1,89 @@
+{
+  "legacy_commit": "43caa160921c8927f33b22fe72e9d443c5d8134f",
+  "reference_kind": "reconstructed_from_legacy_code_not_Loan_T012",
+  "python": "3.12.14",
+  "packages": {
+    "pillow": "13.0.0",
+    "numpy": "2.4.6",
+    "pandas": "3.1.0",
+    "pyarrow": "26.0.0",
+    "huggingface-hub": "2.4.0"
+  },
+  "dataset_revisions": {
+    "datasets--dragonintelligence--CIFAKE-image-dataset": "6eebd6090fe3c0d9d44f899a25f0a34e3c2dad31",
+    "datasets--nebula--GenImage-arrow": "3f4b9f921a673be09a93b335ed728cea0c6ecf33",
+    "datasets--TheKernel01--Tiny-GenImage": "89c4fe9efd0ebc7ce5c7641ef57d578ccd639c69"
+  },
+  "raw_count": 10000,
+  "raw_mismatch_vs_existing": [],
+  "legacy_labels_rows": 10000,
+  "legacy_labels_equal_main": true,
+  "by_source": {
+    "genimage_glide": 1000,
+    "genimage_midjourney": 1000,
+    "genimage_real": 3000,
+    "genimage_sd14": 1000,
+    "cifake_ai": 2000,
+    "cifake_real": 2000
+  },
+  "baseline_sha256": "36d57a1a3fc6fea62bfc5c8f75b0ff35e9835f32f72983321aa799ba1e92b600",
+  "raw_manifest_sha256": "370caf0806452fe663acb23969162416d97f07eebca0304e59591c2815113e50",
+  "created_at": "2026-11-05T02:25:30.907661+00:00",
+  "checker_commit": "56159e29f0a78b2634d77b822dec570632fdfb6a",
+  "checker_git_dirty": false,
+  "current_labels_rows": 9708,
+  "current_labels_sha256": "9ef452f5ba2851c31312033d417b1103d91003987d0b6d9621fc049a446d3ef8",
+  "legacy_labels_sha256": "7a83b1c7c5be7f09463e34cc02254db1c4eeb8b4efbacbb2ca1c7783beabe3ee",
+  "normalization_version": "1",
+  "processed_bytes_compared": 9708,
+  "processed_bytes_mismatches": [],
+  "candidate_metadata_compared": 9708,
+  "candidate_metadata_mismatches": [],
+  "split_changes_vs_legacy": {
+    "genimage_real": 1238,
+    "genimage_sd14": 464
+  },
+  "current_by_source": {
+    "genimage_glide": {
+      "kept": 1000,
+      "split_changed": 0
+    },
+    "genimage_midjourney": {
+      "kept": 1000,
+      "split_changed": 0
+    },
+    "genimage_real": {
+      "kept": 2708,
+      "split_changed": 1238
+    },
+    "genimage_sd14": {
+      "kept": 1000,
+      "split_changed": 464
+    },
+    "cifake_ai": {
+      "kept": 2000,
+      "split_changed": 0
+    },
+    "cifake_real": {
+      "kept": 2000,
+      "split_changed": 0
+    }
+  },
+  "rejected": {
+    "small": 292,
+    "invalid": 0,
+    "duplicate": 0
+  },
+  "rejected_by_source": {
+    "small": {
+      "genimage_real": 292
+    },
+    "invalid": {},
+    "duplicate": {}
+  },
+  "official_T012_baseline_available": false,
+  "canonical_manifest_approved": false,
+  "independent_human_review_complete": false,
+  "model_trained": false,
+  "genimage_model_test_evaluated": false
+}
