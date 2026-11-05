@@ -1,5 +1,7 @@
 # API và test. Không có torch để CI nhẹ; test mock CLIP (specs/001, research R10).
 # pillow, numpy cùng phiên bản với scripts/requirements-data.txt.
+# app/ không import numpy trực tiếp, nhưng models/ và test có dùng; ghim ở đây
+# vì models/requirements-ml.txt không ghim, tránh lệch môi trường train.
 fastapi==0.162.0
 httpx==0.28.1
 joblib==1.6.0

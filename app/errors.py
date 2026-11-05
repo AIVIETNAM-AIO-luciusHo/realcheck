@@ -1,5 +1,6 @@
 """Mọi lỗi của API trả cùng envelope {"error": {code, message, request_id}}."""
 
+from typing import Any
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
@@ -8,13 +9,17 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
 from app.schemas import ErrorCode, ErrorDetail, ErrorResponse
+from models.normalize import MIN_SIDE
 
 REQUEST_ID_HEADER = "X-Request-ID"
 
 ERROR_TABLE: dict[ErrorCode, tuple[int, str]] = {
     ErrorCode.MISSING_FILE: (422, "Thiếu file ảnh trong trường file."),
     ErrorCode.MULTIPLE_FILES: (422, "Chỉ gửi một file ảnh cho mỗi yêu cầu."),
-    ErrorCode.IMAGE_TOO_SMALL: (422, "Ảnh quá nhỏ. Cạnh ngắn tối thiểu 256 px."),
+    ErrorCode.IMAGE_TOO_SMALL: (
+        422,
+        f"Ảnh quá nhỏ. Cạnh ngắn tối thiểu {MIN_SIDE} px.",
+    ),
     ErrorCode.INVALID_REQUEST: (422, "Yêu cầu không hợp lệ."),
     ErrorCode.EMPTY_FILE: (400, "File ảnh rỗng."),
     ErrorCode.INVALID_IMAGE: (400, "Không đọc được ảnh hoặc ảnh bị hỏng."),
@@ -46,6 +51,17 @@ class ApiError(Exception):
         super().__init__(code)
         self.code = code
         self.message = message
+
+
+def error_docs(*codes: ErrorCode) -> dict[int | str, dict[str, Any]]:
+    """Khai báo lỗi cho OpenAPI từ ERROR_TABLE, gom theo HTTP status."""
+    grouped: dict[int, list[str]] = {}
+    for code in codes:
+        grouped.setdefault(ERROR_TABLE[code][0], []).append(code.value)
+    return {
+        status: {"model": ErrorResponse, "description": ", ".join(names)}
+        for status, names in grouped.items()
+    }
 
 
 def error_response(
