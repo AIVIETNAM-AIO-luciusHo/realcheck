@@ -2,15 +2,15 @@
 
 Ghi các mục D01–D14 của `specs/000-realcheck-system-baseline/spec.md`. File này hiện chỉ có phần do Quang phụ trách; các mục khác do người phụ trách bổ sung.
 
-Trạng thái: `proposed` (đề xuất, chờ review) hoặc `approved` (nhóm đã duyệt). Mục `proposed` có thể đổi khi review PR.
+Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã duyệt) hoặc `approved tạm` (đã duyệt để dùng, xem lại sau benchmark). Mục `proposed` có thể đổi khi review PR.
 
 | Mục | Trạng thái | Người đề xuất | Reviewer | Ngày |
 |---|---|---|---|---|
-| D05 Enum và lỗi | proposed | Quang | Chờ Lực, Loan | 2026-11-04 |
-| D06 Dung lượng file | proposed | Quang | Chờ Lực, Loan | 2026-11-04 |
-| D07 Số pixel | proposed | Quang | Chờ Lực, Loan | 2026-11-04 |
-| D11 Timeout | proposed | Quang | Chờ Lực, Loan | 2026-11-04 |
-| D12 Cơ chế suy luận | proposed | Quang | Chờ Lực, Loan | 2026-11-04 |
+| D05 Enum và lỗi | approved | Quang | Lực | 2026-11-04 |
+| D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 |
+| D07 Số pixel | approved | Quang | Lực | 2026-11-04 |
+| D11 Timeout | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 |
+| D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 |
 | Hợp đồng `score` | proposed | Quang | Chờ Kiệt, Lực | 2026-11-04 |
 
 ## D05. Enum `verdict` và lỗi
@@ -52,7 +52,7 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Ảnh hưởng:** Streamlit dựa vào `verdict` và `error.code`; Nginx phải trả lỗi 413 và 429 cùng envelope.
 
-**Cần reviewer xem:** ranh giới 400 và 415 (file không phải ảnh là 400, ảnh sai định dạng là 415); ba mã `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INVALID_REQUEST` được thêm ngoài gợi ý của D05 để lỗi framework cùng định dạng.
+**Ghi chú đã duyệt:** ranh giới 400 và 415 (file không phải ảnh là 400, ảnh sai định dạng là 415); ba mã `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INVALID_REQUEST` được thêm ngoài gợi ý của D05 để lỗi framework cùng định dạng.
 
 ## D06. Dung lượng file
 

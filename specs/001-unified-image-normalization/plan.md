@@ -6,7 +6,7 @@
 
 ## Summary
 
-Gom logic chuẩn hóa ảnh đang nằm trong `scripts/prepare_data.py` thành một module dùng chung `models/normalize.py` (Kiệt chịu trách nhiệm chính, Loan review). Cả `prepare_data.py` và `score(image)` gọi đúng hàm đó. Hàm tái tạo đúng các bước của pipeline hiện tại (xoay theo EXIF, RGB, `ImageOps.fit` BICUBIC 256×256, JPEG chất lượng 95 một lần) để ảnh đã chuẩn hóa còn lại trùng byte với dữ liệu cũ (kiểm bằng `data/processed_baseline.sha256`, chụp trước khi ghi đè); thêm ngưỡng "quá nhỏ" (cạnh ngắn < 256 px, không phóng to), version chuẩn hóa, và hai phép kiểm tra chất lượng (metadata AUROC kèm khoảng tin cậy, dấu vết nén JPEG nhiều lần). Hai mục chưa chốt (`verdict`, mã lỗi) giữ mở và chặn đúng các task API tương ứng.
+Gom logic chuẩn hóa ảnh đang nằm trong `scripts/prepare_data.py` thành một module dùng chung `models/normalize.py` (Kiệt chịu trách nhiệm chính, Loan review). Cả `prepare_data.py` và `score(image)` gọi đúng hàm đó. Hàm tái tạo đúng các bước của pipeline hiện tại (xoay theo EXIF, RGB, `ImageOps.fit` BICUBIC 256×256, JPEG chất lượng 95 một lần) để ảnh đã chuẩn hóa còn lại trùng byte với dữ liệu cũ (kiểm bằng `data/processed_baseline.sha256`, chụp trước khi ghi đè); thêm ngưỡng "quá nhỏ" (cạnh ngắn < 256 px, không phóng to), version chuẩn hóa, và hai phép kiểm tra chất lượng (metadata AUROC kèm khoảng tin cậy, dấu vết nén JPEG nhiều lần). Hai mục `verdict` và mã lỗi đã chốt tại D05 trong [`docs/decisions/realcheck-baseline.md`](../../docs/decisions/realcheck-baseline.md), nên không còn chặn task API tương ứng.
 
 ## Technical Context
 
