@@ -14,7 +14,7 @@ python -m scripts.check_data --labels .cache/ml-run/labels.csv
 
 Output đã tồn tại thì chọn đường dẫn mới. `data/labels.csv` và số đo cũ bên dưới giữ làm tham chiếu, không phải kết quả sau loại ảnh nhỏ. Lần chạy mới có 9.708 ảnh (4.000 CIFAKE + 5.708 GenImage), loại 292 ảnh thật quá nhỏ; chi tiết trong [`models/README.md`](../models/README.md), [`docs/ml-handoff.md`](../docs/ml-handoff.md). Chưa đối chiếu baseline trên máy Loan; không đánh dấu T012/T013 hoàn thành.
 
-Checker hiện yêu cầu manifest có sáu cột với `norm_version` ở cuối và đúng version hiện hành; manifest cũ thiếu version sẽ FAIL, không tự nâng version. `prepare_data` ghi riêng ảnh quá nhỏ vào `rejected_small.csv` và ảnh hỏng/decompression bomb vào `rejected_invalid.csv`, cạnh thư mục output. Cả hai danh sách giữ đường dẫn, source, kích thước, lý do và version để QA đối chiếu.
+Checker hiện yêu cầu manifest có sáu cột với `norm_version` ở cuối và đúng version hiện hành; manifest cũ thiếu version sẽ FAIL, không tự nâng version. `prepare_data` ghi riêng ảnh quá nhỏ vào `rejected_small.csv`, ảnh hỏng/decompression bomb vào `rejected_invalid.csv` và ảnh trùng vào `rejected_duplicate.csv`, trong thư mục output. Cả ba danh sách giữ đường dẫn, source, kích thước, lý do và version để QA đối chiếu.
 
 | Đường dẫn | Nội dung |
 |---|---|
@@ -65,7 +65,7 @@ Lọc theo `source`: chỉ dùng `genimage_*` cho mô hình chính; `cifake_*` c
 | Định dạng | JPEG chất lượng 95, RGB, bỏ EXIF | Cao hơn các mức 90/70/50 của thí nghiệm nén |
 | Chia tập GenImage | 70 / 15 / 15 | Phân tầng theo `source`, seed 42 |
 | Chia tập CIFAKE | train gốc → 85% train / 15% val; test gốc → test | |
-| Ảnh trùng | Bỏ ảnh trùng pixel sau chuẩn hóa; trùng khác nhãn thì bỏ cả hai | |
+| Ảnh trùng | Bỏ ảnh trùng pixel sau chuẩn hóa; trùng khác nhãn thì bỏ cả hai | So sánh sau khi cắt về 256×256; ghi vào `rejected_duplicate.csv` và xóa JPEG của ảnh bị bỏ |
 
 ### Nén JPEG hai lần
 Ảnh thật (ImageNet) vốn là JPEG nên khi lưu lại bị nén 2 lần, còn ảnh AI (PNG) chỉ nén 1 lần; mô hình có thể học dấu vết nén này thay vì dấu vết AI. Vì vậy `prepare_data.py` **crop/resize về 256×256 trước, rồi mới nén JPEG**: đổi kích thước làm lệch lưới khối 8×8 của lần nén cũ, giảm dấu vết nén trước đó.

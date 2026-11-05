@@ -13,7 +13,7 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 | `download_data.py` | Loan | Tải CIFAKE, GenImage về `data/raw/` |
 | `prepare_data.py` | Loan | Chuẩn hóa ảnh, chia tập, xuất `data/labels.csv` |
 | `check_data.py` | Loan | Kiểm tra `labels.csv` và ảnh đã chuẩn hóa; lỗi thì thoát mã 1 |
-| `check_normalization.py` | Lực | `python -m scripts.check_normalization --raw-dir <dữ liệu thô>`: so sha256 của `jpeg` chuẩn hóa lại với `data/processed_baseline.sha256`, kiểm kê ảnh thô (labels hoặc `rejected_small/invalid/duplicate.csv`, tham số `--rejected-dir`, `--rejected-small/-invalid/-duplicate`). Thoát 0 đạt, 1 lỗi kiểm tra, 2 thiếu đầu vào, 3 ảnh thô hỏng. `rejected_duplicate.csv` tùy chọn; `prepare_data` chưa ghi file này nên ảnh trùng bị báo Lost (việc của Loan/Kiệt) |
+| `check_normalization.py` | Lực | `python -m scripts.check_normalization --raw-dir <dữ liệu thô>`: so sha256 của `jpeg` chuẩn hóa lại với `data/processed_baseline.sha256`, kiểm kê ảnh thô (labels hoặc `rejected_small/invalid/duplicate.csv`, tham số `--rejected-dir`, `--rejected-small/-invalid/-duplicate`). Thoát 0 đạt, 1 lỗi kiểm tra, 2 thiếu đầu vào, 3 ảnh thô hỏng. `rejected_duplicate.csv` tùy chọn để đọc được output cũ chưa có file này; `prepare_data` hiện luôn ghi file này |
 | `jpeg_trace_check.py` | Lực | **Chưa có** (T027, KAN-46): chờ nhóm xác nhận phương pháp JPEG ghost; chưa dùng được |
 | `baseline_filesize.py` | Loan | Dung lượng file theo nguồn, chỉ tham khảo độ chi tiết ảnh (không phải gate) |
 | `metadata_audit.py` | Loan | Đoán thật/AI chỉ từ metadata, raw và post; gate post `A_eff <= 0.55`, không đạt thì thoát mã 1 (bản nháp T007) |
@@ -28,7 +28,7 @@ python -m scripts.prepare_data --output-dir .cache/ml-run/processed-v1 --labels 
 python -m scripts.check_data --labels .cache/ml-run/labels.csv
 ```
 
-`prepare_data` từ chối ghi đè output đã có; dùng đường dẫn mới khi chạy lại. `rejected_small.csv` chỉ chứa ảnh quá nhỏ; ảnh hỏng và `DecompressionBombError` vào `rejected_invalid.csv` riêng, cùng các cột `raw_path,source,width,height,reason,norm_version` (kích thước là 0 nếu chưa đọc được). Lỗi ghi output phải làm lần chạy thất bại, không được coi là ảnh hỏng. `--workers` mặc định 2 để tránh tạo quá nhiều process trên Windows. Trước khi thay dữ liệu chuẩn chính của Loan vẫn cần baseline theo spec 001.
+`prepare_data` từ chối ghi đè output đã có; dùng đường dẫn mới khi chạy lại. `rejected_small.csv` chỉ chứa ảnh quá nhỏ; ảnh hỏng và `DecompressionBombError` vào `rejected_invalid.csv` riêng, ảnh trùng vào `rejected_duplicate.csv`, cùng các cột `raw_path,source,width,height,reason,norm_version` (kích thước là 0 nếu chưa đọc được). Lỗi ghi output phải làm lần chạy thất bại, không được coi là ảnh hỏng. `--workers` mặc định 2 để tránh tạo quá nhiều process trên Windows. Trước khi thay dữ liệu chuẩn chính của Loan vẫn cần baseline theo spec 001.
 
 `check_data` yêu cầu đủ sáu cột, bao gồm `norm_version` ở cuối và đúng version hiện hành. Manifest cũ thiếu version là lỗi (exit 1), không còn chỉ cảnh báo; không tự thêm version vào dữ liệu cũ. Ảnh processed hỏng hoặc decompression bomb được ghi FAIL, lần kiểm tra thoát mã 1. Lệnh train xem [`models/README.md`](../models/README.md).
 

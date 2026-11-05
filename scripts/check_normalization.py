@@ -8,8 +8,8 @@ trung baseline (KHONG so voi data/processed hien tai). Kiem ke: moi anh tho co
 dung mot noi: labels.csv, hoac rejected_small / rejected_invalid /
 rejected_duplicate (.csv, cung thu muc --rejected-dir hoac chi dinh rieng).
 Ban ghi rejected_small phai tro toi anh thuc su nho (sau orientation).
-rejected_duplicate.csv tuy chon: chua co thi coi la rong (prepare_data chua ghi
-file nay, viec cua Loan/Kiet); khi do anh bi loai trung se bi bao "Lost".
+rejected_duplicate.csv tuy chon de doc duoc output cu: chua co thi coi la rong;
+khi do anh bi loai trung se bi bao "Lost".
 Script chi doc, khong ghi/xoa gi.
 
 Ma thoat: 0 dat; 1 kiem tra that bai (lech hash, thieu baseline, lost, ...);
