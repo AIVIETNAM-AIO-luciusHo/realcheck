@@ -4,6 +4,7 @@ Giá trị mặc định theo docs/decisions/realcheck-baseline.md (D06, D07, D1
 ví dụ REALCHECK_MODEL_TIMEOUT_S=20 đổi timeout mà không sửa mã.
 """
 
+from pathlib import Path
 from typing import Self
 
 from pydantic import Field, model_validator
@@ -20,6 +21,8 @@ class Settings(BaseSettings):
     inference_slots: int = Field(default=1, gt=0)
     threshold_low: float = Field(default=0.3, ge=0, le=1)
     threshold_high: float = Field(default=0.7, ge=0, le=1)
+    # None: dùng models/clip_probe.joblib theo models.score.DEFAULT_MODEL_PATH.
+    model_path: Path | None = None
 
     @model_validator(mode="after")
     def check_thresholds(self) -> Self:

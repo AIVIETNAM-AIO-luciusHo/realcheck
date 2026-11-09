@@ -12,7 +12,7 @@ API nhận 1 ảnh, kiểm tra hợp lệ, gọi `score(image)` từ `models/`, 
 | `schemas.py` | Hợp đồng JSON: `verdict`, response, mã lỗi |
 | `verdict.py` | Ngưỡng và câu chữ `reason`; không lặp logic này ở nơi khác |
 | `errors.py` | Bảng mã lỗi, envelope lỗi dùng chung |
-| `inference.py` | `InferenceService`: chạy suy luận trên thread riêng, giới hạn slot và timeout |
+| `inference.py` | `InferenceService`: chạy suy luận trên thread riêng, giới hạn slot và timeout; hàm nạp model thật |
 | `uploads.py` | Đọc file có giới hạn, giải mã một lần, đọc EXIF, kiểm tra điểm từ model |
 | `settings.py` | Cấu hình đọc từ biến môi trường |
 | `logging.py` | `X-Request-ID` và log có cấu trúc |
@@ -22,12 +22,33 @@ Endpoint: `POST /v1/analyze`, `GET /health`, `GET /docs`, `GET /openapi.json`. G
 ## Cách chạy
 Từ thư mục gốc repo:
 ```bash
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+pip install -r requirements.txt -r models/requirements-ml.txt
+uvicorn app.main:app
 ```
-Chưa có model thì `/health` trả 503; đây là hành vi đúng, không có chế độ model giả khi chạy server. Test tiêm scorer giả qua `create_app(scorer=...)`, hoặc hàm nạp qua `create_app(loader=...)`; `loader` chỉ chạy khi app đi qua lifespan. Nạp lỗi thì ghi log và `/health` trả 503.
+Lúc khởi động, lifespan gọi `models.score.load_scorer` một lần trên worker thread: kiểm checksum, metadata, rồi warmup CLIP. Server chỉ nhận request sau khi nạp xong (Kiệt đo local khoảng 30 giây). Cần `models/clip_probe.joblib` cùng file `.sha256`, hoặc đặt `REALCHECK_MODEL_PATH`, và trọng số CLIP đã cache (xem [`models/README.md`](../models/README.md)).
 
-Giới hạn suy luận: hết slot trả 503 `SERVICE_BUSY`, quá giờ trả 504 `MODEL_TIMEOUT`. Thread không hủy được CLIP nên sau timeout slot vẫn bị giữ tới khi việc thật sự kết thúc; trong lúc đó request mới nhận 503.
+Thiếu file, sai checksum, sai metadata hoặc thiếu torch: ghi log `model_load_failed`, server vẫn chạy và `/health` trả 503. Không có chế độ model giả, không nạp lại model trong request. Chỉ cài `requirements.txt` thì server luôn ở trạng thái này. Nạp xong ghi log `model_loaded` kèm thời gian.
+
+Test tiêm scorer giả qua `create_app(scorer=...)`, hoặc hàm nạp qua `create_app(loader=...)`; `loader` chỉ chạy khi app đi qua lifespan. `create_app()` không có loader nên không nạp model.
+
+## Giới hạn suy luận, timeout và shutdown
+- Mỗi request giữ một slot trong cả lúc giải mã, đọc EXIF và chấm điểm. Hết slot trả 503 `SERVICE_BUSY` ngay, không xếp hàng. `/health` không dùng slot nên vẫn trả lời khi đang bận.
+- Quá `REALCHECK_MODEL_TIMEOUT_S` trả 504 `MODEL_TIMEOUT`. Thread không hủy được CLIP, nên slot chỉ nhả khi việc thật sự kết thúc; trong lúc đó request mới nhận 503. Client ngắt kết nối cũng không nhả slot sớm.
+
+| Tầng | Timeout | Nguồn |
+|---|---|---|
+| API, model | 10 giây (`REALCHECK_MODEL_TIMEOUT_S`) | D11, approved tạm |
+| Nginx (`proxy_read_timeout`) | 15 giây | Đề xuất, chờ duyệt cùng D11; Nginx chưa có cấu hình |
+| UI Streamlit | 60 giây (`REALCHECK_API_TIMEOUT`) | Mặc định trong `streamlit/api_client.py` |
+
+Mỗi tầng phải dài hơn tầng phía sau. Thời gian khởi động và warmup không tính vào các timeout này.
+
+**Shutdown:** khi server dừng, việc chưa chạy bị hủy, việc đang chạy không bị chờ cũng không bị hủy. Python vẫn chờ thread đang chạy kết thúc trước khi thoát tiến trình.
+
+**Khi thread treo vĩnh viễn:**
+- Dấu hiệu: mọi `POST /v1/analyze` trả 503 `SERVICE_BUSY`, trước đó có request 504 trong log, còn `/health` vẫn trả 200.
+- Xử lý: restart tiến trình API (`docker compose restart api` khi đã có Compose). Tiến trình không tự thoát được, nên Docker sẽ gửi SIGKILL sau thời gian chờ dừng; chạy tay thì phải kill tiến trình.
+- Đây là giới hạn đã biết của D12, có test `xfail` trong `tests/test_inference.py`. Không có cơ chế tự phát hiện hay tự restart.
 
 ## Cấu hình
 Biến môi trường, giá trị mặc định xem `settings.py`. Lý do chọn: [`docs/decisions/realcheck-baseline.md`](../docs/decisions/realcheck-baseline.md).
@@ -41,6 +62,7 @@ Biến môi trường, giá trị mặc định xem `settings.py`. Lý do chọn
 | `REALCHECK_INFERENCE_SLOTS` | 1 | Số ảnh xử lý đồng thời |
 | `REALCHECK_THRESHOLD_LOW` | 0.3 | Dưới ngưỡng này là `likely_real` |
 | `REALCHECK_THRESHOLD_HIGH` | 0.7 | Trên ngưỡng này là `likely_ai` |
+| `REALCHECK_MODEL_PATH` | `models/clip_probe.joblib` | File model; cần file `.sha256` cùng tên bên cạnh |
 
 ## Input / Output
 - Input: `multipart/form-data`, đúng một file ở trường `file`. Chỉ nhận JPEG hoặc PNG một khung hình, xác định theo nội dung file, không theo đuôi. Tối đa 5.242.880 byte, 24 MP, cạnh dài 10.000 px; cạnh ngắn tối thiểu 256 px.

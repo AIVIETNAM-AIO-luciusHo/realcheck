@@ -6,11 +6,12 @@ Cách chạy (từ thư mục gốc repo):
 
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from functools import partial
 
 from fastapi import FastAPI
 
 from app.errors import register_error_handlers
-from app.inference import InferenceService, Scorer
+from app.inference import InferenceService, Scorer, load_model_scorer
 from app.logging import RequestContextMiddleware, configure_logging
 from app.routes import router
 from app.settings import Settings
@@ -44,4 +45,5 @@ def create_app(
     return app
 
 
-app = create_app()
+_settings = Settings()
+app = create_app(settings=_settings, loader=partial(load_model_scorer, _settings))
