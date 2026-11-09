@@ -31,6 +31,35 @@ Thiếu file, sai checksum, sai metadata hoặc thiếu torch: ghi log `model_lo
 
 Test tiêm scorer giả qua `create_app(scorer=...)`, hoặc hàm nạp qua `create_app(loader=...)`; `loader` chỉ chạy khi app đi qua lifespan. `create_app()` không có loader nên không nạp model.
 
+## Chạy bằng Docker
+Image chứa API, code trong `models/` và dependency ML (torch bản CPU). **Không** chứa model, dữ liệu hay trọng số CLIP: cả ba mount từ máy chủ lúc chạy, chỉ đọc. Build từ gốc repo:
+```bash
+docker build -t realcheck-api .
+```
+
+Cung cấp model cho container:
+
+| Mount vào | Từ máy chủ | Biến môi trường trong image |
+|---|---|---|
+| `/models` | Thư mục có `clip_probe.joblib` và `clip_probe.joblib.sha256` (thường là `models/`) | `REALCHECK_MODEL_PATH=/models/clip_probe.joblib` |
+| `/hf-cache` | Cache Hugging Face đã tải đúng revision CLIP (thường là `.cache/huggingface`) | `HF_HOME=/hf-cache`, `HF_HUB_OFFLINE=1` |
+
+Container không tải gì từ mạng lúc khởi động, nên trọng số CLIP phải được tải trước trên máy chủ (xem [`models/README.md`](../models/README.md)). Model khác tên thì đặt lại `-e REALCHECK_MODEL_PATH=/models/<tên>.joblib`, file `.sha256` cùng tên phải nằm cạnh.
+
+Chạy (PowerShell; bash thay `${PWD}` bằng `$PWD` và `` ` `` bằng `\`):
+```powershell
+docker run --rm -p 8000:8000 `
+  -v "${PWD}/models:/models:ro" `
+  -v "${PWD}/.cache/huggingface:/hf-cache:ro" `
+  --name realcheck-api realcheck-api
+```
+Kiểm tra: `curl http://localhost:8000/health` và mở `http://localhost:8000/docs`.
+
+- Không mount model thì container vẫn chạy, `/docs` trả 200, `/health` trả 503 và log `model_load_failed`. Healthcheck của image báo `unhealthy` trong trường hợp này.
+- Healthcheck gọi `/health` mỗi 30 giây, chờ 120 giây lúc khởi động để kịp nạp và warmup CLIP.
+- Container chạy bằng user không phải root (uid 10001), nên các file mount phải cho phép đọc.
+- **Kiểm tra với model thật hoàn tất ở ticket B3:** nạp `clip_probe.joblib` thật, warmup CLIP từ cache chỉ đọc và chấm điểm ảnh thật trong container chưa được kiểm.
+
 ## Giới hạn suy luận, timeout và shutdown
 - Mỗi request giữ một slot trong cả lúc giải mã, đọc EXIF và chấm điểm. Hết slot trả 503 `SERVICE_BUSY` ngay, không xếp hàng. `/health` không dùng slot nên vẫn trả lời khi đang bận.
 - Quá `REALCHECK_MODEL_TIMEOUT_S` trả 504 `MODEL_TIMEOUT`. Thread không hủy được CLIP, nên slot chỉ nhả khi việc thật sự kết thúc; trong lúc đó request mới nhận 503. Client ngắt kết nối cũng không nhả slot sớm.

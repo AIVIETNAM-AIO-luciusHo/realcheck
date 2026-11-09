@@ -1,0 +1,22 @@
+# Image chỉ cần requirements, app/ và code trong models/; model và dữ liệu mount lúc chạy.
+.git
+.github
+.cache
+.venv
+venv*
+**/__pycache__
+**/.pytest_cache
+.ruff_cache
+.env
+data
+docs
+specs
+.specify
+tests
+scripts
+streamlit
+locust
+nginx
+artifacts
+models/*.joblib
+models/*.sha256
