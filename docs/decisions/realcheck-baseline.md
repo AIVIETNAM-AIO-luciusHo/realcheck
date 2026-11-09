@@ -1,18 +1,33 @@
 # Quyết định kỹ thuật RealCheck
 
-Ghi các mục D01–D14 của `specs/000-realcheck-system-baseline/spec.md`. Phần API do Quang phụ trách; lựa chọn D08 của Kiệt được liên kết bên dưới. Các mục khác do người phụ trách bổ sung.
+Ghi các mục D01–D14 của `specs/000-realcheck-system-baseline/spec.md` (mục 11), cùng hợp đồng `score`, manifest và phạm vi nghiệm thu (MVP-01). Phần API do Quang phụ trách; lựa chọn D08 của Kiệt ở [ml-selection.md](ml-selection.md).
 
-Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã duyệt) hoặc `approved tạm` (đã duyệt để dùng, xem lại sau benchmark). Mục `proposed` có thể đổi khi review PR.
+Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã duyệt) hoặc `approved tạm` (đã duyệt để dùng, xem lại sau benchmark). Mục `proposed` có thể đổi khi review PR. Ghi một lựa chọn vào file này **không** làm nó thành `approved`: chỉ đổi trạng thái khi có người duyệt, ngày và lý do.
 
-| Mục | Trạng thái | Người đề xuất | Reviewer | Ngày |
-|---|---|---|---|---|
-| D05 Enum và lỗi | approved | Quang | Lực | 2026-11-04 |
-| D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 |
-| D07 Số pixel | approved | Quang | Lực | 2026-11-04 |
-| D11 Timeout | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 |
-| D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 |
-| D08 Ngưỡng score/hiển thị | proposed; Kiệt chọn 0.3/0.5/0.7 để triển khai, chờ review release | Kiệt | Lực/Loan | 2026-11-05 |
-| Hợp đồng `score` | proposed | Quang | Chờ Kiệt, Lực | 2026-11-04 |
+## Bảng trạng thái
+
+| Mục | Trạng thái | Người quyết định | Reviewer | Ngày | Còn chờ |
+|---|---|---|---|---|---|
+| D01 Split, seed | Chưa ghi quyết định | Loan | — | — | Loan chốt; hiện trạng ở [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
+| D02 Chuẩn hóa | Một phần đã chốt trong spec 001 | Kiệt | — | — | Alpha, ICC, subsampling chưa ghi |
+| D03 Probe metadata | Chưa ghi quyết định | Loan | Kiệt, Lực | — | Loan chốt probe |
+| D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
+| D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
+| D05 Lỗi gateway | proposed | Quang | Chờ Lực, Loan | 2026-11-09 | Duyệt mã mới trước khi sửa code |
+| D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 | — |
+| D06 Body dư multipart | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt 64 KiB |
+| D07 Số pixel | approved | Quang | Lực | 2026-11-04 | — |
+| D08 Ngưỡng | proposed; Kiệt chọn 0.3/0.5/0.7 để triển khai, chờ review release | Kiệt | Lực/Loan | 2026-11-05 | Review release |
+| D09 p95 | Chưa chốt | Lực | — | — | Sau benchmark MVP-09 |
+| D10 RPS, error budget, RSS | Chưa chốt | Lực | — | — | Sau benchmark MVP-09 |
+| D11 Timeout | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
+| D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
+| D13 Truy cập, rate limit | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt trước khi viết cấu hình Nginx (T024) |
+| D14 Profile tải | Chưa chốt | Lực | — | — | Lực chốt; `locust/baseline.conf` chỉ là đề xuất |
+| Hợp đồng `score` | proposed | Quang | Chờ Kiệt, Lực | 2026-11-04 | Kiệt, Lực xác nhận |
+| Manifest phục vụ model | Chưa chốt | Loan | Kiệt, Lực | — | Xem [mục Manifest](#manifest) |
+| Chính sách audit | Chưa chốt | Loan, Lực | Quang tổng hợp | — | Xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
+| Phạm vi M1/M2 | proposed | Quang | Chờ cả nhóm | 2026-11-09 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
 
 ## D05. Enum `verdict` và lỗi
 
@@ -51,9 +66,27 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 | 503 | `SERVICE_BUSY` | Hết slot suy luận |
 | 504 | `MODEL_TIMEOUT` | Quá thời gian xử lý |
 
-**Ảnh hưởng:** Streamlit dựa vào `verdict` và `error.code`; Nginx phải trả lỗi 413 và 429 cùng envelope.
+**Ảnh hưởng:** Streamlit dựa vào `verdict` và `error.code`; Nginx phải trả lỗi cùng envelope (xem mục dưới).
 
 **Ghi chú đã duyệt:** ranh giới 400 và 415 (file không phải ảnh là 400, ảnh sai định dạng là 415); ba mã `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INVALID_REQUEST` được thêm ngoài gợi ý của D05 để lỗi framework cùng định dạng.
+
+**Hạn chế đã biết:** JPEG nhúng nhiều ảnh (MPO, ví dụ gain map HDR từ một số điện thoại) bị Pillow nhận là `MPO` nhiều khung hình nên trả 415 theo đúng bảng trên. Chưa đo tỷ lệ ảnh điện thoại thật bị ảnh hưởng.
+
+### Lỗi do gateway trả (proposed, 2026-11-09)
+
+Đề xuất của Quang cho MVP-01. **Chưa sửa code:** chỉ thêm vào enum `ErrorCode` và `streamlit/` sau khi Lực, Loan duyệt, vì UI của Loan đọc `error.code`.
+
+| HTTP | `code` | Ai trả | Khi nào | `message` |
+|---|---|---|---|---|
+| 413 | `FILE_TOO_LARGE` (dùng lại) | Nginx | Body vượt `client_max_body_size` (D06) | Như bảng API |
+| 429 | `RATE_LIMITED` (mới) | Nginx | Vượt 10 request/giây mỗi IP (D13) | "Đang có quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại." |
+| 502 | `UPSTREAM_UNAVAILABLE` (mới) | Nginx | API không chạy hoặc từ chối kết nối | "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau." |
+| 504 | `GATEWAY_TIMEOUT` (mới) | Nginx | API không trả lời trong `proxy_read_timeout` | "Hệ thống xử lý quá lâu. Vui lòng thử lại sau." |
+
+- Cùng envelope `{"error": {code, message, request_id}}`, `Content-Type: application/json`.
+- `request_id`: Nginx tạo bằng `$request_id`, gửi sang API qua header `X-Request-ID` và trả lại trong header response. API chỉ nhận UUID, và `$request_id` (32 ký tự hex) được API ghi lại ở dạng UUID có gạch nối.
+- 429 kèm `Retry-After: 1` (D13). Các lỗi khác không gửi `Retry-After`.
+- `GATEWAY_TIMEOUT` khác `MODEL_TIMEOUT`: `MODEL_TIMEOUT` do API trả khi model quá D11; `GATEWAY_TIMEOUT` nghĩa là cả API không trả lời kịp. `proxy_read_timeout` phải dài hơn tổng thời gian API (D11), và timeout của UI dài hơn proxy.
 
 ## D06. Dung lượng file
 
@@ -61,7 +94,7 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Lý do:** trùng cách Nginx hiểu `5m`, tránh lệch giữa gateway và API.
 
-**Chưa chốt:** phần body dư cho multipart (64 hoặc 128 KiB) thuộc cấu hình Nginx.
+**Body dư cho multipart (proposed, 2026-11-09):** 64 KiB. Nginx đặt `client_max_body_size 5184k` (5.242.880 + 65.536 = 5.308.416 byte). Phần dư chỉ để chứa header multipart; file vẫn bị API giới hạn đúng 5.242.880 byte, body lọt qua Nginx nhưng file lớn hơn vẫn nhận 413 `FILE_TOO_LARGE` từ API.
 
 ## D07. Số pixel
 
@@ -75,7 +108,9 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Lựa chọn:** timeout model 10 giây (`REALCHECK_MODEL_TIMEOUT_S`).
 
-**Lưu ý:** chưa đo trên model thật. Timeout của Nginx và UI phải dài hơn timeout này. Thời gian khởi động và warmup tính riêng.
+**Mốc xem lại:** sau benchmark MVP-09 trên model thật. Kiệt đo local: startup + warmup khoảng 31,57 giây, một lượt score sau warmup 0,065–0,093 giây ([bàn giao ML](../ml-handoff.md)); chưa phải số đo trên server.
+
+**Lưu ý:** timeout của Nginx và UI phải dài hơn timeout này. Thời gian khởi động và warmup tính riêng.
 
 ## D12. Cơ chế suy luận
 
@@ -85,12 +120,90 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Hệ quả:** thread không hủy được CLIP đang chạy. Quá giờ trả 504 nhưng slot chỉ nhả khi việc thật sự kết thúc, nên trong lúc đó request mới nhận 503.
 
-**Lưu ý:** spec yêu cầu chọn sau benchmark CPU/RAM; xem lại khi có model thật.
+**Mốc xem lại:** sau benchmark CPU/RAM MVP-09. Dùng nhiều slot cần Kiệt xác nhận `Scorer` an toàn khi gọi từ nhiều thread.
+
+## D13. Truy cập và rate limit (proposed, 2026-11-09)
+
+**Lựa chọn đề xuất:**
+- Demo chạy HTTP cổng 80 trong mạng lab hoặc qua SSH tunnel; **không TLS**, không public.
+- Rate limit 10 request/giây theo IP kết nối thật (`$binary_remote_addr`). **Không tin `X-Forwarded-For`** do client tự gửi.
+- `burst=10 nodelay`: cho dồn tối đa 10 request rồi trả 429 ngay, không xếp hàng nên không làm tăng latency.
+- 429 kèm `Retry-After: 1`.
+
+**Hệ quả đã biết:** Streamlit gọi API qua Nginx từ server, nên mọi phiên UI dùng chung IP của container Streamlit và chung giới hạn 10 request/giây. Không tuyên bố giới hạn theo từng trình duyệt (spec 000 mục 10).
+
+**Còn mở:** URL lab cụ thể và máy chạy demo; danh sách IP proxy tin cậy để trống vì không có proxy nào đứng trước Nginx.
 
 ## Hợp đồng `score`
 
 Ngưỡng D08 và lựa chọn manifest/holdout mới được ghi tại [ml-selection.md](ml-selection.md). Bảng API/UI hiện có khớp các mốc Kiệt chọn; việc đó không thay thế xác nhận QA hoặc kết quả model-test.
 
-**Lựa chọn:** theo spec 001: `models/score.py`, `score(image) -> float`, `image` là PIL Image gốc đã giải mã, chưa chuẩn hóa. API giải mã một lần, đọc EXIF, gọi `score` và bắt `ImageTooSmall`.
+**Lựa chọn:** theo spec 001: `models/score.py`, `score(image) -> float`, `image` là PIL Image gốc đã giải mã, chưa chuẩn hóa. API giải mã một lần, đọc EXIF, gọi `score` và bắt `ImageTooSmall`. Không quay lại giao diện nhận bytes của spec 000.
 
 **Lý do:** spec 000 ghi `models/scoring.py` và nhận bytes, nhưng spec 001 mới hơn và có Clarification riêng cho điểm này. Nhận PIL Image cho phép API giải mã đúng một lần.
+
+**Hiện trạng:** `models/README.md` của Kiệt mô tả đúng hợp đồng này và `load_scorer()` đã có, nhưng chưa có xác nhận chính thức của Kiệt và Lực, nên vẫn `proposed`.
+
+**Còn hỏi Kiệt:** model nào phục vụ API (xem [mục Manifest](#manifest)); `Scorer` có an toàn khi gọi từ nhiều thread; có cách lấy thời gian normalize/CLIP/LR (FR-A06) không.
+
+## D01–D04. Dữ liệu và audit
+
+Hiện trạng trong mã, **không phải quyết định đã duyệt**:
+
+| Mục | Mã hiện tại | Còn thiếu |
+|---|---|---|
+| D01 | `scripts/prepare_data.py`: seed 42; GenImage 70/15/15; CIFAKE tách 15% train làm val, test giữ split gốc; `--split-from` giữ split cũ | Cách nhóm ảnh cha/near-duplicate; ghi lý do chọn |
+| D02 | Spec 001 Clarifications: xoay EXIF → RGB → `ImageOps.fit` BICUBIC 256×256 → JPEG 95 một lần; ảnh cạnh ngắn < 256 bị loại; version `1` | Alpha nền nào (hiện `convert("RGB")` bỏ kênh alpha), ICC, subsampling (đang dùng mặc định của Pillow) |
+| D03 | `scripts/metadata_audit.py` (bản nháp T007): `HistGradientBoostingClassifier` | Đăng ký probe trước khi xem audit-test |
+| D04 | Audit dùng cột `split` của manifest; control dương và control âm | Protocol riêng khỏi model-test, cỡ mẫu tối thiểu mỗi slice, số lần bootstrap |
+
+## Manifest
+
+Có ba manifest khác nhau. **Chưa chốt cái nào dùng để phục vụ model**; Loan chốt sau baseline và QA độc lập.
+
+| Manifest | Đường dẫn | Ảnh | SHA256 `labels.csv` | `norm_version` | Dùng cho |
+|---|---|---|---|---|---|
+| Main | `data/labels.csv` (trong Git) | 10.000 | `dac186082dd3506bc91acda7cdd6ed5bb68b083e2ed7f445d7e89edc16d67931` | Không có cột | Tham chiếu cũ; checker hiện tại FAIL vì thiếu cột |
+| Lần chạy ML đầu | `.cache/ml-run/labels.csv` (máy Kiệt) | 9.708 | `72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5` | 1 | Train `clip_probe.joblib` cũ, SHA256 `69810fd6…` |
+| Giữ split | `../outputs/realcheck-preserved-split/labels.csv` (máy Kiệt) | 9.708 | `4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad` | 1 | Kiệt chọn; train model mới, SHA256 `e5718345…`, `release_approved=false` |
+
+- 9.708 = 10.000 trừ 292 ảnh thật GenImage cạnh ngắn < 256 px, ghi trong `rejected_small.csv`. `prepare_data` còn ghi `rejected_invalid.csv` và `rejected_duplicate.csv`.
+- Baseline T012: `data/processed_baseline.sha256` (Loan, commit `68bb352`, 10.005 dòng). Đối chiếu độc lập T013 còn chờ.
+- Pillow 13.0.0 (ghim trong `requirements.txt`, nằm trong metadata của model).
+- **Hash phụ thuộc kiểu xuống dòng.** SHA256 của manifest main ở trên tính trên nội dung trong Git (LF). Trên Windows với `core.autocrlf=true`, file checkout ra là CRLF và có SHA256 `7a83b1c7…`. Khi chốt manifest cần ghi hash tính theo cách nào, hoặc thêm `.gitattributes` giữ LF cho file CSV.
+
+**Loan cần chốt:** đường dẫn, SHA256, `norm_version`, commit tạo ra, chính sách split và các file rejected của manifest được dùng; xác nhận model phục vụ API được train từ manifest đó.
+
+## Xung đột audit (spec 000 và spec 001)
+
+- Spec 000: post `A_eff > 0.55` chặn release.
+- Spec 001 FR-009 và T026: đề xuất `metadata_audit.py` chỉ cảnh báo, chờ Loan và Lực xác nhận.
+- Mã hiện tại: `metadata_audit.py` là cổng cứng, thoát mã 1 khi không đạt.
+
+**Phương án do MVP-01 nêu (proposed):** `metadata_audit.py` có thể chỉ cảnh báo theo T026, nhưng một release checker riêng vẫn chặn post `A_eff > 0.55`.
+
+Dù chọn phương án nào, các ca sau phải fail: `A_eff = max(AUROC, 1 − AUROC)` vượt 0.55; thiếu slice hoặc slice thiếu một lớp; dự đoán NaN; control dương hoặc control âm không hợp lệ.
+
+Nếu nhóm chọn khác, phải sửa spec và phạm vi nghiệm thu trước khi làm. Cần biên bản có Loan và Lực.
+
+## Phạm vi nghiệm thu M1 và M2
+
+Trạng thái: proposed, 2026-11-09.
+
+| Mốc | Phạm vi | Acceptance |
+|---|---|---|
+| M1 Demo localhost | `uvicorn` và Streamlit trên một máy, model thật, chưa qua Nginx/Docker | Các AC kiểm được không cần gateway: AC-01 đến AC-08, AC-10 đến AC-12, AC-19 đến AC-22, AC-27, AC-29 |
+| M2 Nghiệm thu core | Docker Compose, Nginx cổng 80, model và manifest đã chốt | AC-01 đến AC-24, AC-27, AC-29, cộng AC-25 (model-test) và AC-28 (hiệu năng, sau khi chốt D09, D10, D14) |
+
+- AC-26 (robustness nâng cao) nằm ngoài backlog này; nhóm phải xác nhận phạm vi.
+- AC-09, AC-23, AC-24 cần Nginx thật nên thuộc M2. AC-13 đến AC-18 thuộc dữ liệu và audit, kiểm trong lúc làm M1 nhưng nghiệm thu ở M2.
+- Spec 000 T001–T013 trong `tasks.md` chưa task nào được đánh dấu xong; chưa rà soát thì không coi là đã hoàn thành.
+
+## Việc cần từng người
+
+| Người | Việc |
+|---|---|
+| Lực | Duyệt mã lỗi gateway, body dư 64 KiB, D13; xác nhận hợp đồng `score`; cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau MVP-09 |
+| Loan | Xác nhận D05 và mã gateway cho UI; chốt D01, D03, D04 và manifest; cùng Lực chốt chính sách audit |
+| Kiệt | Xác nhận hợp đồng `score`; chọn model phục vụ API và gửi file kèm `.sha256`; trả lời câu hỏi về thread và timing; ghi phần còn thiếu của D02 |
+| Cả nhóm | Duyệt phạm vi M1/M2 và AC-26 |
