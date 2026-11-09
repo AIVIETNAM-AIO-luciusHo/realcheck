@@ -5,6 +5,7 @@ import json
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from threading import BoundedSemaphore
+from time import perf_counter
 from typing import TypeVar
 
 from PIL.Image import Image
@@ -25,6 +26,13 @@ def _log_failure(event: str, exc: Exception) -> None:
             ensure_ascii=False,
         )
     )
+
+
+def load_model_scorer(settings: Settings) -> Scorer:
+    """Nạp model thật và warmup; import trong hàm để import app/ không kéo numpy, torch."""
+    from models.score import DEFAULT_MODEL_PATH, load_scorer
+
+    return load_scorer(settings.model_path or DEFAULT_MODEL_PATH)
 
 
 class InferenceService:
@@ -66,11 +74,15 @@ class InferenceService:
 
     async def load(self, loader: Callable[[], Scorer]) -> Scorer | None:
         """Nạp trên worker thread; không có timeout vì D11 tính startup riêng."""
+        started = perf_counter()
         try:
-            return await asyncio.wrap_future(self._executor.submit(loader))
+            scorer = await asyncio.wrap_future(self._executor.submit(loader))
         except Exception as exc:  # noqa: BLE001 - mọi lỗi nạp đều là chưa ready (AC-20)
             _log_failure("model_load_failed", exc)
             return None
+        duration_ms = round((perf_counter() - started) * 1000, 1)
+        logger.info(json.dumps({"event": "model_loaded", "duration_ms": duration_ms}))
+        return scorer
 
     def close(self) -> None:
         """Không chờ việc đang chạy; việc chưa chạy bị hủy và trả lại slot."""
