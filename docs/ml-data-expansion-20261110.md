@@ -90,7 +90,7 @@ Dùng `HF_HOME=.cache/huggingface`, `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`
 
 ## Đồng bộ code mới trước khi push
 
-Nhánh `kiet/ml-data-expansion-20261110` đã pull/rebase lên `origin/main` tại `274f869ada646400d00f832b0aa3723c219d7742`, không có conflict. Commit code ML được kiểm là `48de1a0`. Chỉ đưa 14 file code/test/tài liệu của task vào nhánh; CSV Jira, dữ liệu/cache/weights và thay đổi Backend local ngoài task được giữ riêng.
+Nhánh `kiet/ml-data-expansion-20261110` đã pull/rebase lên `origin/main` tại `274f869ada646400d00f832b0aa3723c219d7742`, không có conflict. Commit code ML được kiểm là `48de1a0`. Lượt push mở rộng dữ liệu ban đầu gồm 14 file; lượt bổ sung [hồ sơ đủ bốn task](ml-recheck-20261110.md) đưa tổng diff lên 16 file ML. CSV Jira, dữ liệu/cache/weights và thay đổi Backend local ngoài task được giữ riêng. Implementation chuẩn hóa/CLIP/protocol của KAN-37/39/51 đã nằm trong base main, không phải thiếu code khi không xuất hiện lại trong diff.
 
 Kiểm tra local trên bản đã đồng bộ, Windows/Python 3.12.14, với `PYTHONUTF8=1`:
 
