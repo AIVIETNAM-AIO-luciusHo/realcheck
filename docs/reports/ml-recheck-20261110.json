@@ -1,0 +1,80 @@
+{
+  "created_at": "2026-11-10T08:54:45.559530+00:00",
+  "run": {
+    "id": "59a34561-7c00-4f98-b332-5f844478db44",
+    "started_at": "2026-11-10T08:53:58.825820+00:00",
+    "command": [
+      "python",
+      "-m",
+      "scripts.verify_ml",
+      "--labels",
+      "../outputs/realcheck-preserved-split/labels.csv",
+      "--features",
+      "../outputs/realcheck-ml-final-run/features",
+      "--model",
+      "../outputs/realcheck-ml-final-run/genimage.joblib",
+      "--report",
+      "outputs/ml-recheck-20261110/validation-parity.json"
+    ],
+    "git_commit": "9a3ca19e7f8eee273476bcf3ea8f3c4c6510c483",
+    "git_dirty": true,
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "model_sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+  "labels_sha256": "4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad",
+  "startup_and_warmup_seconds": 34.92013240000233,
+  "samples": [
+    {
+      "source": "genimage_glide",
+      "raw_path": "data/raw/genimage/glide/glide_train-00000_0061.png",
+      "split": "val",
+      "score": 0.9888923764228821,
+      "cached_feature_score": 0.9888923764228821,
+      "absolute_score_difference": 0.0,
+      "tensor_exact_match": true,
+      "scoring_seconds": 0.11195109999971464
+    },
+    {
+      "source": "genimage_midjourney",
+      "raw_path": "data/raw/genimage/midjourney/midjourney_train-00000_0007.png",
+      "split": "val",
+      "score": 0.6575105786323547,
+      "cached_feature_score": 0.6575107574462891,
+      "absolute_score_difference": 1.7881393432617188e-07,
+      "tensor_exact_match": true,
+      "scoring_seconds": 0.13642039999831468
+    },
+    {
+      "source": "genimage_real",
+      "raw_path": "data/raw/genimage/real/real_train-00000_0002.jpg",
+      "split": "val",
+      "score": 0.06939249485731125,
+      "cached_feature_score": 0.06939277797937393,
+      "absolute_score_difference": 2.8312206268310547e-07,
+      "tensor_exact_match": true,
+      "scoring_seconds": 0.09733129999949597
+    },
+    {
+      "source": "genimage_sd14",
+      "raw_path": "data/raw/genimage/sd14/sd14_data-00004_0018.png",
+      "split": "val",
+      "score": 0.9647643566131592,
+      "cached_feature_score": 0.9647641777992249,
+      "absolute_score_difference": 1.7881393432617188e-07,
+      "tensor_exact_match": true,
+      "scoring_seconds": 0.1066448999918066
+    }
+  ],
+  "synthetic_size_mode_smoke": {
+    "phone_sized_synthetic_4000x3000": 0.9760101437568665,
+    "grayscale": 0.9535679817199707,
+    "rgba": 0.9647643566131592
+  },
+  "small_image_rejected": true,
+  "clip_eval_and_frozen": true,
+  "test_split_evaluated": false,
+  "score_comparison_tolerance": 1e-05,
+  "latency_note": "Single-process local smoke timings, not p95 or load benchmark",
+  "scope": "Historical local validation-only parity smoke, dirty source; no independent QA approval"
+}

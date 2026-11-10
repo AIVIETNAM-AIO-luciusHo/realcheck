@@ -1,0 +1,205 @@
+{
+  "task": "GitHub #39",
+  "status": "sender_verified_pending_recipient_acceptance",
+  "serving_choice": "retain_existing_local_api_reference",
+  "model_sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+  "model_training_commit": "4a87e4ac3f14d34e0501303d47e25a02828363ce",
+  "training_git_dirty": false,
+  "seed": 42,
+  "dependencies": {
+    "python_training": "3.12.14",
+    "torch": "2.15.0",
+    "transformers": "5.22.1",
+    "sentence_transformers": "6.2.0",
+    "pillow": "13.0.0"
+  },
+  "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+  "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+  "normalization_version": "1",
+  "labels_sha256": "4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad",
+  "features_sha256": "1a08a1005c3ea3f6daf2172f944b97d51a6d3d33f73ec812558840d2cedfa217",
+  "hf_cache": {
+    "host_root": ".cache/huggingface",
+    "container_root": "/hf-cache",
+    "HF_HOME": "/hf-cache"
+  },
+  "archive_file": "realcheck-api-model-e571-20261110-v2.zip",
+  "archive_bytes": 24132,
+  "archive_sha256": "baf7bd5772bb2146c07ed0189413d99a26c170ee1cfdcd1747be55a1e6beea07",
+  "archive_crc_and_internal_sha256_verified": true,
+  "release_url": "https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/releases/tag/api-model-reference-e571-20261110",
+  "original_models_unchanged": true,
+  "api_smoke": {
+    "status": "local_real_model_api_smoke_passed",
+    "started_at": "2026-11-10T14:23:25.269622+00:00",
+    "finished_at": "2026-11-10T14:24:07.349274+00:00",
+    "source_code_commit": "274f869ada646400d00f832b0aa3723c219d7742",
+    "source_files_sha256": {
+      "app/main.py": "55de98061a6fbf2526f27dd1e6015c7ef49677f1526d4031d78f4ade3ca7c1c0",
+      "app/inference.py": "9bc42d83105ef939ef2106a474964be3e419fe65f1ef1d311e48473a62ba8b5b",
+      "app/routes.py": "398c9360ccdbf47611970ca40026eeace91a8b3edede2329efec4346a0dbcd96",
+      "app/uploads.py": "8ef07d429260f3683493a1f5ecde1d1b5a6e66f292d06a2daec03ecc6f5fdf48",
+      "app/settings.py": "352bf53f2feb197352529e1845bf67c52d345fde2d764ed02ade75e604c24385",
+      "models/score.py": "33b98fc44cb42d821ffbf0946d97f5e6343f258f60cdaa012d073344fcd89edf",
+      "models/normalize.py": "e1d3f862de9190985ffbbdb3668929644182ce0de9fca24e52efbfb4a56a740d",
+      "models/clip_input.py": "e2598305f418567b489c9ee7de391821c90cbe16d4877cf7ec303b1233361b51"
+    },
+    "model_sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+    "startup_health_status": 200,
+    "model_ready": true,
+    "loader_calls": 1,
+    "valid_analyze_requests": 4,
+    "http_scorer_calls": 4,
+    "invalid_image_status": 400,
+    "invalid_image_model_calls": 0,
+    "samples": [
+      {
+        "source": "genimage_real",
+        "split": "val",
+        "raw_sha256": "c5a86af3f9e695ab89a4c909e01cb47a6135406411f9dcb04475bb2e8d5f3847",
+        "http_status": 200,
+        "direct_score": 0.06939249485731125,
+        "api_score": 0.06939249485731125,
+        "absolute_difference": 0.0,
+        "verdict": "likely_real"
+      },
+      {
+        "source": "genimage_sd14",
+        "split": "val",
+        "raw_sha256": "538f33345e0861b24eb8e6c3f0984d62517f0d02e25c8a1cfb0dbbc1fe3e6dc1",
+        "http_status": 200,
+        "direct_score": 0.9647643566131592,
+        "api_score": 0.9647643566131592,
+        "absolute_difference": 0.0,
+        "verdict": "likely_ai"
+      },
+      {
+        "source": "genimage_glide",
+        "split": "val",
+        "raw_sha256": "cdca7ca43965eb0e0f9546473d46100ad9616e71b52ed97dffe500707b3a6bcd",
+        "http_status": 200,
+        "direct_score": 0.9888923764228821,
+        "api_score": 0.9888923764228821,
+        "absolute_difference": 0.0,
+        "verdict": "likely_ai"
+      },
+      {
+        "source": "genimage_midjourney",
+        "split": "val",
+        "raw_sha256": "5dd4821edd69f0dc4f44aceb2c2cc5fb3a4695b8fceb305d44997ec96578ba46",
+        "http_status": 200,
+        "direct_score": 0.6575105786323547,
+        "api_score": 0.6575105786323547,
+        "absolute_difference": 0.0,
+        "verdict": "uncertain"
+      }
+    ],
+    "maximum_score_difference": 0.0,
+    "tolerance": 1e-05,
+    "clip_frozen_and_eval": true,
+    "old_genimage_test_evaluated": false,
+    "container_or_target_machine_checked": false,
+    "recipient_acknowledged": false,
+    "independent_qa_approved": false,
+    "release_approved": false
+  },
+  "cli_smoke": {
+    "source_code_commit": "274f869ada646400d00f832b0aa3723c219d7742",
+    "command": "python -m models.score <original-genimage-real-validation-image> --model artifacts/api-reference/model/clip_probe.joblib",
+    "model_sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+    "output": "AI score: 0.06939249",
+    "finite_in_unit_interval": true,
+    "sender_machine_only": true,
+    "recipient_acknowledged": false
+  },
+  "stage_profile": {
+    "scope": "single-process offline validation-image diagnostic, not API per-request telemetry or p95",
+    "repeat": 5,
+    "samples": [
+      {
+        "normalize_ms": 2.916000026743859,
+        "clip_ms": 102.12709999177605,
+        "lr_ms": 0.41280000004917383,
+        "total_ms": 105.45590001856908,
+        "score": 0.06939249485731125
+      },
+      {
+        "normalize_ms": 2.50089998007752,
+        "clip_ms": 112.0717000158038,
+        "lr_ms": 0.7161999819800258,
+        "total_ms": 115.28879997786134,
+        "score": 0.06939249485731125
+      },
+      {
+        "normalize_ms": 3.3909000048879534,
+        "clip_ms": 100.42189998785034,
+        "lr_ms": 0.38270000368356705,
+        "total_ms": 104.19549999642186,
+        "score": 0.06939249485731125
+      },
+      {
+        "normalize_ms": 2.748700004303828,
+        "clip_ms": 95.63080000225455,
+        "lr_ms": 0.5030999891459942,
+        "total_ms": 98.88259999570437,
+        "score": 0.06939249485731125
+      },
+      {
+        "normalize_ms": 2.362300001550466,
+        "clip_ms": 105.68720000446774,
+        "lr_ms": 0.5850000015925616,
+        "total_ms": 108.63450000761077,
+        "score": 0.06939249485731125
+      }
+    ],
+    "median_ms": {
+      "normalize_ms": 2.748700004303828,
+      "clip_ms": 102.12709999177605,
+      "lr_ms": 0.5030999891459942,
+      "total_ms": 105.45590001856908
+    },
+    "score_contract_unchanged": true,
+    "FR_A06_api_stage_logging_implemented": false
+  },
+  "normalization_observation": {
+    "scope": "synthetic observation of unchanged normalization v1, not color-science approval",
+    "source_code_commit": "274f869ada646400d00f832b0aa3723c219d7742",
+    "normalization_version": "1",
+    "pillow": "13.0.0",
+    "jpeg_library_version": "8.0",
+    "input_rgba": [
+      200,
+      30,
+      10,
+      0
+    ],
+    "rgb_before_jpeg": [
+      200,
+      30,
+      10
+    ],
+    "decoded_rgb": [
+      201,
+      30,
+      10
+    ],
+    "output_icc_present": false,
+    "jpeg_sampling_code": 2,
+    "jpeg_sampling_observed": "4:2:0",
+    "explicit_subsampling_argument_in_normalizer": false,
+    "alpha_composited": false,
+    "icc_color_transform_in_normalizer": false,
+    "formal_group_approval": false
+  },
+  "recipient_acknowledged": false,
+  "independent_qa_approved": false,
+  "release_approved": false,
+  "jira_updated": false,
+  "limitations": [
+    "Sender-side Windows in-process API/CLI smoke only, not recipient-machine or Docker/Linux acceptance",
+    "Shared Scorer multithread inference not certified; retain one worker and one slot",
+    "Offline stage diagnostic does not implement API per-request stage logging FR-A06",
+    "No GenImage test rescored; historical 94.53% pertains only to 384 history-filtered samples",
+    "Jira updates pending connected account; task status table is a proposal, not a Jira transition"
+  ]
+}

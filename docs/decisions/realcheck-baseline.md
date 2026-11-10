@@ -9,7 +9,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | Mục | Trạng thái | Người quyết định | Reviewer | Ngày | Còn chờ |
 |---|---|---|---|---|---|
 | D01 Split, seed | Chưa ghi quyết định | Loan | — | — | Loan chốt; hiện trạng ở [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
-| D02 Chuẩn hóa | Một phần đã chốt trong spec 001 | Kiệt | — | — | Alpha, ICC, subsampling chưa ghi |
+| D02 Chuẩn hóa | Một phần đã chốt trong spec 001 | Kiệt | — | — | [Đã ghi hiện trạng alpha/ICC/subsampling](ml-api-handoff-39.md#d02-hành-vi-version-1-hiện-có); chờ review |
 | D03 Probe metadata | Chưa ghi quyết định | Loan | Kiệt, Lực | — | Loan chốt probe |
 | D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
@@ -24,7 +24,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
 | D13 Truy cập, rate limit | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt trước khi viết cấu hình Nginx (T024) |
 | D14 Profile tải | Chưa chốt | Lực | — | — | Lực chốt; `locust/baseline.conf` chỉ là đề xuất |
-| Hợp đồng `score` | proposed | Quang | Chờ Kiệt, Lực | 2026-11-04 | Kiệt, Lực xác nhận |
+| Hợp đồng `score` | proposed; ML đã ghi xác nhận kỹ thuật | Quang | Chờ Quang/Lực review | 2026-11-10 | [Xác nhận ML và bằng chứng](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml); chưa duyệt chung |
 | Manifest phục vụ model | Chưa chốt | Loan | Kiệt, Lực | — | Xem [mục Manifest](#manifest) |
 | Chính sách audit | Chưa chốt | Loan, Lực | Quang tổng hợp | — | Xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
 | Phạm vi M1/M2 | proposed | Quang | Chờ cả nhóm | 2026-11-09 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
@@ -120,7 +120,7 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Hệ quả:** thread không hủy được CLIP đang chạy. Quá giờ trả 504 nhưng slot chỉ nhả khi việc thật sự kết thúc, nên trong lúc đó request mới nhận 503.
 
-**Mốc xem lại:** sau benchmark CPU/RAM MVP-09. Dùng nhiều slot cần Kiệt xác nhận `Scorer` an toàn khi gọi từ nhiều thread.
+**Mốc xem lại:** sau benchmark CPU/RAM MVP-09. Kiệt chưa chứng nhận shared `Scorer` an toàn đa luồng; giữ một slot. [Trả lời và timing offline](ml-api-handoff-39.md#d12-và-fr-a06-trả-lời-câu-hỏi-pr-36); FR-A06 logging API còn chờ.
 
 ## D13. Truy cập và rate limit (proposed, 2026-11-09)
 
@@ -142,9 +142,9 @@ Ngưỡng D08 và lựa chọn manifest/holdout mới được ghi tại [ml-sel
 
 **Lý do:** spec 000 ghi `models/scoring.py` và nhận bytes, nhưng spec 001 mới hơn và có Clarification riêng cho điểm này. Nhận PIL Image cho phép API giải mã đúng một lần.
 
-**Hiện trạng:** `models/README.md` của Kiệt mô tả đúng hợp đồng này và `load_scorer()` đã có, nhưng chưa có xác nhận chính thức của Kiệt và Lực, nên vẫn `proposed`.
+**Hiện trạng:** Kiệt đã ghi [xác nhận kỹ thuật phía ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), kèm smoke model thật trên main. Chờ Quang/Lực review nên vẫn `proposed`, không tự ghi QA/release approved.
 
-**Còn hỏi Kiệt:** model nào phục vụ API (xem [mục Manifest](#manifest)); `Scorer` có an toàn khi gọi từ nhiều thread; có cách lấy thời gian normalize/CLIP/LR (FR-A06) không.
+**Trả lời phía ML:** chọn reference e571 cho local/lab; giữ một slot vì chưa chứng nhận đa luồng; gói có profiler offline, FR-A06 telemetry API chưa làm. Xem [bàn giao #39](../ml-api-model-handoff.md). Chờ nghiệm thu trên máy Quang và review chung.
 
 ## D01–D04. Dữ liệu và audit
 
@@ -153,13 +153,13 @@ Hiện trạng trong mã, **không phải quyết định đã duyệt**:
 | Mục | Mã hiện tại | Còn thiếu |
 |---|---|---|
 | D01 | `scripts/prepare_data.py`: seed 42; GenImage 70/15/15; CIFAKE tách 15% train làm val, test giữ split gốc; `--split-from` giữ split cũ | Cách nhóm ảnh cha/near-duplicate; ghi lý do chọn |
-| D02 | Spec 001 Clarifications: xoay EXIF → RGB → `ImageOps.fit` BICUBIC 256×256 → JPEG 95 một lần; ảnh cạnh ngắn < 256 bị loại; version `1` | Alpha nền nào (hiện `convert("RGB")` bỏ kênh alpha), ICC, subsampling (đang dùng mặc định của Pillow) |
+| D02 | Spec 001 Clarifications: xoay EXIF → RGB → `ImageOps.fit` BICUBIC 256×256 → JPEG 95 một lần; ảnh cạnh ngắn < 256 bị loại; version `1` | [Đã ghi quan sát v1](ml-api-handoff-39.md#d02-hành-vi-version-1-hiện-có): bỏ alpha, không chuyển/nhúng ICC, default Pillow quan sát 4:2:0; chờ duyệt chung |
 | D03 | `scripts/metadata_audit.py` (bản nháp T007): `HistGradientBoostingClassifier` | Đăng ký probe trước khi xem audit-test |
 | D04 | Audit dùng cột `split` của manifest; control dương và control âm | Protocol riêng khỏi model-test, cỡ mẫu tối thiểu mỗi slice, số lần bootstrap |
 
 ## Manifest
 
-Có ba manifest khác nhau. **Chưa chốt cái nào dùng để phục vụ model**; Loan chốt sau baseline và QA độc lập.
+Có ba manifest khác nhau. **Kiệt chọn manifest giữ split cho reference e571 local/lab** ([bàn giao](../ml-api-model-handoff.md)); xác nhận manifest/dữ liệu của Loan và QA độc lập vẫn còn chờ.
 
 | Manifest | Đường dẫn | Ảnh | SHA256 `labels.csv` | `norm_version` | Dùng cho |
 |---|---|---|---|---|---|
@@ -205,5 +205,5 @@ Trạng thái: proposed, 2026-11-09.
 |---|---|
 | Lực | Duyệt mã lỗi gateway, body dư 64 KiB, D13; xác nhận hợp đồng `score`; cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau MVP-09 |
 | Loan | Xác nhận D05 và mã gateway cho UI; chốt D01, D03, D04 và manifest; cùng Lực chốt chính sách audit |
-| Kiệt | Xác nhận hợp đồng `score`; chọn model phục vụ API và gửi file kèm `.sha256`; trả lời câu hỏi về thread và timing; ghi phần còn thiếu của D02 |
+| Kiệt | Đã ghi [lựa chọn model, contract, thread/timing và D02](../ml-api-model-handoff.md); theo dõi Quang xác nhận checksum/CLI và review chung |
 | Cả nhóm | Duyệt phạm vi M1/M2 và AC-26 |
