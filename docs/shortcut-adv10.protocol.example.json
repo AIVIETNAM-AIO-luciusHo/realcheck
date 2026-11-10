@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "proposed",
+  "code_commit": "REPLACE_WITH_CLEAN_COMMIT",
+  "dataset_root": "../..",
+  "model": {"path": "../../artifacts/api-reference/model/clip_probe.joblib", "sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494"},
+  "labels": {"path": "labels.csv", "sha256": "4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad"},
+  "history": [{"path": "history-labels.csv", "sha256": "REPLACE_WITH_HISTORY_HASH"}],
+  "exposure": "GenImage validation previously used for C/model selection; diagnostic only.",
+  "history_limitations": "Exact supplied manifests only; near-duplicates and undisclosed history not certified.",
+  "independent_qa_approved": false,
+  "profile": {"clip_model_id": "sentence-transformers/clip-ViT-B-32", "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f", "normalization_version": "1"},
+  "runtime": {"python": "3.12.14", "pillow": "13.0.0", "numpy": "2.4.6", "pandas": "3.1.0", "scikit-learn": "1.9.1", "joblib": "1.6.0", "torch": "2.15.0+cpu", "transformers": "5.22.1", "sentence-transformers": "6.2.0"},
+  "expected_counts": {"genimage_real": {"train": 1888, "val": 421}, "genimage_glide": {"train": 700, "val": 150}, "genimage_midjourney": {"train": 700, "val": 150}, "genimage_sd14": {"train": 700, "val": 150}},
+  "design": {
+    "arms": ["B", "J", "R", "JR"],
+    "jpeg": {"quality": 95, "subsampling": 2, "progressive": false, "optimize": false},
+    "resample": {"source": "genimage_glide", "size": [512, 512], "filter": "BICUBIC"},
+    "order": ["exif_rgb", "resample_if_R", "jpeg_if_J", "normalization_v1"],
+    "thresholds": {"binary": 0.5, "low": 0.3, "high": 0.7},
+    "bootstrap": {"replicates": 2000, "seed": 42, "confidence": 0.95},
+    "filesize": {"logreg_C": 1.0, "max_iter": 1000, "tree_depth": 3, "class_weight": "balanced"},
+    "metadata": {"probe": "HistGradientBoostingClassifier", "seed": 42, "features": 13, "unknown_category": "missing"}
+  }
+}

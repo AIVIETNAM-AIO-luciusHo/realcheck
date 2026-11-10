@@ -62,3 +62,7 @@ Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan
 
 `test_check_gateway.py` (KAN-54): chạy `scripts/check_gateway.py` với gateway giả (stdlib, thread, cổng 0, HTTP/1.1, backlog 128) và khẳng định đúng ca lỗi theo từng hành vi sai: thiếu 429, envelope/X-Request-ID sai ở 200/429/413, sai mã/status 413, 5xx hoặc ngắt kết nối trong flood, không phục hồi, Retry-After, header Server lộ, ca biên, upstream lộ/treo/không phục hồi (ca lỗi, vẫn in kết quả và ghi JSON), stdin đóng, cổng đóng và tham số thiếu (thoát 2). Chưa chạy với Nginx thật.
 
+
+## ADV-10 (#59)
+
+`test_shortcut_controls.py`: train/val isolation, raw/variant hashes, EXIF/JPEG/resample order, frozen/refit probe outputs, scorer parity/cache, grouped bootstrap v? saved-report consistency. Fixtures kh?ng c?n model, GPU ho?c m?ng.

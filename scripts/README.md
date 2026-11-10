@@ -57,3 +57,7 @@ python -m scripts.check_data --labels .cache/ml-preserve/labels.csv
 
 ## Lưu ý và giả định
 - Script phải chạy lại được và cho cùng kết quả.
+
+## ADV-10 (#59)
+
+`python -m scripts.shortcut_controls {prepare,run,summarize}`: ??i ch?ng JPEG/resample GLIDE, probe fit train v? ??nh gi? validation tr?n model kh?a. [Protocol, l?nh v? gi?i h?n](../docs/shortcut-adv10.md). Kh?ng ch?y CLI audit c? ?? m? test.

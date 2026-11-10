@@ -21,3 +21,7 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 - [Bổ sung quyết định D02/D12/score](decisions/ml-api-handoff-39.md): hiện trạng kiểm được, chờ review chung.
 - [JSON bàn giao](reports/ml-api-handoff-20261110.json), [JSON parity lịch sử](reports/ml-recheck-20261110.json).
 - Dữ liệu mở rộng/train candidate được review riêng tại [PR B #61](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/61); PR tài liệu không phụ thuộc PR B.
+
+## ??i ch?ng shortcut ADV-10
+
+- [Thi?t k? v? t?i l?p #59](shortcut-adv10.md): JPEG b? sung, GLIDE resample, model e571 kh?a, validation v? CI theo group.
