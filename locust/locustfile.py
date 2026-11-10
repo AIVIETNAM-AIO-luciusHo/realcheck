@@ -24,6 +24,7 @@ WARMUP_N = int(os.environ.get("RC_WARMUP_REQUESTS", "0"))
 META_ENV = ("commit", "image", "model", "profile", "config_hash", "client", "server")
 TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
+SCENARIOS = ("baseline", "rate_only", "stress", "recovery", "soak")
 _fh = None
 
 
@@ -31,9 +32,15 @@ _fh = None
 def _args(parser):
     # Tham số locust (đặt được trong file conf) thay cho biến môi trường: conf ghim kịch bản,
     # quên biến môi trường không thể chạy nhầm rate-only thành baseline.
-    parser.add_argument(
-        "--rc-scenario", choices=("baseline", "rate_only"), default="baseline"
-    )
+    parser.add_argument("--rc-scenario", choices=SCENARIOS, default="baseline")
+
+
+@events.init.add_listener
+def _check_scenario(environment, **_):
+    """Soak không có thời lượng mặc định (D14 chưa chốt): bắt buộc --run-time."""
+    opts = environment.parsed_options
+    if opts.rc_scenario == "soak" and not getattr(opts, "run_time", None):
+        raise SystemExit("rc-scenario soak cần --run-time (D14 chưa chốt: 30/60/120m)")
 
 
 _pool: list[tuple[Path, str]] = []

@@ -29,7 +29,7 @@ def _write(path, rows):
 
 
 def _mixed():
-    rows = [{"type": "meta", "commit": "abc123"}]
+    rows = [{"type": "meta", "commit": "abc123", "scenario": "baseline"}]
     # 10 request 200 với latency 100..1000 ms, mỗi giây một request
     rows += [_req(i, "200", 200, 100 * (i + 1)) for i in range(10)]
     rows += [_req(10 + i, "429", 429, 5, "RATE_LIMITED") for i in range(5)]
@@ -40,8 +40,21 @@ def _mixed():
     return rows
 
 
+GOOD_SLO = {
+    "p95_ms_max": 2000,
+    "rps200_min": 0.1,
+    "error_ratio_max": 0.5,
+    "rss_growth_pct_max": 10,
+    "recovery_criterion": "health 200 và request kế tiếp 200 trong 60 giây",
+    "workload": {"profile": "A", "payload_mix": "40/30/30", "warmup": "30s", "hardware": "x"},
+    "approved": True,
+    "approved_by": ["Lực", "Quang"],
+    "approved_date": "2026-11-05",
+}  # fmt: skip
+
+
 def _slo(tmp_path, **over):
-    slo = {"p95_ms_max": 2000, "rps200_min": 0.1, "error_ratio_max": 0.5} | over
+    slo = GOOD_SLO | over
     p = tmp_path / "slo.json"
     p.write_text(json.dumps(slo), encoding="utf-8")
     return p
@@ -150,7 +163,7 @@ def test_check_performance_thieu_slo_thoat_khac_0(tmp_path, capsys):
 @pytest.mark.parametrize("missing", check_performance.SLO_KEYS)
 def test_check_performance_slo_thieu_truong(tmp_path, capsys, missing):
     side = _write(tmp_path / "s.jsonl", _mixed())
-    slo = {"p95_ms_max": 2000, "rps200_min": 0.1, "error_ratio_max": 0.5}
+    slo = dict(GOOD_SLO)
     del slo[missing]
     (tmp_path / "slo.json").write_text(json.dumps(slo), encoding="utf-8")
     assert (
@@ -208,11 +221,19 @@ def test_check_performance_sidecar_hong(tmp_path):
         {"rps200_min": -1},
         {"error_ratio_max": -0.1},
         {"error_ratio_max": 1.5},
+        {"rss_growth_pct_max": None},
+        {"rss_growth_pct_max": -1},
+        {"approved": False},
+        {"approved": "true"},
+        {"approved_by": []},
+        {"approved_date": ""},
+        {"recovery_criterion": "  "},
+        {"workload": {"profile": "A"}},
     ],
 )
 def test_slo_gia_tri_khong_hop_le_thoat_2(tmp_path, capsys, bad):
     side = _write(tmp_path / "s.jsonl", _mixed())
-    slo = {"p95_ms_max": 2000, "rps200_min": 0.1, "error_ratio_max": 0.5} | bad
+    slo = GOOD_SLO | bad
     p = tmp_path / "slo.json"
     p.write_text(
         json.dumps(slo), encoding="utf-8"
@@ -432,6 +453,46 @@ def test_locustfile_voi_locust_that(need_locust):
     assert got["mix_ok"] == [{"jpeg": 40.0, "png": 0.0}, {"jpeg": 1.0, "png": 1.0}]
 
 
+def test_locust_kich_ban_moi_va_soak_can_run_time(need_locust):
+    code = """
+import argparse, types
+p = argparse.ArgumentParser(); m._args(p)
+def opts(**kw):
+    return types.SimpleNamespace(parsed_options=types.SimpleNamespace(**kw))
+def refused(**kw):
+    try:
+        m._check_scenario(opts(**kw)); return False
+    except SystemExit as e:
+        return "run-time" in str(e)
+print(json.dumps({
+    "scenarios": list(m.SCENARIOS),
+    "parse": [p.parse_args(["--rc-scenario", s]).rc_scenario for s in ("stress", "recovery", "soak")],
+    "wait": {s: list(m._wait_bounds(s)) for s in m.SCENARIOS},
+    "soak_no_time": refused(rc_scenario="soak", run_time=None),
+    "soak_zero": refused(rc_scenario="soak", run_time=0),
+    "soak_ok": not refused(rc_scenario="soak", run_time=1800),
+    "stress_no_time_ok": not refused(rc_scenario="stress", run_time=None),
+}))
+"""
+    got = _run_lf(code)
+    assert set(got["scenarios"]) == {
+        "baseline",
+        "rate_only",
+        "stress",
+        "recovery",
+        "soak",
+    }
+    assert got["parse"] == ["stress", "recovery", "soak"]
+    assert got["wait"]["rate_only"] == [0, 0]
+    assert all(
+        got["wait"][s] == [1, 3] for s in ("baseline", "stress", "recovery", "soak")
+    )
+    assert got["soak_no_time"] and got["soak_zero"] and got["soak_ok"]
+    assert got["stress_no_time_ok"]
+    # kịch bản mà check_performance chấp nhận phải là kịch bản locust có thật
+    assert set(check_performance.SCOPE_SCENARIO.values()) <= set(got["scenarios"])
+
+
 def test_slo_khong_phai_object(tmp_path):
     (tmp_path / "slo.json").write_text("[1, 2]", encoding="utf-8")
     side = _write(tmp_path / "s.jsonl", _mixed())
@@ -451,6 +512,15 @@ def test_conf_ghim_dung_kich_ban():
     assert "rc-scenario = baseline" in (conf / "baseline.conf").read_text(
         encoding="utf-8"
     )
+    for name in ("stress", "recovery", "soak"):
+        assert f"rc-scenario = {name}" in (conf / f"{name}.conf").read_text(
+            encoding="utf-8"
+        )
+    # soak không có thời lượng mặc định (D14 chưa chốt)
+    assert "run-time" not in "\n".join(
+        ln for ln in (conf / "soak.conf").read_text(encoding="utf-8").splitlines()
+        if not ln.startswith("#")
+    )  # fmt: skip
     assert "rc-scenario" not in (conf / "baseline.conf").read_text(
         encoding="utf-8"
     ).replace("rc-scenario = baseline", "")
