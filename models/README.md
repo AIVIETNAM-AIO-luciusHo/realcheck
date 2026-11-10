@@ -127,7 +127,7 @@ Khi đã duyệt, chạy đúng model/manifest đó vào thư mục output chưa
 python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-release/features --model .cache/ml-release/clip_probe.joblib --history-labels .cache/ml-run/labels.csv --lock .cache/ml-release/protocol.json --output-dir .cache/ml-release/test-result
 ```
 
-Đầu ra: `evaluation.json` có các trường báo cáo UI, `predictions.csv` có row_index/source/label/score/hash ảnh để dựng lại bảng mà không chấm test lại, và bản sao `protocol.json`. Accuracy nhị phân dùng toàn bộ N; vùng Chưa chắc lấy ngưỡng đã khóa, decided-only/coverage ghi riêng; AUROC source một lớp là null. Nếu không có ca đã kết luận thì decided_accuracy=null; UI đã nhận null và hiển thị “Không có ảnh nào được kết luận”, có regression test trong `tests/test_ui.py`. Accuracy dưới 0,90 vẫn lưu kết quả thật và CLI exit 1; chưa có đủ gate khác thì không coi quality pass là MVP release pass.
+Đầu ra: `evaluation.json` có các trường báo cáo UI, `predictions.csv` có row_index/source/label/score/hash ảnh để dựng lại bảng mà không chấm test lại, và bản sao `protocol.json`. Accuracy nhị phân dùng toàn bộ N; vùng Chưa chắc lấy ngưỡng đã khóa, decided-only/coverage ghi riêng; AUROC source một lớp là null. Nếu không có ca đã kết luận thì decided_accuracy=null; adapter UI của Loan cần xử lý trường hợp này (validator UI hiện chưa nhận null). Accuracy dưới 0,90 vẫn lưu kết quả thật và CLI exit 1; chưa có đủ gate khác thì không coi quality pass là MVP release pass.
 
 `protocol.json.used.json` được tạo độc quyền **trước** inference, kể cả lần lỗi; lần sau cùng protocol bị từ chối. Đây là chống chạy lại vô ý tại cùng đường dẫn, không phải registry toàn hệ thống. Không xóa marker hoặc copy protocol để lựa lần test đẹp hơn. Nếu lỗi kỹ thuật cần replay, giữ bằng chứng lần lỗi và xin reviewer thống nhất cách ghi nhận replay trước; không tune lại model/ngưỡng bằng test.
 
@@ -138,7 +138,3 @@ Ban đầu người dùng xác nhận chưa chốt manifest và chưa mở GenIm
 Đã train candidate `realcheck_mixed_v3` trên 9.936 ảnh, giữ CLIP/normalization và GenImage validation cũ; [số liệu, artifact và giới hạn](../docs/ml-data-expansion-20261110.md). `models.data_sources` khai báo source/label và dataset dùng chung cho extract/train/loader; mixed v3 nhận các nguồn GenImage, OpenFake và Community, không nhận CIFAKE vào fit. BigGAN/VQDM là audit-only; mixed v2 tiếp tục loại SD14. GenImage test vẫn chỉ qua protocol riêng; `train --evaluate-test` chỉ dành CIFAKE.
 
 `load_bundle`/`load_scorer` nhận bundle mixed có checksum/profile đúng; việc này không thay đường dẫn model, registry hay phê duyệt phục vụ của Backend. Candidate mới cải thiện Reddit nhưng giảm GenImage validation/core; chưa đề xuất thay artifact hiện hành.
-
-## Gói bàn giao API — GitHub #39
-
-[Hướng dẫn và evidence bàn giao](../docs/ml-api-model-handoff.md) chốt giữ reference GenImage `e571…69494` cho profile local/lab, đóng gói thành `model/clip_probe.joblib` + checksum và đã kiểm HTTP với model thật. Mixed candidate giữ riêng; artifact nằm ngoài Git. Phía nhận cần xác nhận checksum/startup trên máy đích; QA/release chưa được ghi approved.

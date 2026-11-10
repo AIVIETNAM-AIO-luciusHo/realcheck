@@ -246,5 +246,3 @@ PENDING_SETUP.md
 
 # Local dataset expansion images, caches and reports with machine-specific paths.
 outputs/data-expansion-20261110/
-outputs/api-model-handoff-20261110/
-artifacts/api-reference/

@@ -2,6 +2,10 @@
 
 Đã tải bổ sung, lọc dữ liệu và train một **model ứng viên** trên 9.936 ảnh. Model cải thiện trên mẫu Reddit và validation nguồn mới, nhưng giảm trên validation GenImage giữ nguyên và mẫu OpenFake core/test. Chưa đủ cơ sở thay model đang phục vụ hoặc nghiệm thu release. Toàn bộ số đo, hash và provenance đã bỏ đường dẫn cá nhân nằm trong [báo cáo JSON](reports/ml-data-expansion-20261110.json).
 
+**Phạm vi PR #61: chỉ KAN-44, mở rộng dữ liệu và train candidate thử nghiệm.** Bàn giao/chốt artifact cho API thuộc [issue #39](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/39), được xử lý ở nhánh riêng; PR này không hoàn thành hoặc đóng issue đó. Không tuyên bố hoàn tất KAN-37/39/51 qua PR này.
+
+`models/score.py` mở rộng danh sách dataset được loader chấp nhận sang mixed v2/v3 để kiểm/nạp candidate hợp lệ. Đây là thay đổi ở đường nạp model, dù không thay hành vi cho artifact GenImage hiện hành; cần được reviewer ML đánh giá. Không thay đường dẫn model mặc định, cấu hình API hoặc chọn candidate mới làm model phục vụ.
+
 ## Dữ liệu thực tế
 
 Tận dụng 18.332 ảnh hợp lệ đã tải ngày 08/11, gồm ảnh được chọn và dự phòng; tải thêm để có **28.007 ứng viên hợp lệ**. Đây là pool để lọc/lấy mẫu, không phải số ảnh fit. 157 trường hợp tải bổ sung bị loại ở bước giải mã/kích thước; các ảnh bị loại của lần tải cũ vẫn giữ nhật ký riêng.
@@ -90,7 +94,7 @@ Dùng `HF_HOME=.cache/huggingface`, `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`
 
 ## Đồng bộ code mới trước khi push
 
-Nhánh `kiet/ml-data-expansion-20261110` đã pull/rebase lên `origin/main` tại `274f869ada646400d00f832b0aa3723c219d7742`, không có conflict. Commit code ML được kiểm là `48de1a0`. Lượt push mở rộng dữ liệu ban đầu gồm 14 file; lượt bổ sung [hồ sơ đủ bốn task](ml-recheck-20261110.md) đưa tổng diff lên 16 file ML. CSV Jira, dữ liệu/cache/weights và thay đổi Backend local ngoài task được giữ riêng. Implementation chuẩn hóa/CLIP/protocol của KAN-37/39/51 đã nằm trong base main, không phải thiếu code khi không xuất hiện lại trong diff.
+Nhánh `kiet/ml-data-expansion-20261110` đã pull/rebase lên `origin/main` tại `274f869ada646400d00f832b0aa3723c219d7742`, không có conflict. Commit code ML được kiểm là `48de1a0`. Sau review, hồ sơ bàn giao #39 và rà soát bốn task được tách khỏi diff, giữ 14 file cho KAN-44. CSV Jira, dữ liệu/cache/weights và thay đổi Backend local ngoài task được giữ riêng. Việc implementation cũ đã có trên main không phải bằng chứng PR #61 đóng các task khác.
 
 Kiểm tra local trên bản đã đồng bộ, Windows/Python 3.12.14, với `PYTHONUTF8=1`:
 

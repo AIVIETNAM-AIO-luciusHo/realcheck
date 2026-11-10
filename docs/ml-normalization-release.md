@@ -4,8 +4,6 @@ Nguồn đồng bộ ban đầu: `origin/main` tại `9364fdb`; cập nhật đ�
 
 **Đã chạy thử nghiệm theo yêu cầu của Kiệt; chưa nghiệm thu release:** sau khi được thông báo QA độc lập còn chờ, người dùng yêu cầu train/test ngay. KAN-44 đã trích features và train model mới; KAN-51 đã chấm một lần trên holdout lọc lịch sử, đạt **94,53%/384 ảnh**. Protocol ghi đúng user authorization và QA độc lập chưa duyệt. Xem [biên bản kết quả thật](ml-final-experiment.md); không chuyển các gate release khác thành approved.
 
-Rà soát ngày 10/11/2026: [kết quả kiểm lại bốn task](ml-recheck-20261110.md). Phần triển khai ML chưa phát hiện lỗi mới trong các kiểm tra đã chạy; UI đã xử lý `decided_accuracy=null`. Các bước chuẩn bị và số kiểm thử ban đầu bên dưới là lịch sử, không phải trạng thái chưa thực thi của candidate hiện tại.
-
 | Jira | Phần thực hiện | Điều kiện còn lại |
 |---|---|---|
 | [KAN-37](https://quangtadang4206.atlassian.net/browse/KAN-37) | T005/T019 spec 001: rà soát normalize hiện có, kiểm JPEG95 một lần, EXIF trước resize, 4000×3000, 255/256 và CIFAKE. Không đổi tham số/version 1. | Loan/Lực review theo phân công; baseline thật T012/T013 là task dữ liệu/QA riêng. |
@@ -23,7 +21,7 @@ Protocol ghi exact hash model, labels, features, manifest features, profile/vers
 
 ## Manifest và test đang giữ nguyên
 
-Cập nhật quyết định của Kiệt: chọn candidate giữ split từ bản 10.000. Bộ 9.708 cũ vẫn giữ để tái lập, không phải manifest mới đã chọn. Holdout lọc lịch sử còn 384 ảnh, đã được chấm một lần với accuracy 94,53%. Xem [manifest/ngưỡng/holdout đã chọn](decisions/ml-selection.md). Các số 856 dưới đây thuộc bộ QA cũ, không dùng làm N test của candidate mới.
+Cập nhật quyết định của Kiệt: chọn candidate giữ split từ bản 10.000. Bộ 9.708 cũ vẫn giữ để tái lập, không phải manifest mới đã chọn. Holdout lọc lịch sử còn 384 ảnh; chưa tính score model. Xem [manifest/ngưỡng/holdout đã chọn](decisions/ml-selection.md). Các số 856 dưới đây thuộc bộ QA cũ, không dùng làm N test của candidate mới.
 
 - Manifest chính trên main: 10.000 ảnh, chưa có norm_version. Bộ thí nghiệm riêng: 9.708 ảnh, gồm 4.000 CIFAKE và 5.708 GenImage, loại 292 real ảnh nhỏ.
 - Bộ 9.708 có 856 GenImage test chưa chấm điểm. 1.702 ảnh còn lại đổi split so với manifest cũ; chưa tự xác nhận holdout độc lập đối với mọi lần train trước của cả nhóm.
@@ -34,25 +32,25 @@ Cập nhật quyết định của Kiệt: chọn candidate giữ split từ b�
 
 Phản hồi của Loan là giữ ảnh cũ và ghi riêng ảnh không dùng. Nhánh ML chuẩn bị chế độ `--split-from` để tạo bản ứng viên giữ nguyên split của ảnh còn hợp lệ; không coi tin nhắn này là phê duyệt toàn bộ manifest/QA/holdout. Raw 10.000 ảnh, manifest cũ và bộ QA 9.708 dùng cho model/báo cáo cũ giữ nguyên. Bản ứng viên riêng có 9.708 ảnh, 292 ảnh nhỏ ghi rejected; không ảnh hợp lệ nào đổi split so với bản 10.000.
 
-Baseline T012 của Loan đã có trên main (PR #24); 10.000 hash khớp tham chiếu code cũ đã tái lập, nhưng chưa thay việc review nghiệm thu T013. Manifest ứng viên mới không phải holdout chưa từng tiếp xúc: trong 849 GenImage test có 383 ảnh từng ở train và 82 ở validation của lần QA cũ. Lần chạy sau đó đã train trên candidate và chỉ chấm 384 ảnh còn lại sau khi lọc lịch sử. Chi tiết chuẩn bị ở [ml-preserved-split.md](ml-preserved-split.md), kết quả thực thi ở [ml-final-experiment.md](ml-final-experiment.md).
+Baseline T012 của Loan đã có trên main (PR #24); 10.000 hash khớp tham chiếu code cũ đã tái lập, nhưng chưa thay việc review nghiệm thu T013. Manifest ứng viên mới không phải holdout chưa từng tiếp xúc: trong 849 GenImage test có 383 ảnh từng ở train và 82 ở validation của lần QA cũ. Chưa train lại hoặc chấm điểm test trên bản này. Chi tiết ở [ml-preserved-split.md](ml-preserved-split.md).
 
 ## Chạy và bàn giao
 
 Lệnh extract/train và hai bước prepare/evaluate protocol nằm ở [models/README.md](../models/README.md). Loan có thể dùng output evaluation.json/predictions của lớp ML để làm adapter UI tại MVP-03; không cần một lần train hoặc chấm test độc lập thứ hai trong scripts/evaluate.py.
 
-Trường hợp toàn bộ mẫu là Chưa chắc, `decided_accuracy=null` (không có mẫu để tính). Validator UI đã nhận null và hiển thị “Không có ảnh nào được kết luận”; regression được kiểm bằng `test_evaluation_uncertainty_all_images_has_no_decided_accuracy`. Không đổi null thành 0 hoặc 100% để ép UI nhận. Các trường version/hash, thresholds, test và by_source giữ cấu trúc báo cáo đã mô tả trong README UI.
+Trường hợp toàn bộ mẫu là Chưa chắc, `decided_accuracy=null` (không có mẫu để tính). Validator UI hiện yêu cầu trường này là số; Loan cần cho phép null và hiển thị “chưa có mẫu đã kết luận” khi nối báo cáo ở MVP-03/MVP-06. Không đổi null thành 0 hoặc 100% để ép UI nhận. Các trường version/hash, thresholds, test và by_source giữ cấu trúc báo cáo đã mô tả trong README UI.
 
 Giữ artifacts/protocol thực trong thư mục output không đưa vào commit tự động. Khi công bố báo cáo, kiểm đường dẫn cá nhân trong run_info, giữ nguyên bản provenance gốc ở gói QA và chỉ công bố bản đã ẩn đường dẫn có ghi chú. Joblib cần checksum và nguồn tin cậy; checksum không xác thực tác giả.
 
 95,68% vẫn là validation chọn C. Post metadata hằng/A_eff=0,50 chưa chứng minh không có shortcut; baseline real-GLIDE 84,54% là số của cohort cũ đã báo. Không tự đưa số này thành kết quả của manifest phát hành mới. JPEG ghost T027 vẫn chờ xác nhận/triển khai.
 
-## Kết quả kiểm chứng local ban đầu (lưu lịch sử)
+## Kết quả kiểm chứng local
 
 - Windows, Python 3.12.14; Ruff check và format đạt.
 - Bộ test repo: 122 passed, coverage app 98,31%. Các ca mới dùng dữ liệu tổng hợp, không đọc điểm GenImage test.
 - Chạy riêng 35 test từ nhánh `luc/qa-check-normalization` (normalize, normalize_large, too_small, score_normalization, extract_features) trên code ML mới: 35 passed. File test nằm ngoài repo để giữ quyền triển khai/review của Lực; chưa thay biên bản QA trên máy Lực.
 - Kiểm model CLIP thật bằng `scripts.verify_ml` trên một ảnh validation mỗi nguồn GenImage: JPEG khớp bytes, tensor train/serve khớp từng phần tử, sai khác score lớn nhất `3,3527612686157227e-7` dưới tolerance `1e-5`; encoder frozen/eval, ảnh nhỏ bị từ chối, smoke 4000×3000/grayscale/RGBA đạt.
-- Ở lần kiểm ban đầu, protocol cho bộ thí nghiệm 9.708 ảnh được chuẩn bị với trạng thái proposed và evidence trống. Lần train/test theo user authorization sau đó đã hoàn tất, xem biên bản kết quả thật ở đầu tài liệu; manifest phát hành vẫn chưa được nghiệm thu.
+- Chuẩn bị protocol thật cho bộ thí nghiệm 9.708 ảnh thành công, trạng thái proposed và evidence trống; model-test chưa chạy. Chưa train lại trên manifest phát hành chưa được chốt.
 
 Lệnh kiểm model thật (report lưu ngoài repo) tương đương:
 
