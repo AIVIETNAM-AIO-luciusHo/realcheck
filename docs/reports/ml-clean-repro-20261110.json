@@ -1,0 +1,339 @@
+{
+  "scope": "clean-code training reproduction from locked existing feature cache; no reacquisition or new test evaluation",
+  "run": {
+    "id": "f059d829-6a10-49c7-9fc7-8881cd56ca03",
+    "started_at": "2026-11-10T14:18:09.778017+00:00",
+    "finished_at": "2026-11-10T14:18:34.900387+00:00",
+    "elapsed_seconds": 25.014622400020016,
+    "git_commit": "e4b6d29018144d86c515262750a0a28aa56835f4",
+    "git_dirty": false,
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "source_resolution": "PYTHONSAFEPATH=1 and PYTHONPATH set to clean PR worktree; module import location and clean Git state asserted before fit; cwd remains original workspace for existing relative data paths",
+  "environment": {
+    "OMP_NUM_THREADS": "4"
+  },
+  "dataset": {
+    "version": "realcheck_mixed_v3",
+    "hash": "2997cdb9a7899f6daa4807fe024b87bf4150ef2286473676fa59d31ef2a22c5d"
+  },
+  "model": {
+    "version": "sentence-transformers/clip-ViT-B-32+LogisticRegression",
+    "hash": "7164eeca27ce1d30f73ed70451cafd2a4c26423352a04a2cf44ff26685e19678"
+  },
+  "metadata": {
+    "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+    "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+    "feature_dim": 512,
+    "normalize_embeddings": true,
+    "pillow_version": "13.0.0",
+    "norm_version": "1",
+    "dataset": "realcheck_mixed_v3",
+    "labels_sha256": "2997cdb9a7899f6daa4807fe024b87bf4150ef2286473676fa59d31ef2a22c5d",
+    "features_sha256": "e27c23fe5708108f2c7309e5a8287cff4eaab905a5631cacbd56f301412356af",
+    "seed": 42,
+    "C": 10.0,
+    "split_counts": {
+      "train": 9936,
+      "val": 1860,
+      "test": 849
+    }
+  },
+  "dependencies": {
+    "numpy": "2.4.6",
+    "pillow": "13.0.0",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0",
+    "torch": "2.15.0",
+    "transformers": "5.22.1",
+    "sentence-transformers": "6.2.0"
+  },
+  "selection": {
+    "metric": "validation_accuracy",
+    "candidates": [
+      {
+        "C": 0.01,
+        "validation_accuracy": 0.7559139784946236
+      },
+      {
+        "C": 0.1,
+        "validation_accuracy": 0.7978494623655914
+      },
+      {
+        "C": 1.0,
+        "validation_accuracy": 0.8290322580645161
+      },
+      {
+        "C": 10.0,
+        "validation_accuracy": 0.8403225806451613
+      },
+      {
+        "C": 100.0,
+        "validation_accuracy": 0.8354838709677419
+      }
+    ],
+    "C": 10.0
+  },
+  "thresholds": {
+    "binary": 0.5,
+    "low": 0.3,
+    "high": 0.7
+  },
+  "validation": {
+    "n": 1860,
+    "accuracy": 0.8403225806451613,
+    "precision": 0.851409978308026,
+    "recall": 0.8306878306878307,
+    "auroc": 0.9172648683031196,
+    "confusion_matrix": [
+      [
+        778,
+        137
+      ],
+      [
+        160,
+        785
+      ]
+    ],
+    "uncertain_n": 386,
+    "uncertain_rate": 0.2075268817204301,
+    "decided_accuracy": 0.9029850746268657,
+    "decided_n": 1474,
+    "decided_coverage": 0.7924731182795699,
+    "false_positive_rate": 0.14972677595628414,
+    "false_negative_rate": 0.1693121693121693,
+    "likely_real_false_negative_rate": 0.07724867724867725,
+    "likely_ai_false_positive_rate": 0.07650273224043716
+  },
+  "validation_by_source": [
+    {
+      "name": "community_ai",
+      "n": 288,
+      "accuracy": 0.7986111111111112,
+      "precision": 1.0,
+      "recall": 0.7986111111111112,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          58,
+          230
+        ]
+      ],
+      "uncertain_n": 62,
+      "uncertain_rate": 0.2152777777777778,
+      "decided_accuracy": 0.8672566371681416,
+      "decided_n": 226,
+      "decided_coverage": 0.7847222222222222,
+      "false_positive_rate": null,
+      "false_negative_rate": 0.2013888888888889,
+      "likely_real_false_negative_rate": 0.10416666666666667,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "community_real",
+      "n": 349,
+      "accuracy": 0.9255014326647565,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          323,
+          26
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "uncertain_n": 43,
+      "uncertain_rate": 0.12320916905444126,
+      "decided_accuracy": 0.9738562091503268,
+      "decided_n": 306,
+      "decided_coverage": 0.8767908309455588,
+      "false_positive_rate": 0.07449856733524356,
+      "false_negative_rate": null,
+      "likely_real_false_negative_rate": null,
+      "likely_ai_false_positive_rate": 0.022922636103151862
+    },
+    {
+      "name": "genimage_glide",
+      "n": 150,
+      "accuracy": 0.9,
+      "precision": 1.0,
+      "recall": 0.9,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          15,
+          135
+        ]
+      ],
+      "uncertain_n": 29,
+      "uncertain_rate": 0.19333333333333333,
+      "decided_accuracy": 0.9834710743801653,
+      "decided_n": 121,
+      "decided_coverage": 0.8066666666666666,
+      "false_positive_rate": null,
+      "false_negative_rate": 0.1,
+      "likely_real_false_negative_rate": 0.013333333333333334,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "genimage_midjourney",
+      "n": 150,
+      "accuracy": 0.8666666666666667,
+      "precision": 1.0,
+      "recall": 0.8666666666666667,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          20,
+          130
+        ]
+      ],
+      "uncertain_n": 25,
+      "uncertain_rate": 0.16666666666666666,
+      "decided_accuracy": 0.928,
+      "decided_n": 125,
+      "decided_coverage": 0.8333333333333334,
+      "false_positive_rate": null,
+      "false_negative_rate": 0.13333333333333333,
+      "likely_real_false_negative_rate": 0.06,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "genimage_real",
+      "n": 421,
+      "accuracy": 0.8598574821852731,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          362,
+          59
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "uncertain_n": 99,
+      "uncertain_rate": 0.23515439429928742,
+      "decided_accuracy": 0.9192546583850931,
+      "decided_n": 322,
+      "decided_coverage": 0.7648456057007126,
+      "false_positive_rate": 0.14014251781472684,
+      "false_negative_rate": null,
+      "likely_real_false_negative_rate": null,
+      "likely_ai_false_positive_rate": 0.06175771971496437
+    },
+    {
+      "name": "genimage_sd14",
+      "n": 150,
+      "accuracy": 0.84,
+      "precision": 1.0,
+      "recall": 0.84,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          24,
+          126
+        ]
+      ],
+      "uncertain_n": 34,
+      "uncertain_rate": 0.22666666666666666,
+      "decided_accuracy": 0.9051724137931034,
+      "decided_n": 116,
+      "decided_coverage": 0.7733333333333333,
+      "false_positive_rate": null,
+      "false_negative_rate": 0.16,
+      "likely_real_false_negative_rate": 0.07333333333333333,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "openfake_ai",
+      "n": 207,
+      "accuracy": 0.7922705314009661,
+      "precision": 1.0,
+      "recall": 0.7922705314009661,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          43,
+          164
+        ]
+      ],
+      "uncertain_n": 50,
+      "uncertain_rate": 0.24154589371980675,
+      "decided_accuracy": 0.8662420382165605,
+      "decided_n": 157,
+      "decided_coverage": 0.7584541062801933,
+      "false_positive_rate": null,
+      "false_negative_rate": 0.20772946859903382,
+      "likely_real_false_negative_rate": 0.10144927536231885,
+      "likely_ai_false_positive_rate": null
+    },
+    {
+      "name": "openfake_real",
+      "n": 145,
+      "accuracy": 0.6413793103448275,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auroc": null,
+      "confusion_matrix": [
+        [
+          93,
+          52
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "uncertain_n": 44,
+      "uncertain_rate": 0.30344827586206896,
+      "decided_accuracy": 0.6435643564356436,
+      "decided_n": 101,
+      "decided_coverage": 0.696551724137931,
+      "false_positive_rate": 0.3586206896551724,
+      "false_negative_rate": null,
+      "likely_real_false_negative_rate": null,
+      "likely_ai_false_positive_rate": 0.2482758620689655
+    }
+  ],
+  "test": null,
+  "original_experiment_model_sha256": "26b8882963b9224eb72d2010b46dd390dbd3545173c40c4e452908fbd596c28d",
+  "model_bytes_identical_to_original": false,
+  "original_test_metrics_reused_as_clean_model_metrics": false,
+  "limitations": [
+    "Acquisition/normalization provenance remains the original recorded dirty run; only training was reproduced on clean code",
+    "Same C and binary validation accuracy reproduced; model bytes and AUROC differ slightly, so archived OpenFake test metrics remain attached only to original model 26b888...",
+    "No OpenFake or old GenImage test predictions were run in this reproduction",
+    "Independent data QA and missing cohort history still pending; no production approval"
+  ],
+  "original_validation_auroc": 0.917268337814786,
+  "validation_report_sha256": "838008f3231255e86f4525db2759f1b38a5f182aa4cef65fece8ddfbdf2eac05"
+}

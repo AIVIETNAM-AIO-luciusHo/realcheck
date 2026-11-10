@@ -94,7 +94,7 @@ Dùng `HF_HOME=.cache/huggingface`, `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`
 
 ## Đồng bộ code mới trước khi push
 
-Nhánh `kiet/ml-data-expansion-20261110` đã pull/rebase lên `origin/main` tại `274f869ada646400d00f832b0aa3723c219d7742`, không có conflict. Commit code ML được kiểm là `48de1a0`. Sau review, hồ sơ bàn giao #39 và rà soát bốn task được tách khỏi diff, giữ 14 file cho KAN-44. CSV Jira, dữ liệu/cache/weights và thay đổi Backend local ngoài task được giữ riêng. Việc implementation cũ đã có trên main không phải bằng chứng PR #61 đóng các task khác.
+Nhánh `kiet/ml-data-expansion-20261110` đã pull/rebase lên `origin/main` tại `274f869ada646400d00f832b0aa3723c219d7742`, không có conflict. Commit code ML được kiểm là `48de1a0`. Sau review, hồ sơ bàn giao #39 và rà soát bốn task được tách khỏi diff; cùng report tái lập sạch, PR B có 15 file cho KAN-44. CSV Jira, dữ liệu/cache/weights và thay đổi Backend local ngoài task được giữ riêng. Việc implementation cũ đã có trên main không phải bằng chứng PR #61 đóng các task khác.
 
 Kiểm tra local trên bản đã đồng bộ, Windows/Python 3.12.14, với `PYTHONUTF8=1`:
 
@@ -109,5 +109,17 @@ git diff origin/main...HEAD --check    → passed
 Hai skip là dependency Locust tùy chọn; xfail scorer treo vô hạn đã có trên main. Lượt chạy Windows mặc định gặp CP1252 khi một test Docker mới của main đọc file CI tiếng Việt; cùng test và toàn bộ suite đều qua khi chạy UTF-8, không sửa Dockerfile/test ngoài phạm vi. Đây là kiểm tra code sau tích hợp, không phải lần train hay mở lại model-test; provenance và số đo thí nghiệm trong JSON giữ nguyên. Chưa thay kiểm chứng này bằng CI từ xa hoặc build Docker/Linux mới.
 
 ## Kết luận sử dụng
+
+### Tái lập bước train trên commit sạch sau review
+
+Đã fit lại từ đúng labels/features đã khóa trên code commit sạch **`e4b6d29018144d86c515262750a0a28aa56835f4`**, `dirty=false`, seed 42, `OMP_NUM_THREADS=4`. [Bằng chứng tái lập](reports/ml-clean-repro-20261110.json) ghi import source từ worktree sạch qua `PYTHONSAFEPATH=1`/`PYTHONPATH`; cwd chỉ dùng để resolve đường dẫn dữ liệu cũ. Không tải/trích lại dữ liệu hoặc mở test.
+
+Kết quả vẫn chọn **C=10**, validation **84,032258%/1.860**, cùng confusion matrix. Model tái lập SHA **`7164eeca27ce1d30f73ed70451cafd2a4c26423352a04a2cf44ff26685e19678`** khác bytes bản gốc; AUROC là **0,9172648683** so với **0,9172683378** của lần gốc. Không gán số OpenFake test đã lưu cho model tái lập, không đổi model phục vụ. Report gốc tiếp tục giữ đúng `dirty=true`; provenance của acquisition/normalization chưa được biến thành clean run bằng bước fit lại này.
+
+Lệnh chạy từ workspace dữ liệu gốc, sau khi chỉ đường `PYTHONPATH` tới worktree PR sạch và đặt `PYTHONSAFEPATH=1`, `OMP_NUM_THREADS=4`:
+
+```text
+python -P -m models.train --labels outputs/data-expansion-20261110/run-v2/labels.csv --features outputs/data-expansion-20261110/run-v2/features --dataset realcheck_mixed_v3 --output outputs/data-expansion-20261110/clean-repro/mixed-v3.joblib --report outputs/data-expansion-20261110/clean-repro/validation.json --binary-threshold 0.5
+```
 
 Giữ model mới ở trạng thái thử nghiệm: FPR Reddit còn 37,38%, validation GenImage và core accuracy giảm. Chưa đổi artifact phục vụ, tune ngưỡng sau test hoặc phê duyệt QA/release. Lần phát triển tiếp theo nên đánh giá lại tỷ lệ trộn dữ liệu cũ/mới và chất lượng screen bằng train/validation; đánh giá độc lập tiếp theo cần cohort/protocol phù hợp, ghi rõ các mẫu OpenFake này đã được mở.
