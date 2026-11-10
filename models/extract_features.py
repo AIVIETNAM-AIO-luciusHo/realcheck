@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 
 from models.clip_input import FEATURE_DIM, encode_images, feature_contract, load_encoder
+from models.data_sources import SOURCE_LABELS
 from models.normalize import NORMALIZATION_VERSION
 
 
@@ -36,16 +37,9 @@ def read_labels(path: Path) -> list[dict[str, str]]:
         if None in row or any(row.get(key) is None for key in required):
             raise ValueError("Malformed labels row")
         source = row["source"]
-        if source not in {
-            "cifake_real",
-            "cifake_ai",
-            "genimage_real",
-            "genimage_sd14",
-            "genimage_midjourney",
-            "genimage_glide",
-        }:
+        if source not in SOURCE_LABELS:
             raise ValueError(f"Unknown source: {source}")
-        if row["label"] != ("0" if source.endswith("_real") else "1"):
+        if row["label"] != str(SOURCE_LABELS[source]):
             raise ValueError(f"Label/source mismatch: {row['filepath']}")
         if row["split"] not in {"train", "val", "test"}:
             raise ValueError("Unknown split")
