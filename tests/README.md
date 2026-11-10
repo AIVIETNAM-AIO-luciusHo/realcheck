@@ -29,6 +29,7 @@ Test chuẩn hóa spec 001 (ảnh tổng hợp + mock CLIP, không cần mạng,
 | T008 | `test_extract_features.py` | manifest ghi `norm_version`, `labels_norm_version`, `rows`; loader từ chối version hoặc số dòng lệch |
 | T018 | `test_normalize_large.py` | 4000×3000 ra 256×256; bảng lượng tử JPEG quality 95; `save` đúng một lần; EXIF orientation áp trước resize |
 | T020 | `test_too_small.py` | cạnh ngắn 255 bị `ImageTooSmall`, 256 qua; `resize=False` giữ 32×32; không phóng to |
+| T013 | `test_check_raw_baseline.py` | `scripts/check_raw_baseline.py` trên dữ liệu tổng hợp: bắt sha lệch, ảnh nhỏ không bị loại, sai `norm_version`, thiếu file thô, labels đổi sau baseline, header thiếu, ảnh hỏng; thiếu raw-dir thoát 2. Chưa thay thế lần chạy trên raw thật |
 | T016/T022 | `test_check_normalization.py` | logic `scripts/check_normalization.py` trên dữ liệu tổng hợp; chưa thay thế lần chạy trên raw thật |
 
 Chạy riêng: `pytest tests/test_normalize.py tests/test_score_normalization.py tests/test_extract_features.py tests/test_normalize_large.py tests/test_too_small.py`.
