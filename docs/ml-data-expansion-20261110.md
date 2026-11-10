@@ -76,7 +76,7 @@ Model SHA256: `26b8882963b9224eb72d2010b46dd390dbd3545173c40c4e452908fbd596c28d`
 
 Đã nạp model/CLIP thật và đối chiếu **8 nguồn validation**: JPEG/tensor train–serve khớp, sai khác score lớn nhất **6,56e-7 < 1e-5**; encoder frozen/eval. Đếm lại 1.880 dòng predictions, tất cả metrics khớp report. Model/labels/features/protocol khớp hash; hai model cũ không đổi. Raw SHA ảnh chẩn đoán Tháp Rùa không xuất hiện trong train, không chứng nhận đã loại mọi bản biến đổi của ảnh đó.
 
-Kiểm tra cuối trên working tree hiện tại: **514 passed, 1 skipped, 1 xfailed**, 99,35 giây; Ruff check/format đạt; `git diff --check` không có lỗi whitespace (chỉ thông báo CRLF ở tài liệu có sẵn). Skip là dependency Locust tùy chọn; xfail có sẵn cho scorer treo vô hạn. Không có skip/xfail mới. Lượt này không đo lại coverage hoặc chạy lại Docker/Linux.
+Kiểm tra cuối của lần train trước khi đồng bộ main: **514 passed, 1 skipped, 1 xfailed**, 99,35 giây; Ruff check/format đạt; `git diff --check` không có lỗi whitespace (chỉ thông báo CRLF ở tài liệu có sẵn). Skip là dependency Locust tùy chọn; xfail có sẵn cho scorer treo vô hạn. Không có skip/xfail mới. Lượt train này không đo lại coverage hoặc chạy lại Docker/Linux.
 
 Lệnh local đã dùng; tải mẫu cần catalogue và pool cũ đang có trên máy, không phải luồng bootstrap từ repo sạch:
 
@@ -86,7 +86,23 @@ python -m scripts.train_expansion --downloads outputs/data-expansion-20261110/do
 python -m scripts.train_expansion --downloads outputs/data-expansion-20261110/downloads --output outputs/data-expansion-20261110/run-v2
 ```
 
-Dùng `HF_HOME=.cache/huggingface`, `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1` cho bước ML. Download cần mạng. Source main `9a3ca19` với working tree dirty; hash từng module nằm trong báo cáo, không giả đây là clean release/CI. Các bước cache/kiểm model thật có log local riêng trong output.
+Dùng `HF_HOME=.cache/huggingface`, `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1` cho bước ML. Download cần mạng. Source của lần train là `9a3ca19` với working tree dirty; hash từng module nằm trong báo cáo, không giả đây là clean release/CI. Các bước cache/kiểm model thật có log local riêng trong output.
+
+## Đồng bộ code mới trước khi push
+
+Nhánh `kiet/ml-data-expansion-20261110` đã pull/rebase lên `origin/main` tại `274f869ada646400d00f832b0aa3723c219d7742`, không có conflict. Commit code ML được kiểm là `48de1a0`. Chỉ đưa 14 file code/test/tài liệu của task vào nhánh; CSV Jira, dữ liệu/cache/weights và thay đổi Backend local ngoài task được giữ riêng.
+
+Kiểm tra local trên bản đã đồng bộ, Windows/Python 3.12.14, với `PYTHONUTF8=1`:
+
+```text
+python -m pytest --cov=app --cov-fail-under=70 -q -ra
+650 passed, 2 skipped, 1 xfailed; app coverage 98,52%; 199,35 giây
+python -m ruff check .                 → passed
+python -m ruff format --check .        → 114 files already formatted
+git diff origin/main...HEAD --check    → passed
+```
+
+Hai skip là dependency Locust tùy chọn; xfail scorer treo vô hạn đã có trên main. Lượt chạy Windows mặc định gặp CP1252 khi một test Docker mới của main đọc file CI tiếng Việt; cùng test và toàn bộ suite đều qua khi chạy UTF-8, không sửa Dockerfile/test ngoài phạm vi. Đây là kiểm tra code sau tích hợp, không phải lần train hay mở lại model-test; provenance và số đo thí nghiệm trong JSON giữ nguyên. Chưa thay kiểm chứng này bằng CI từ xa hoặc build Docker/Linux mới.
 
 ## Kết luận sử dụng
 
