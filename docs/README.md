@@ -14,3 +14,11 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 
 ## Lưu ý và giả định
 - Tài liệu viết tiếng Việt; code và commit viết tiếng Anh.
+
+## Bàn giao ML/API và rà soát
+
+- [Bàn giao model #39](ml-api-model-handoff.md): artifact e571, checksum, provenance/cache, hợp đồng và nghiệm thu còn chờ.
+- [Rà soát bốn task](ml-recheck-20261110.md): tách bằng chứng kỹ thuật khỏi trạng thái Jira/QA.
+- [Bổ sung quyết định D02/D12/score](decisions/ml-api-handoff-39.md): hiện trạng kiểm được, chờ review chung.
+- [JSON bàn giao](reports/ml-api-handoff-20261110.json), [JSON parity lịch sử](reports/ml-recheck-20261110.json).
+- Dữ liệu mở rộng/train candidate được review riêng tại [PR B #61](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/61); PR tài liệu không phụ thuộc PR B.
