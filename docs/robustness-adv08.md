@@ -56,7 +56,7 @@ sample_id,group_id,parent_id,label,status,score,verdict,error_code,model_sha256,
 
 ## Trình tự chạy khi đủ đầu vào
 
-1. Tạo worktree riêng `kiet/adv08-robustness` từ main đã nhận runner bàn giao; giữ workspace Backend hiện tại nguyên trạng. Chạy test helper/runner rồi commit trước lượt inference. Input/output nằm trong `.cache/adv08/` để không làm Git dirty.
+1. Tạo worktree riêng `nhap-issuse-52` từ main đã nhận runner bàn giao; giữ workspace Backend hiện tại nguyên trạng. Chạy test helper/runner rồi commit trước lượt inference. Input/output nằm trong `.cache/adv08/` để không làm Git dirty.
 2. Chốt protocol, hash và tham chiếu dữ liệu/lineage với Loan. Điền `analysis_commit` bằng HEAD sạch. Không đổi protocol theo kết quả.
 3. Chạy preflight bên dưới. Exit0 nghĩa hợp lệ cho phần có dữ liệu; `missing_cohorts` vẫn phải theo dõi, không nghĩa đủ AC-26. Exit1 báo ảnh decode/kích thước lỗi: giữ evidence, sửa bàn giao trước lượt chính. Exit2 là protocol/hash/lineage/history/checkout sai, dừng trước inference.
 4. Chỉ chạy lệnh **thật** do #51 bàn giao, đối chiếu `--help`; mỗi ảnh một prediction, tái sử dụng prediction cha. Scorer nhận ảnh raw/biến thể và normalize một lần. Không gọi lại model-test cũ, không xóa used-marker, không lấy holdout384 ảnh cũ làm tập cha thay thế. Tập cha từng tiếp xúc phải ghi rõ trong protocol.
