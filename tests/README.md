@@ -8,6 +8,8 @@ Từ 15 test trở lên cho API, model và dữ liệu. Test chống phá: ảnh
 ## Cách chạy
 `pytest --cov=app --cov-fail-under=70`
 
+ADV-08/#52: `python -m pytest tests/test_analyze_robustness.py tests/test_evaluate.py -q` kiểm protocol/hash/lineage, metrics matched, missing/error và bootstrap theo group bằng ảnh/predictions tổng hợp. Không cần CLIP/GPU, không thay bằng chứng chạy robustness thật hoặc QA độc lập #49. Xem [contract bàn giao](../docs/robustness-adv08.md).
+
 ## Input / Output
 - Input: code trong `app/`, `models/`, pipeline dữ liệu.
 - Output: kết quả pass/fail và độ bao phủ.

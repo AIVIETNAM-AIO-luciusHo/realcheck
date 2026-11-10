@@ -26,6 +26,7 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 | `metadata_audit.py` | Loan | Đoán thật/AI chỉ từ metadata, raw và post; gate post `A_eff <= 0.55`, không đạt thì thoát mã 1 (bản nháp T007) |
 | `evaluate.py` | Loan | `python -m scripts.evaluate --split val --output <file>`: báo cáo validation theo source, ngưỡng lấy từ model, không ghi đè output. GenImage test dùng `models.evaluate` với protocol đã duyệt và lịch sử holdout; `--split test` ở script này chỉ dùng cho CIFAKE smoke test |
 | `verify_ml.py` | Kiệt | Model thật: parity tensor train/serve, score từ raw so feature cache, ảnh lớn/mode ảnh/ảnh nhỏ; chỉ lấy mẫu validation |
+| `analyze_robustness.py` | Kiệt | ADV-08/#52: `--preflight` kiểm protocol/hash/lineage/history/ảnh, hoặc đọc predictions CSV để tính metrics, flip/degradation matched và CI bootstrap theo group. Không inference, không tạo biến thể; chờ runner #51. Exit0 hợp lệ/đủ cohort chờ QA, 1 partial, 2 input invalid; không ghi đè. [Contract và lệnh](../docs/robustness-adv08.md) |
 
 Thư viện cho các script dữ liệu: `pip install -r scripts/requirements-data.txt`. Thứ tự chạy xem [`data/README.md`](../data/README.md).
 

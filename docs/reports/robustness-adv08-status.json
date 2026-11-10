@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "task": "ADV-08 / GitHub #52",
+  "status": "blocked_pending_adv07_handoff",
+  "checked_on": "2026-11-11",
+  "checked_main_commit": "a37ff0e25ca9835ece567d0313650828dfd76c99",
+  "runner_issue": "https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/51",
+  "runner_issue_state_at_check": "OPEN",
+  "runner_handoff_comments_at_check": 0,
+  "runner_cli_available_on_checked_main": false,
+  "runner_cli_observed_options": [
+    "--split",
+    "--output",
+    "--labels",
+    "--features",
+    "--model"
+  ],
+  "locked_manifest_received": false,
+  "predictions_received": false,
+  "reference_model_sha256_verified_locally": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+  "real_inference_performed": false,
+  "metrics": null,
+  "independent_qa_approved": false,
+  "release_approved": false,
+  "blockers": [
+    "ADV-07 runner CLI, commit and test evidence not received",
+    "Locked cohort manifest, actual transform parameters and lineage history not received",
+    "No real per-image predictions; helper tests use synthetic fixtures only"
+  ],
+  "expected_cohorts_without_measurements": [
+    "ai_new",
+    "brightness",
+    "crop",
+    "downscale",
+    "jpeg50",
+    "jpeg70",
+    "jpeg90",
+    "parents",
+    "phone",
+    "rotate",
+    "zalo"
+  ],
+  "prepared_components": [
+    "handoff preflight without inference",
+    "saved-prediction metrics, paired changes and group bootstrap",
+    "draft protocol and producer contract",
+    "synthetic offline tests"
+  ],
+  "adv07_integration_schema_confirmed": false,
+  "validation": {
+    "scope": "Synthetic tests on feature working tree, not real robustness or independent QA",
+    "full_suite_before_final_model_manifest_shape_guard": {
+      "passed": 684,
+      "failed": 0,
+      "skipped": 2,
+      "xfailed": 1,
+      "seconds": 154.88,
+      "app_coverage_percent": 98.52
+    },
+    "final_helper_and_existing_evaluator_tests": {
+      "passed": 71,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.09
+    },
+    "ruff_check": "passed",
+    "ruff_format_check": "114 files already formatted",
+    "full_suite_repeated_after_final_shape_guard": false
+  }
+}
