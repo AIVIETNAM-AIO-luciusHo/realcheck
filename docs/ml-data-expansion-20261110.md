@@ -6,6 +6,25 @@
 
 `models/score.py` mở rộng danh sách dataset được loader chấp nhận sang mixed v2/v3 để kiểm/nạp candidate hợp lệ. Đây là thay đổi ở đường nạp model, dù không thay hành vi cho artifact GenImage hiện hành; cần được reviewer ML đánh giá. Không thay đường dẫn model mặc định, cấu hình API hoặc chọn candidate mới làm model phục vụ.
 
+## Đối chiếu nghiệm thu KAN-44 / T024
+
+**KAN-44 chưa đủ điều kiện đóng.** Theo sáu nhóm tiêu chí đang review, khoảng **4/6 có bằng chứng kỹ thuật** trong PR; đây không phải xác nhận QA độc lập hay sáu AC đã được duyệt trên Jira.
+
+| Nhóm tiêu chí | Bằng chứng trong PR | Kết luận review |
+|---|---|---|
+| CLIP cố định, embeddings đúng hợp đồng | Revision đã ghim, encoder frozen/eval, float32 L2; parity validation có báo cáo | Cơ bản đáp ứng về kỹ thuật |
+| Manifest và normalization metadata | Feature manifest ghi version/hash/số dòng; bundle ghi normalization version 1 | Cơ bản đáp ứng về kỹ thuật |
+| Train dùng `load_features` kiểm manifest | `models.train.train` gọi loader chung; regression từ chối sai version/hash/số dòng/cache | Cơ bản đáp ứng về kỹ thuật |
+| Fit trên train, chọn tham số trên validation | C-grid cố định, seed42, C10 chọn bằng 1.860 validation; test không dùng để chọn C | Cơ bản đáp ứng về kỹ thuật |
+| Phụ thuộc dữ liệu chính T023 | Lần train này dùng manifest mở rộng tự dựng `realcheck_mixed_v3`, SHA labels `2997cdb9…`; không phải bàn giao migration dữ liệu chính sau T023 | **Chưa đáp ứng phụ thuộc của T024** |
+| QA độc lập / nghiệm thu artifact | `independent_qa_approved=false`; còn review dữ liệu, lịch sử/near-duplicate và artifact | **Chưa đáp ứng** |
+
+T024 của [spec 001](../specs/001-unified-image-normalization/tasks.md) phụ thuộc **T011 và T023**. PR #61 chỉ là thí nghiệm candidate cho phần mở rộng nguồn; việc fit trên code sạch không thay thế dữ liệu chính đã được Loan bàn giao sau T023 hoặc QA của Lực. Không tick T024, không đóng KAN-44 chỉ bằng merge PR này.
+
+Để hoàn tất phần còn lại: nhận manifest/dữ liệu chính sau T023 cùng hash, normalization version, split và biên bản kiểm; extract lại vào cache riêng, train bằng `load_features` trên commit sạch, kiểm version/parity rồi bàn giao artifact/report đúng hash cho QA độc lập. Không ghi đè dữ liệu/model hiện có hoặc mở lại test đã tiếp xúc để thay cho bước nghiệm thu này.
+
+Kiểm lại khi bổ sung review: `python -m pytest tests/test_ml_pipeline.py tests/test_extract_features.py tests/test_domain_expansion.py tests/test_train_expansion.py -q` → **56 passed, 0 failed, 0 skipped**, 9,95 giây; `git diff --check` qua. Đây là test hợp đồng/fixture, không nghiệm thu dữ liệu T023 hoặc chất lượng model thay QA. Hai report thí nghiệm gốc/fit sạch được giữ nguyên; lượt chỉnh tài liệu này không train hoặc chấm test.
+
 ## Dữ liệu thực tế
 
 Tận dụng 18.332 ảnh hợp lệ đã tải ngày 08/11, gồm ảnh được chọn và dự phòng; tải thêm để có **28.007 ứng viên hợp lệ**. Đây là pool để lọc/lấy mẫu, không phải số ảnh fit. 157 trường hợp tải bổ sung bị loại ở bước giải mã/kích thước; các ảnh bị loại của lần tải cũ vẫn giữ nhật ký riêng.
@@ -51,7 +70,9 @@ Giữ CLIP `sentence-transformers/clip-ViT-B-32` revision `327ab6726d33c0e22f920
 
 Baseline là candidate cũ SHA `e5718345…69494`, không phải artifact mặc định cũ hơn trong `models/clip_probe.joblib`, và không được gọi là baseline 87,39%/83,1% chưa nhận được artifact.
 
-| Cohort | N | Accuracy baseline | Accuracy mới | FPR thật baseline → mới |
+**Bảng dưới chỉ thuộc model mixed gốc SHA `26b8882963b9224eb72d2010b46dd390dbd3545173c40c4e452908fbd596c28d`, train trên source `dirty=true`. Không phải kết quả test của bản fit sạch `7164eeca…`.**
+
+| Cohort | N | Accuracy baseline | Accuracy mixed gốc `26b888…` | FPR thật baseline → mixed gốc |
 |---|---:|---:|---:|---:|
 | GenImage validation giữ nguyên | 871 | 97,24% | **86,45%** | 2,14% → 14,01% |
 | Validation nguồn mới | 989 | 57,94% | **81,90%** | 80,57% → 15,79% |
@@ -114,7 +135,19 @@ Hai skip là dependency Locust tùy chọn; xfail scorer treo vô hạn đã có
 
 Đã fit lại từ đúng labels/features đã khóa trên code commit sạch **`e4b6d29018144d86c515262750a0a28aa56835f4`**, `dirty=false`, seed 42, `OMP_NUM_THREADS=4`. [Bằng chứng tái lập](reports/ml-clean-repro-20261110.json) ghi import source từ worktree sạch qua `PYTHONSAFEPATH=1`/`PYTHONPATH`; cwd chỉ dùng để resolve đường dẫn dữ liệu cũ. Không tải/trích lại dữ liệu hoặc mở test.
 
-Kết quả vẫn chọn **C=10**, validation **84,032258%/1.860**, cùng confusion matrix. Model tái lập SHA **`7164eeca27ce1d30f73ed70451cafd2a4c26423352a04a2cf44ff26685e19678`** khác bytes bản gốc; AUROC là **0,9172648683** so với **0,9172683378** của lần gốc. Không gán số OpenFake test đã lưu cho model tái lập, không đổi model phục vụ. Report gốc tiếp tục giữ đúng `dirty=true`; provenance của acquisition/normalization chưa được biến thành clean run bằng bước fit lại này.
+Kết quả vẫn chọn **C=10**, validation **84,032258%/1.860**, cùng confusion matrix. Model tái lập SHA **`7164eeca27ce1d30f73ed70451cafd2a4c26423352a04a2cf44ff26685e19678`** khác bytes bản gốc; AUROC là **0,9172648683** so với **0,9172683378** của lần gốc. Chưa xác định nguyên nhân khác bytes; không suy ra hai artifact có cùng dự đoán test từ validation giống nhau. Không gán số OpenFake test đã lưu cho model tái lập, không đổi model phục vụ. Report gốc tiếp tục giữ đúng `dirty=true`; provenance của acquisition/normalization chưa được biến thành clean run bằng bước fit lại này.
+
+| Thuộc tính | Mixed gốc `26b888…` | Fit sạch `7164ee…` |
+|---|---|---|
+| Commit chạy train | `9a3ca19…`, `dirty=true` | `e4b6d29…`, `dirty=false` |
+| Labels/features | Cache mở rộng đã khóa | Cùng cache đã khóa, không trích lại |
+| C / accuracy validation, N=1.860 | 10 / 84,032258% | 10 / 84,032258% |
+| AUROC validation | 0,9172683378 | 0,9172648683 |
+| OpenFake core/test, N=1.040 | 80,38% | **Chưa đánh giá** |
+| OpenFake reddit/test, N=840 | 75,95% | **Chưa đánh giá** |
+| JSON nguồn | [Thí nghiệm gốc](reports/ml-data-expansion-20261110.json) | [Fit sạch](reports/ml-clean-repro-20261110.json), `test=null` |
+
+Fit sạch chỉ xử lý provenance của **bước train**, chưa hoàn tất toàn bộ KAN-44. Hai model vẫn là candidate thử nghiệm; số liệu test cũ gắn với hash model gốc. OpenFake đã được mở, nên không chạy lại rồi mô tả như test unseen hoặc tune theo kết quả đó.
 
 Lệnh chạy từ workspace dữ liệu gốc, sau khi chỉ đường `PYTHONPATH` tới worktree PR sạch và đặt `PYTHONSAFEPATH=1`, `OMP_NUM_THREADS=4`:
 
