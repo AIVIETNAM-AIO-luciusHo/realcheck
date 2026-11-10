@@ -60,3 +60,5 @@ Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan
 
 `test_mvp_gates.py` (KAN-57/58/59): mẫu `docs/performance/slo.template.json` bị từ chối và repo không có `slo.json`, SLO chưa duyệt thoát 2, scope soak/recovery và RSS của `check_performance`, bảng gate của `check_mvp_gates` (đủ bằng chứng thoát 0; thiếu/rỗng/xấu từng file thì thoát 1, không gate nào tự đạt). Kịch bản locust mới (stress/recovery/soak, soak đòi `--run-time`) nằm trong `test_performance_reporting.py` và chỉ chạy khi có locust.
 
+`test_check_gateway.py` (KAN-54): chạy `scripts/check_gateway.py` với gateway giả (stdlib, thread, cổng 0, HTTP/1.1, backlog 128) và khẳng định đúng ca lỗi theo từng hành vi sai: thiếu 429, envelope/X-Request-ID sai ở 200/429/413, sai mã/status 413, 5xx hoặc ngắt kết nối trong flood, không phục hồi, Retry-After, header Server lộ, ca biên, upstream lộ/treo/không phục hồi (ca lỗi, vẫn in kết quả và ghi JSON), stdin đóng, cổng đóng và tham số thiếu (thoát 2). Chưa chạy với Nginx thật.
+
