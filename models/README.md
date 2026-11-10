@@ -138,3 +138,7 @@ Ban đầu người dùng xác nhận chưa chốt manifest và chưa mở GenIm
 Đã train candidate `realcheck_mixed_v3` trên 9.936 ảnh, giữ CLIP/normalization và GenImage validation cũ; [số liệu, artifact và giới hạn](../docs/ml-data-expansion-20261110.md). `models.data_sources` khai báo source/label và dataset dùng chung cho extract/train/loader; mixed v3 nhận các nguồn GenImage, OpenFake và Community, không nhận CIFAKE vào fit. BigGAN/VQDM là audit-only; mixed v2 tiếp tục loại SD14. GenImage test vẫn chỉ qua protocol riêng; `train --evaluate-test` chỉ dành CIFAKE.
 
 `load_bundle`/`load_scorer` nhận bundle mixed có checksum/profile đúng; việc này không thay đường dẫn model, registry hay phê duyệt phục vụ của Backend. Candidate mới cải thiện Reddit nhưng giảm GenImage validation/core; chưa đề xuất thay artifact hiện hành.
+
+## Gói bàn giao API — GitHub #39
+
+[Hướng dẫn và evidence bàn giao](../docs/ml-api-model-handoff.md) chốt giữ reference GenImage `e571…69494` cho profile local/lab, đóng gói thành `model/clip_probe.joblib` + checksum và đã kiểm HTTP với model thật. Mixed candidate giữ riêng; artifact nằm ngoài Git. Phía nhận cần xác nhận checksum/startup trên máy đích; QA/release chưa được ghi approved.
