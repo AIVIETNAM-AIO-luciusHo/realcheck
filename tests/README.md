@@ -57,3 +57,6 @@ Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan
 `test_model_loading.py` kiểm nạp model lúc khởi động bằng `models.score` giả và loader giả: đối số `load_scorer`, `REALCHECK_MODEL_PATH`, log `model_loaded`/`model_load_failed`, 503 không lộ chi tiết, scorer tiêm thắng loader, import `app.main` không kéo torch/numpy, biến `app` mức module (chạy trong subprocess). Không cần torch hay model thật.
 
 `test_docker_static.py` kiểm tĩnh `Dockerfile` và `.dockerignore` bằng thư viện chuẩn (không chạy docker): base image khớp CI, user không root, healthcheck, cổng, biến môi trường, torch ghim bản CPU, danh sách `COPY`, và mọi module `models/` mà `models.score` import đều nằm trong `models/*.py`. Chưa thay thế lần build và chạy container thật.
+
+`test_mvp_gates.py` (KAN-57/58/59): mẫu `docs/performance/slo.template.json` bị từ chối và repo không có `slo.json`, SLO chưa duyệt thoát 2, scope soak/recovery và RSS của `check_performance`, bảng gate của `check_mvp_gates` (đủ bằng chứng thoát 0; thiếu/rỗng/xấu từng file thì thoát 1, không gate nào tự đạt). Kịch bản locust mới (stress/recovery/soak, soak đòi `--run-time`) nằm trong `test_performance_reporting.py` và chỉ chạy khi có locust.
+

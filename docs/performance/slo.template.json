@@ -1,0 +1,17 @@
+{
+  "_huong_dan": "MAU, chua phai SLO. Sao chep thanh docs/performance/slo.json va dien so do that sau baseline (xem README.md cung thu muc). Moi o null/rong bi scripts.check_performance tu choi.",
+  "p95_ms_max": null,
+  "rps200_min": null,
+  "error_ratio_max": null,
+  "rss_growth_pct_max": null,
+  "recovery_criterion": "",
+  "workload": {
+    "profile": "",
+    "payload_mix": "",
+    "warmup": "",
+    "hardware": ""
+  },
+  "approved": false,
+  "approved_by": [],
+  "approved_date": ""
+}
