@@ -5,7 +5,8 @@ name: realcheck
 services:
   api:
     build: .
-    image: realcheck-api
+    # Tag theo commit để giữ image cũ cho rollback (docs/deploy.md); mặc định latest.
+    image: realcheck-api:${REALCHECK_TAG:-latest}
     environment:
       # Model đang dùng cho local/lab là reference e571 (issue #39); đổi file qua REALCHECK_MODEL_FILE.
       REALCHECK_MODEL_PATH: /models/${REALCHECK_MODEL_FILE:-clip_probe_e571.joblib}
@@ -19,7 +20,7 @@ services:
 
   ui:
     build: ./streamlit
-    image: realcheck-ui
+    image: realcheck-ui:${REALCHECK_TAG:-latest}
     environment:
       REALCHECK_API_URL: http://nginx
       REALCHECK_API_TIMEOUT: "60"
