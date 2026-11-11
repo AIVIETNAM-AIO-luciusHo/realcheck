@@ -19,6 +19,7 @@ import hashlib
 import io
 import json
 import os
+import shutil
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
@@ -126,8 +127,59 @@ def _row(
 
 
 def _read_csv(path: Path) -> list[dict]:
-    with path.open(newline="", encoding="utf-8") as handle:
-        return list(csv.DictReader(handle))
+    try:
+        with path.open(newline="", encoding="utf-8") as handle:
+            return list(csv.DictReader(handle))
+    except FileNotFoundError:
+        raise ValueError(f"Not found: {path}") from None
+
+
+def _decode(data: bytes) -> Image.Image:
+    """Decoded RGB pixels with EXIF orientation applied, as the normalizer sees them."""
+    with Image.open(io.BytesIO(data)) as image:
+        return ImageOps.exif_transpose(image).convert("RGB")
+
+
+def _check_parents(parents_csv: Path) -> list[tuple[Path, str, dict]]:
+    """Validate every parent row before anything is written; list all problems.
+
+    Returns (path, sha256, lineage) per unique parent. A parent must decode and
+    have a short side of at least MIN_SIDE px, like the API requires.
+    """
+    parents, problems, group_of = [], [], {}
+    for number, parent in enumerate(_read_csv(parents_csv), 2):
+        where = f"{parents_csv.name}:{number}"
+        label, source, group_id, name = (
+            (parent.get(key) or "").strip()
+            for key in ("label", "source", "group_id", "path")
+        )
+        if label not in {"0", "1"} or not source or not group_id or not name:
+            problems.append(f"{where}: need path, label 0/1, source, group_id")
+            continue
+        path = (parents_csv.parent / name).resolve()
+        try:
+            data = path.read_bytes()
+            short_side = min(_decode(data).size)
+        except FileNotFoundError:
+            problems.append(f"{where}: file not found")
+            continue
+        except (OSError, Image.DecompressionBombError):
+            problems.append(f"{where}: cannot be decoded")
+            continue
+        if short_side < MIN_SIDE:
+            problems.append(f"{where}: short side {short_side} px < {MIN_SIDE} px")
+            continue
+        digest = sha256_bytes(data)
+        if digest in group_of:
+            if group_of[digest] != group_id:
+                problems.append(f"{where}: same bytes as a parent in another group")
+            continue
+        group_of[digest] = group_id
+        lineage = {"label": int(label), "source": source, "group_id": group_id}
+        parents.append((path, digest, lineage))
+    if problems:
+        raise ValueError("Parents refused:\n" + "\n".join(problems))
+    return parents
 
 
 def make_variants(parents_csv: Path, output: Path) -> list[dict]:
@@ -135,63 +187,57 @@ def make_variants(parents_csv: Path, output: Path) -> list[dict]:
 
     parents_csv columns: path (relative to the CSV), label (0/1), source, group_id.
     Exact duplicate parents must share a group and are listed once. Raises
-    ValueError on a bad row and FileExistsError if the image folder already exists.
+    ValueError listing every bad parent before writing, FileExistsError if the
+    image folder exists; a failure while writing removes the folder it created.
     """
     image_dir = output.parent / output.stem
+    if image_dir.exists():
+        raise FileExistsError(f"Variant folder already exists: {image_dir}")
+    parents = _check_parents(parents_csv)
+    rows = []
     image_dir.mkdir(parents=True)
-    rows, group_of = [], {}
-    for number, parent in enumerate(_read_csv(parents_csv), 2):
-        label, source, group_id = (
-            parent[k].strip() for k in ("label", "source", "group_id")
-        )
-        if label not in {"0", "1"} or not source or not group_id:
-            raise ValueError(
-                f"{parents_csv.name}:{number}: need label 0/1, source, group_id"
-            )
-        path = (parents_csv.parent / parent["path"]).resolve()
-        data = path.read_bytes()
-        digest = sha256_bytes(data)
-        if digest in group_of:
-            if group_of[digest] != group_id:
-                raise ValueError(
-                    f"{parents_csv.name}:{number}: same bytes in another group"
-                )
-            continue
-        group_of[digest] = group_id
-        parent_id = digest[:16]
-        common = {"label": int(label), "source": source, "group_id": group_id}
-        rows.append(
-            _row(
-                parent_id,
-                _relative(path, output),
-                digest,
-                "parents",
-                None,
-                ROOT_TRANSFORM,
-                **common,
-            )
-        )
-        with Image.open(io.BytesIO(data)) as decoded:
-            base = ImageOps.exif_transpose(decoded).convert("RGB")
-        for cohort, (transform, apply) in VARIANTS.items():
-            image, fmt, save_kwargs = apply(base)
-            buffer = io.BytesIO()
-            image.save(buffer, fmt, **save_kwargs)
-            suffix = ".jpg" if fmt == "JPEG" else ".png"
-            target = image_dir / cohort / f"{parent_id}{suffix}"
-            target.parent.mkdir(exist_ok=True)
-            target.write_bytes(buffer.getvalue())
+    try:
+        for path, digest, lineage in parents:
+            data = path.read_bytes()
+            if sha256_bytes(data) != digest:
+                raise ValueError(f"Parent changed while running: {path.name}")
+            parent_id = digest[:16]
             rows.append(
                 _row(
-                    f"{parent_id}-{cohort}",
-                    _relative(target, output),
-                    sha256_bytes(buffer.getvalue()),
-                    cohort,
                     parent_id,
-                    transform,
-                    **common,
+                    _relative(path, output),
+                    digest,
+                    "parents",
+                    None,
+                    ROOT_TRANSFORM,
+                    **lineage,
                 )
             )
+            base = _decode(data)
+            for cohort, (transform, apply) in VARIANTS.items():
+                image, fmt, save_kwargs = apply(base)
+                buffer = io.BytesIO()
+                image.save(buffer, fmt, **save_kwargs)
+                suffix = ".jpg" if fmt == "JPEG" else ".png"
+                target = image_dir / cohort / f"{parent_id}{suffix}"
+                target.parent.mkdir(exist_ok=True)
+                target.write_bytes(buffer.getvalue())
+                rows.append(
+                    _row(
+                        f"{parent_id}-{cohort}",
+                        _relative(target, output),
+                        sha256_bytes(buffer.getvalue()),
+                        cohort,
+                        parent_id,
+                        transform,
+                        **lineage,
+                    )
+                )
+    except BaseException:
+        shutil.rmtree(
+            image_dir
+        )  # created above by this call; leave no partial variants
+        raise
     return rows
 
 
@@ -233,9 +279,14 @@ def make_cohort(
             problems.append(f"{path.name}: need source and label {expected}")
             continue
         data = path.read_bytes()
-        with Image.open(io.BytesIO(data)) as image:
-            if image.getexif().get_ifd(GPS_IFD):
-                problems.append(f"{path.name}: has GPS location, remove it first")
+        try:
+            with Image.open(io.BytesIO(data)) as image:
+                image.load()
+                if image.getexif().get_ifd(GPS_IFD):
+                    problems.append(f"{path.name}: has GPS location, remove it first")
+        except (OSError, Image.DecompressionBombError):
+            problems.append(f"{path.name}: cannot be decoded")
+            continue
         digest = sha256_bytes(data)
         if digest in seen:
             problems.append(f"{path.name}: duplicate of another file in this cohort")
@@ -285,10 +336,13 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     if args.output.exists():
         parser.error(f"Output already exists: {args.output}")
-    if args.command == "variants":
-        rows = make_variants(args.parents, args.output)
-    else:
-        rows = make_cohort(args.name, args.dir, args.output, args.parent_manifest)
+    try:
+        if args.command == "variants":
+            rows = make_variants(args.parents, args.output)
+        else:
+            rows = make_cohort(args.name, args.dir, args.output, args.parent_manifest)
+    except (ValueError, FileExistsError) as exc:
+        parser.exit(2, f"{parser.prog}: error: {exc}\n")
     write_manifest(rows, args.output)
     print(f"Đã ghi {args.output}: {dict(Counter(row['cohort'] for row in rows))}")
 

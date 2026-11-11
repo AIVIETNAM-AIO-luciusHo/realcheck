@@ -21,6 +21,7 @@ import hashlib
 import json
 import logging
 from collections import Counter
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -156,25 +157,50 @@ def evaluate(labels: Path, feature_dir: Path, model_path: Path, split: str) -> d
     return report
 
 
+class RobustnessInputError(ValueError):
+    """Inputs refused before any image is scored; the CLI exits with code 2."""
+
+
+def _read_json_object(path: Path, what: str) -> dict:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise RobustnessInputError(f"{what} not found: {path}") from None
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise RobustnessInputError(f"{what} is not valid JSON: {path}") from None
+    if not isinstance(data, dict):
+        raise RobustnessInputError(f"{what} must be a JSON object: {path}")
+    return data
+
+
 def read_robustness_manifest(path: Path) -> list[dict]:
-    """Rows of a robustness manifest; refuses missing fields, bad labels or reused IDs."""
-    rows = [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line
-    ]
-    ids = Counter(row.get("sample_id") for row in rows)
+    """Manifest rows; refuses missing fields, non-integer labels, non-test rows,
+    reused IDs and identical bytes listed under different groups."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+        rows = [json.loads(line) for line in lines if line.strip()]
+    except FileNotFoundError:
+        raise RobustnessInputError(f"Manifest not found: {path}") from None
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise RobustnessInputError(f"Manifest is not valid JSONL: {path}") from None
+    if not rows:
+        raise RobustnessInputError(f"Manifest is empty: {path}")
+    ids, group_of_bytes = set(), {}
     for number, row in enumerate(rows, 1):
-        if missing := MANIFEST_FIELDS - set(row):
-            raise ValueError(f"{path.name}:{number}: missing {sorted(missing)}")
-        if (
-            row["label"] not in (0, 1)
-            or row["split"] != "test"
-            or ids[row["sample_id"]] > 1
-        ):
-            raise ValueError(
-                f"{path.name}:{number}: need label 0/1, split test, unique ID"
+        where = f"{path.name}:{number}"
+        if not isinstance(row, dict) or MANIFEST_FIELDS - set(row):
+            raise RobustnessInputError(
+                f"{where}: need fields {sorted(MANIFEST_FIELDS)}"
             )
+        if type(row["label"]) is not int or row["label"] not in (0, 1):
+            raise RobustnessInputError(f"{where}: label must be the integer 0 or 1")
+        if row["split"] != "test":
+            raise RobustnessInputError(f"{where}: split must be test")
+        if row["sample_id"] in ids:
+            raise RobustnessInputError(f"{where}: duplicate sample_id")
+        if group_of_bytes.setdefault(row["sha256"], row["group_id"]) != row["group_id"]:
+            raise RobustnessInputError(f"{where}: same image bytes in another group")
+        ids.add(row["sample_id"])
     return rows
 
 
@@ -191,7 +217,60 @@ def check_model_manifest(
     }
     for key, value in expected.items():
         if model_manifest.get(key) != value:
-            raise ValueError(f"Model manifest does not match the model: {key}")
+            raise RobustnessInputError(
+                f"Model manifest does not match the model: {key}"
+            )
+
+
+def check_protocol(
+    protocol: dict, hashes: dict[str, str], thresholds: dict, rows: list[dict]
+) -> None:
+    """Test-set gate: the locked ADV-08 protocol must name exactly these inputs.
+
+    Checks status, review references, profile, thresholds, the SHA256 of model,
+    model manifest and manifest, and that every row's cohort is registered as
+    present with the same transform. Raises RobustnessInputError listing problems.
+    """
+    profile = {
+        "clip_model_id": feature_contract()["clip_model_id"],
+        "clip_revision": feature_contract()["clip_revision"],
+        "normalization_version": NORMALIZATION_VERSION,
+    }
+    refs = ("manifest_lock_ref", "split_review_ref")
+    checks = [
+        (protocol.get("schema_version") == 1, "schema_version must be 1"),
+        (protocol.get("status") == "locked", "status must be locked"),
+        (
+            all(isinstance(protocol.get(k), str) and protocol[k].strip() for k in refs),
+            "manifest_lock_ref and split_review_ref are required",
+        ),
+        (protocol.get("profile") == profile, "profile differs from the model"),
+        (protocol.get("thresholds") == thresholds, "thresholds differ from the model"),
+    ]
+    artifacts = protocol.get("artifacts")
+    artifacts = artifacts if isinstance(artifacts, dict) else {}
+    for name, digest in hashes.items():
+        entry = artifacts.get(name)
+        checks.append(
+            (
+                isinstance(entry, dict) and entry.get("sha256") == digest,
+                f"artifacts.{name}.sha256 differs from the file given",
+            )
+        )
+    cohorts = protocol.get("cohorts")
+    present = {
+        cohort.get("name"): cohort.get("transform")
+        for cohort in (cohorts if isinstance(cohorts, list) else [])
+        if isinstance(cohort, dict) and cohort.get("status") == "present"
+    }
+    unregistered = sorted(
+        {r["cohort"] for r in rows if present.get(r["cohort"], {}) != r["transform"]}
+    )
+    checks.append(
+        (not unregistered, f"cohorts not registered as present: {unregistered}")
+    )
+    if problems := [message for passed, message in checks if not passed]:
+        raise RobustnessInputError("Protocol refused: " + "; ".join(problems))
 
 
 def score_like_api(data: bytes, settings: Settings, scorer: ImageScorer) -> float:
@@ -208,36 +287,71 @@ def score_like_api(data: bytes, settings: Settings, scorer: ImageScorer) -> floa
     return score
 
 
+def _side_files(output: Path, protocol: Path) -> tuple[Path, Path, Path]:
+    """Partial predictions, run log and the protocol's used marker."""
+    return (
+        output.with_name(output.name + ".partial"),
+        output.with_name(output.name + ".run.json"),
+        protocol.with_name(protocol.name + ".used.json"),
+    )
+
+
 def run_robustness(
     manifest: Path,
     model: Path,
     model_manifest: Path,
     protocol: Path,
     output: Path,
-    scorer: ImageScorer,
+    load: Callable[[], ImageScorer],
 ) -> Counter:
-    """Score every manifest image like the API and write one prediction row each.
+    """Check every input, then score each manifest image like the API.
 
-    Rows stream to ``<output>.partial``, renamed to ``output`` only after all images
-    and an unchanged-hash check pass; an interrupted run keeps the partial file and
-    never invents outcomes. Expected image errors become ``status=error`` rows with
-    the API error code. Returns counts per status.
+    Everything is validated before ``load`` (CLIP) is called. The protocol's
+    ``.used.json`` marker is written before the first prediction, so one locked
+    protocol scores once, like models.evaluate. Rows stream to ``<output>.partial``
+    and are renamed only after all images and an unchanged-hash check pass; an
+    interrupted run keeps the partial file and never invents outcomes. Expected
+    image errors become ``status=error`` rows. Returns counts per status.
     """
-    partial = output.with_name(output.name + ".partial")
-    if output.exists() or partial.exists():
-        raise FileExistsError(f"Output already exists: {output}")
-    inputs = (model, manifest, protocol)
-    hashes = [sha256_file(path) for path in inputs]
-    thresholds = load_bundle(model)["thresholds"]
-    check_model_manifest(
-        json.loads(model_manifest.read_text(encoding="utf-8")), hashes[0], thresholds
-    )
+    partial, run_log, used = _side_files(output, protocol)
+    for path in (output, partial, run_log):
+        if path.exists():
+            raise FileExistsError(f"Output already exists: {path}")
+    if used.exists():
+        raise RobustnessInputError(
+            f"Protocol already used ({used.name}); review that run, do not delete to retry"
+        )
+    inputs = {"model": model, "model_manifest": model_manifest, "manifest": manifest}
+    for name, path in {**inputs, "protocol": protocol}.items():
+        if not path.is_file():
+            raise RobustnessInputError(f"{name} not found: {path}")
+    hashes = {name: sha256_file(path) for name, path in inputs.items()}
+    protocol_sha = sha256_file(protocol)
+    try:
+        thresholds = load_bundle(model)["thresholds"]
+    except (OSError, TypeError, ValueError) as exc:
+        raise RobustnessInputError(f"Model refused: {exc}") from None
+    model_info = _read_json_object(model_manifest, "Model manifest")
+    check_model_manifest(model_info, hashes["model"], thresholds)
+    rows = read_robustness_manifest(manifest)
+    check_protocol(_read_json_object(protocol, "Protocol"), hashes, thresholds, rows)
     settings = Settings(
         threshold_low=thresholds["low"], threshold_high=thresholds["high"]
     )
-    rows = read_robustness_manifest(manifest)
-    counts = Counter()
+    scorer = load()
     output.parent.mkdir(parents=True, exist_ok=True)
+    with used.open("x", encoding="utf-8") as handle:
+        json.dump(
+            {
+                "started_at": datetime.now(UTC).isoformat(),
+                "output": output.name,
+                "protocol_sha256": protocol_sha,
+                **{f"{name}_sha256": digest for name, digest in hashes.items()},
+            },
+            handle,
+            indent=2,
+        )
+    counts = Counter()
     with partial.open("x", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, PREDICTION_FIELDS)
         writer.writeheader()
@@ -263,15 +377,14 @@ def run_robustness(
                     "parent_id": row["parent_id"] or "",
                     "label": row["label"],
                     **result,
-                    "model_sha256": hashes[0],
-                    "manifest_sha256": hashes[1],
-                    "protocol_sha256": hashes[2],
+                    "model_sha256": hashes["model"],
+                    "manifest_sha256": hashes["manifest"],
+                    "protocol_sha256": protocol_sha,
                 }
             )
-    if [sha256_file(path) for path in inputs] != hashes:
-        raise ValueError(
-            f"Model, manifest or protocol changed during the run; see {partial}"
-        )
+    after = {name: sha256_file(path) for name, path in inputs.items()}
+    if after != hashes or sha256_file(protocol) != protocol_sha:
+        raise ValueError(f"Inputs changed during the run; see {partial}")
     partial.rename(output)
     return counts
 
@@ -297,19 +410,23 @@ def main(argv: list[str] | None = None) -> None:
         if not (args.manifest and args.model_manifest and args.protocol):
             parser.error("--robustness needs --manifest, --model-manifest, --protocol")
         provenance = run_info("scripts.evaluate")
-        counts = run_robustness(
-            args.manifest,
-            args.model,
-            args.model_manifest,
-            args.protocol,
-            args.output,
-            load_scorer(args.model),
-        )
+        try:
+            counts = run_robustness(
+                args.manifest,
+                args.model,
+                args.model_manifest,
+                args.protocol,
+                args.output,
+                lambda: load_scorer(args.model),
+            )
+        except (RobustnessInputError, FileExistsError) as exc:
+            parser.exit(2, f"{parser.prog}: error: {exc}\n")
+        except ValueError as exc:
+            parser.exit(1, f"{parser.prog}: run stopped: {exc}\n")
         # Local run log for QA (commit, dirty flag, versions); keep it out of Git.
-        args.output.with_name(args.output.name + ".run.json").write_text(
-            json.dumps({**provenance, "counts": dict(counts)}, indent=2),
-            encoding="utf-8",
-        )
+        _, run_log, _ = _side_files(args.output, args.protocol)
+        with run_log.open("x", encoding="utf-8") as handle:
+            json.dump({**provenance, "counts": dict(counts)}, handle, indent=2)
         print(f"Đã ghi {args.output}: {dict(counts)}")
         return
     provenance = run_info("scripts.evaluate")

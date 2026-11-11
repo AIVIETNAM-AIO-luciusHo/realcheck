@@ -1,32 +1,48 @@
 """ADV-07: robustness manifest (variants, external cohorts) and the --robustness runner.
 
 Synthetic images and a fake scorer that runs the real normalizer; no CLIP download.
+Expected transforms are written from the ADV-07 spec (#51), not read from the module.
 """
 
 import csv
+import io
 import json
 
 import joblib
 import numpy as np
 import pytest
-from PIL import Image
+from PIL import Image, ImageEnhance
 from sklearn.linear_model import LogisticRegression
 
 from models.clip_input import FEATURE_DIM, feature_contract
 from models.extract_features import sha256_file
-from models.normalize import MIN_SIDE, NORMALIZATION_VERSION, normalize_image
+from models.normalize import NORMALIZATION_VERSION, normalize_image
 from scripts import evaluate as ev
 from scripts import robustness_manifest as rm
 
 THRESHOLDS = {"binary": 0.5, "low": 0.3, "high": 0.7}
-VARIANT_COHORTS = [
-    "jpeg90",
-    "jpeg70",
-    "jpeg50",
-    "rotate",
-    "crop",
-    "downscale",
-    "brightness",
+SPEC_TRANSFORMS = {
+    "jpeg90": {"kind": "jpeg", "params": {"quality": 90}},
+    "jpeg70": {"kind": "jpeg", "params": {"quality": 70}},
+    "jpeg50": {"kind": "jpeg", "params": {"quality": 50}},
+    "rotate": {"kind": "rotate", "params": {"degrees": 90}},
+    "crop": {"kind": "center_crop", "params": {"keep": 0.8, "min_side": 256}},
+    "downscale": {"kind": "downscale", "params": {"scale": 0.5, "min_side": 256}},
+    "brightness": {"kind": "brightness", "params": {"factor": 1.3}},
+}
+PARENT_ROWS = [
+    {
+        "path": "parents/real.png",
+        "label": "0",
+        "source": "genimage_real",
+        "group_id": "g-real",
+    },
+    {
+        "path": "parents/ai.jpg",
+        "label": "1",
+        "source": "genimage_sd15",
+        "group_id": "g-ai",
+    },
 ]
 
 
@@ -48,30 +64,19 @@ def read_jsonl(path):
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
+def pixels(path):
+    with Image.open(path) as image:
+        return np.asarray(image.convert("RGB"))
+
+
 @pytest.fixture
 def parents(tmp_path):
-    """Two parents (real 320x300, AI 1024x768) in their own folder with a parents CSV."""
+    """Two parents (real 320x300 PNG, AI 1024x768 JPEG) and their parents CSV."""
     folder = tmp_path / "parents"
     folder.mkdir()
     save(folder / "real.png")
     save(folder / "ai.jpg", size=(1024, 768), color=(30, 160, 200), fmt="JPEG")
-    return write_csv(
-        tmp_path / "parents.csv",
-        [
-            {
-                "path": "parents/real.png",
-                "label": "0",
-                "source": "genimage_real",
-                "group_id": "g-real",
-            },
-            {
-                "path": "parents/ai.jpg",
-                "label": "1",
-                "source": "genimage_sd15",
-                "group_id": "g-ai",
-            },
-        ],
-    )
+    return write_csv(tmp_path / "parents.csv", PARENT_ROWS)
 
 
 def build_variants(parents_csv, output):
@@ -80,54 +85,89 @@ def build_variants(parents_csv, output):
     return rows
 
 
-def test_each_parent_gets_all_variants_with_inherited_lineage(parents, tmp_path):
+def test_each_parent_gets_the_spec_variants_with_its_own_lineage(parents, tmp_path):
     output = tmp_path / "out" / "variants.jsonl"
     rows = build_variants(parents, output)
-    assert len(rows) == 2 * (1 + len(VARIANT_COHORTS))
+    assert len(rows) == len(PARENT_ROWS) * (1 + len(SPEC_TRANSFORMS))
     assert len({row["sample_id"] for row in rows}) == len(rows)
     roots = {row["sample_id"]: row for row in rows if row["parent_id"] is None}
-    assert {row["cohort"] for row in roots.values()} == {"parents"}
+    declared = {row["source"]: row for row in PARENT_ROWS}
+    for root in roots.values():
+        csv_row = declared[root["source"]]
+        assert root["cohort"] == "parents" and root["transform"]["kind"] == "original"
+        assert (root["label"], root["group_id"]) == (
+            int(csv_row["label"]),
+            csv_row["group_id"],
+        )
     for row in rows:
         assert set(row) == ev.MANIFEST_FIELDS and row["split"] == "test"
         assert sha256_file(output.parent / row["path"]) == row["sha256"]
         if row["parent_id"]:
             parent = roots[row["parent_id"]]
-            assert (row["group_id"], row["label"], row["source"]) == (
-                parent["group_id"],
-                parent["label"],
-                parent["source"],
-            )
-            assert row["transform"] == rm.VARIANTS[row["cohort"]][0]
+            assert [row[k] for k in ("group_id", "label", "source")] == [
+                parent[k] for k in ("group_id", "label", "source")
+            ]
+            assert row["transform"] == SPEC_TRANSFORMS[row["cohort"]]
+    assert {r["cohort"] for r in rows} == {"parents", *SPEC_TRANSFORMS}
     assert read_jsonl(output) == [
-        json.loads(json.dumps(row, sort_keys=True)) for row in rows
+        json.loads(json.dumps(r, sort_keys=True)) for r in rows
     ]
 
 
-def test_transforms_change_only_what_their_cohort_names(parents, tmp_path):
+@pytest.mark.parametrize("quality", [90, 70, 50])
+def test_jpeg_variant_is_encoded_at_the_spec_quality(parents, tmp_path, quality):
     output = tmp_path / "variants.jsonl"
     rows = build_variants(parents, output)
-    by = {(row["source"], row["cohort"]): output.parent / row["path"] for row in rows}
+    for source in ("genimage_real", "genimage_sd15"):
+        root = next(r for r in rows if r["source"] == source and not r["parent_id"])
+        child = next(
+            r for r in rows if r["source"] == source and r["cohort"] == f"jpeg{quality}"
+        )
+        reference = io.BytesIO()
+        Image.fromarray(pixels(output.parent / root["path"])).save(
+            reference, "JPEG", quality=quality
+        )
+        with Image.open(output.parent / child["path"]) as image:
+            assert image.format == "JPEG"
+            # Quantization tables identify the quality the file was really saved with.
+            assert image.quantization == Image.open(reference).quantization
 
-    def image(source, cohort):
-        with Image.open(by[(source, cohort)]) as img:
-            img.load()
-            return img
 
-    sizes = {q: by[("genimage_sd15", f"jpeg{q}")].stat().st_size for q in (90, 70, 50)}
-    assert sizes[90] > sizes[70] > sizes[50]
-    assert image("genimage_sd15", "jpeg50").format == "JPEG"
-    assert image("genimage_sd15", "rotate").size == (768, 1024)
-    assert image("genimage_sd15", "crop").size == (819, 614)
-    assert image("genimage_sd15", "downscale").size == (512, 384)
-    # A 300 px short side only shrinks to the serving minimum, never below it.
-    assert min(image("genimage_real", "crop").size) == MIN_SIDE
-    assert min(image("genimage_real", "downscale").size) == MIN_SIDE
-    bright, base = (
-        image("genimage_real", "brightness"),
-        image("genimage_real", "rotate"),
-    )
-    assert np.asarray(bright).mean() > np.asarray(base).mean()
-    assert image("genimage_real", "brightness").format == "PNG"
+def test_geometry_and_brightness_match_the_spec_exactly(parents, tmp_path):
+    output = tmp_path / "variants.jsonl"
+    rows = build_variants(parents, output)
+    path = {(r["source"], r["cohort"]): output.parent / r["path"] for r in rows}
+    for source, (width, height) in (
+        ("genimage_sd15", (1024, 768)),
+        ("genimage_real", (320, 300)),
+    ):
+        base = Image.fromarray(pixels(path[(source, "parents")]))
+        keep = max(
+            0.8, 256 / min(width, height)
+        )  # never below the 256 px serving minimum
+        crop_w, crop_h = round(width * keep), round(height * keep)
+        left, top = (width - crop_w) // 2, (height - crop_h) // 2
+        scale = max(0.5, 256 / min(width, height))
+        expected = {
+            "rotate": base.transpose(
+                Image.Transpose.ROTATE_90
+            ),  # 90° counter-clockwise
+            "crop": base.crop((left, top, left + crop_w, top + crop_h)),
+            "downscale": base.resize(
+                (round(width * scale), round(height * scale)), Image.Resampling.BICUBIC
+            ),
+            "brightness": ImageEnhance.Brightness(base).enhance(1.3),
+        }
+        for cohort, image in expected.items():
+            with Image.open(path[(source, cohort)]) as saved:
+                assert saved.format == "PNG", cohort
+            assert np.array_equal(pixels(path[(source, cohort)]), np.asarray(image)), (
+                cohort
+            )
+    with Image.open(path[("genimage_sd15", "crop")]) as image:
+        assert image.size == (819, 614)
+    with Image.open(path[("genimage_sd15", "downscale")]) as image:
+        assert image.size == (512, 384)
 
 
 def test_variants_are_reproducible(parents, tmp_path):
@@ -150,35 +190,69 @@ def test_exif_orientation_is_applied_before_variants(tmp_path):
         assert img.size == (300, 400)
 
 
-def test_duplicate_parent_bytes(parents, tmp_path):
-    rows = list(csv.DictReader(parents.open(encoding="utf-8")))
-    same_group = write_csv(tmp_path / "dup.csv", [*rows, rows[0]])
+def test_duplicate_parent_bytes_must_share_a_group(parents, tmp_path):
+    same_group = write_csv(tmp_path / "dup.csv", [*PARENT_ROWS, PARENT_ROWS[0]])
     assert len(rm.make_variants(same_group, tmp_path / "one" / "v.jsonl")) == 2 * 8
-    other_group = write_csv(
-        tmp_path / "bad.csv", [*rows, {**rows[0], "group_id": "other"}]
+    other = write_csv(
+        tmp_path / "bad.csv", [*PARENT_ROWS, {**PARENT_ROWS[0], "group_id": "x"}]
     )
     with pytest.raises(ValueError, match="another group"):
-        rm.make_variants(other_group, tmp_path / "two" / "v.jsonl")
+        rm.make_variants(other, tmp_path / "two" / "v.jsonl")
 
 
-def test_parent_rows_need_label_source_and_group(tmp_path):
-    save(tmp_path / "p.png")
-    bad = write_csv(
-        tmp_path / "p.csv",
-        [{"path": "p.png", "label": "2", "source": "x", "group_id": "g"}],
+def test_every_bad_parent_is_listed_before_anything_is_written(parents, tmp_path):
+    save(tmp_path / "parents" / "small.png", size=(255, 400))
+    (tmp_path / "parents" / "broken.jpg").write_bytes(b"not an image")
+    rows = [
+        *PARENT_ROWS,
+        {"path": "parents/small.png", "label": "0", "source": "s", "group_id": "g1"},
+        {"path": "parents/broken.jpg", "label": "0", "source": "s", "group_id": "g2"},
+        {"path": "parents/missing.png", "label": "0", "source": "s", "group_id": "g3"},
+        {"path": "parents/real.png", "label": "2", "source": "s", "group_id": "g4"},
+    ]
+    output = tmp_path / "v.jsonl"
+    with pytest.raises(ValueError) as info:
+        rm.make_variants(write_csv(tmp_path / "bad.csv", rows), output)
+    message = str(info.value)
+    assert "bad.csv:4: short side 255 px < 256 px" in message
+    assert "bad.csv:5: cannot be decoded" in message
+    assert "bad.csv:6: file not found" in message
+    assert "bad.csv:7: need path, label 0/1" in message
+    assert not (tmp_path / "v").exists()
+
+
+def test_failure_while_writing_leaves_no_variant_folder(parents, tmp_path, monkeypatch):
+    def fail(image):
+        raise OSError("disk full")
+
+    monkeypatch.setitem(
+        rm.VARIANTS, "brightness", (SPEC_TRANSFORMS["brightness"], fail)
     )
-    with pytest.raises(ValueError, match="label 0/1"):
-        rm.make_variants(bad, tmp_path / "v.jsonl")
+    with pytest.raises(OSError, match="disk full"):
+        rm.make_variants(parents, tmp_path / "v.jsonl")
+    assert not (tmp_path / "v").exists()
 
 
-def test_main_refuses_existing_manifest_or_image_folder(parents, tmp_path):
+def test_variants_cli_reports_errors_with_exit_code_2(parents, tmp_path, capsys):
     output = tmp_path / "v.jsonl"
     rm.main(["variants", "--parents", str(parents), "--output", str(output)])
-    with pytest.raises(SystemExit):
-        rm.main(["variants", "--parents", str(parents), "--output", str(output)])
-    output.unlink()
-    with pytest.raises(FileExistsError):
-        rm.make_variants(parents, output)
+    assert len(read_jsonl(output)) == 16
+    for argv in (
+        ["variants", "--parents", str(parents), "--output", str(output)],
+        ["variants", "--parents", str(parents), "--output", str(tmp_path / "v")],
+        [
+            "variants",
+            "--parents",
+            str(tmp_path / "none.csv"),
+            "--output",
+            str(tmp_path / "n.jsonl"),
+        ],
+    ):
+        with pytest.raises(SystemExit) as exit_info:
+            rm.main(argv)
+        assert exit_info.value.code == 2
+    err = capsys.readouterr().err
+    assert "already exists" in err and "Not found" in err and "Traceback" not in err
 
 
 def cohort_folder(tmp_path, name, files):
@@ -224,18 +298,37 @@ def test_cohort_rejects_wrong_label_or_missing_source(tmp_path, name, info, mess
         rm.make_cohort(name, folder, tmp_path / "c.jsonl")
 
 
-def test_cohort_refuses_gps_and_unlisted_files(tmp_path):
+def test_cohort_lists_every_problem(tmp_path):
     folder = cohort_folder(
-        tmp_path, "phone", {"a.jpg": {"source": "iPhone", "label": "0"}}
+        tmp_path,
+        "phone",
+        {
+            "a.jpg": {"source": "iPhone", "label": "0"},
+            "b.png": {"source": "iPhone", "label": "0"},
+            "c.png": {"source": "iPhone", "label": "0"},
+        },
     )
     exif = Image.Exif()
     exif.get_ifd(rm.GPS_IFD)[2] = (10.0, 45.0, 0.0)
     save(folder / "a.jpg", size=(300, 300), fmt="JPEG", exif=exif.tobytes())
+    (folder / "b.png").write_bytes(b"broken")
+    (folder / "c.png").unlink()
     save(folder / "extra.png")
     with pytest.raises(ValueError) as info:
         rm.make_cohort("phone", folder, tmp_path / "c.jsonl")
-    assert "a.jpg: has GPS" in str(info.value)
-    assert "extra.png: need source" in str(info.value)
+    message = str(info.value)
+    assert "a.jpg: has GPS" in message
+    assert "b.png: cannot be decoded" in message
+    assert "c.png: listed in sources.csv but not in folder" in message
+    assert "extra.png: need source" in message
+
+
+def test_cohort_without_sources_csv_is_a_clear_error(tmp_path):
+    folder = tmp_path / "phone"
+    folder.mkdir()
+    save(folder / "a.png")
+    with pytest.raises(ValueError, match="Not found: .*sources.csv"):
+        rm.make_cohort("phone", folder, tmp_path / "c.jsonl")
 
 
 def test_zalo_copy_keeps_the_phone_parent_group(tmp_path):
@@ -275,34 +368,11 @@ class FakeScorer:
     """Runs the real normalizer (so too-small images fail like serving); score = brightness."""
 
     def __call__(self, image):
-        pixels = np.asarray(normalize_image(image).image, dtype=np.float32)
-        return float(pixels.mean() / 255)
+        values = np.asarray(normalize_image(image).image, dtype=np.float32)
+        return float(values.mean() / 255)
 
 
-@pytest.fixture
-def locked(tmp_path, parents):
-    """Variant manifest plus a small/broken extra row, a valid model bundle and manifests."""
-    manifest = tmp_path / "run" / "manifest.jsonl"
-    rows = rm.make_variants(parents, manifest)
-    small = save(tmp_path / "run" / "small.png", size=(200, 200))
-    broken = tmp_path / "run" / "broken.jpg"
-    broken.write_bytes(b"not an image")
-    for path, cohort in ((small, "phone"), (broken, "zalo")):
-        digest = sha256_file(path)
-        rows.append(
-            rm._row(
-                f"{cohort}-x",
-                path.name,
-                digest,
-                cohort,
-                None,
-                rm.ROOT_TRANSFORM,
-                label=0,
-                source="test",
-                group_id=f"{cohort}-x",
-            )
-        )
-    rm.write_manifest(rows, manifest)
+def write_model(tmp_path, thresholds):
     rng = np.random.default_rng(0)
     probe = LogisticRegression().fit(rng.normal(size=(20, FEATURE_DIM)), [0, 1] * 10)
     model = tmp_path / "model.joblib"
@@ -311,7 +381,7 @@ def locked(tmp_path, parents):
         "norm_version": NORMALIZATION_VERSION,
         "dataset": "genimage",
     }
-    joblib.dump({"probe": probe, "metadata": metadata, "thresholds": THRESHOLDS}, model)
+    joblib.dump({"probe": probe, "metadata": metadata, "thresholds": thresholds}, model)
     model.with_suffix(".joblib.sha256").write_text(sha256_file(model) + "\n")
     model_manifest = tmp_path / "model_manifest.json"
     model_manifest.write_text(
@@ -321,19 +391,82 @@ def locked(tmp_path, parents):
                 "clip_model_id": feature_contract()["clip_model_id"],
                 "clip_revision": feature_contract()["clip_revision"],
                 "normalization_version": NORMALIZATION_VERSION,
-                "thresholds": THRESHOLDS,
+                "thresholds": thresholds,
             }
         )
     )
-    protocol = tmp_path / "protocol.json"
-    protocol.write_text(json.dumps({"status": "locked"}))
-    return {
+    return model, model_manifest
+
+
+def write_protocol(locked, **overrides):
+    """A locked ADV-08 protocol naming exactly the fixture's inputs."""
+    rows = read_jsonl(locked["manifest"])
+    protocol = {
+        "schema_version": 1,
+        "status": "locked",
+        "manifest_lock_ref": "test lock",
+        "split_review_ref": "test review",
+        "profile": {
+            "clip_model_id": feature_contract()["clip_model_id"],
+            "clip_revision": feature_contract()["clip_revision"],
+            "normalization_version": NORMALIZATION_VERSION,
+        },
+        "thresholds": json.loads(locked["model_manifest"].read_text())["thresholds"],
+        "artifacts": {
+            name: {"path": locked[name].name, "sha256": sha256_file(locked[name])}
+            for name in ("model", "model_manifest", "manifest")
+        },
+        "cohorts": [
+            {
+                "name": c,
+                "status": "present",
+                "transform": next(r["transform"] for r in rows if r["cohort"] == c),
+            }
+            for c in sorted({r["cohort"] for r in rows})
+        ],
+        **overrides,
+    }
+    locked["protocol"].write_text(json.dumps(protocol))
+    return protocol
+
+
+@pytest.fixture
+def locked(tmp_path, parents):
+    """Variant manifest plus a too-small phone image and a broken Zalo file, a valid
+    model with its manifest, and a locked protocol naming all of them."""
+    manifest = tmp_path / "run" / "manifest.jsonl"
+    rows = rm.make_variants(parents, manifest)
+    small = save(tmp_path / "run" / "small.png", size=(200, 200))
+    broken = tmp_path / "run" / "broken.jpg"
+    broken.write_bytes(b"not an image")
+    for path, cohort, transform in (
+        (small, "phone", rm.ROOT_TRANSFORM),
+        (broken, "zalo", rm.ZALO_TRANSFORM),
+    ):
+        rows.append(
+            rm._row(
+                f"{cohort}-x",
+                path.name,
+                sha256_file(path),
+                cohort,
+                None,
+                transform,
+                label=0,
+                source="test",
+                group_id=f"{cohort}-x",
+            )
+        )
+    rm.write_manifest(rows, manifest)
+    model, model_manifest = write_model(tmp_path, THRESHOLDS)
+    files = {
         "manifest": manifest,
         "model": model,
         "model_manifest": model_manifest,
-        "protocol": protocol,
+        "protocol": tmp_path / "protocol.json",
         "rows": rows,
     }
+    write_protocol(files)
+    return files
 
 
 def run(locked, output, scorer=None):
@@ -343,44 +476,62 @@ def run(locked, output, scorer=None):
         locked["model_manifest"],
         locked["protocol"],
         output,
-        scorer or FakeScorer(),
+        lambda: scorer or FakeScorer(),
     )
+
+
+def expected_verdict(score, low, high):
+    return (
+        "likely_real" if score < low else "likely_ai" if score > high else "uncertain"
+    )
+
+
+def read_predictions(path):
+    with path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        return reader.fieldnames, list(reader)
 
 
 def test_runner_writes_one_prediction_per_image_like_the_api(locked, tmp_path):
     output = tmp_path / "out" / "predictions.csv"
-    counts = run(locked, output)
-    assert counts == {"ok": 16, "error": 2}
+    assert run(locked, output) == {"ok": 16, "error": 2}
     assert not output.with_name(output.name + ".partial").exists()
-    with output.open(newline="", encoding="utf-8") as handle:
-        reader = csv.DictReader(handle)
-        predictions = list(reader)
-    assert reader.fieldnames == ev.PREDICTION_FIELDS
+    fields, predictions = read_predictions(output)
+    assert fields == ev.PREDICTION_FIELDS
     assert [p["sample_id"] for p in predictions] == [
         r["sample_id"] for r in locked["rows"]
     ]
     hashes = [sha256_file(locked[k]) for k in ("model", "manifest", "protocol")]
     for prediction, row in zip(predictions, locked["rows"]):
         assert [
-            prediction[k]
-            for k in ("model_sha256", "manifest_sha256", "protocol_sha256")
+            prediction[f"{k}_sha256"] for k in ("model", "manifest", "protocol")
         ] == hashes
         assert prediction["parent_id"] == (row["parent_id"] or "")
         if prediction["status"] == "ok":
             score = float(prediction["score"])
-            assert 0 <= score <= 1 and prediction["error_code"] == ""
-            expected = (
-                "likely_real"
-                if score < 0.3
-                else "likely_ai"
-                if score > 0.7
-                else "uncertain"
-            )
-            assert prediction["verdict"] == expected
+            assert prediction["verdict"] == expected_verdict(score, 0.3, 0.7)
     errors = {p["sample_id"]: p for p in predictions if p["status"] == "error"}
     assert errors["phone-x"]["error_code"] == "IMAGE_TOO_SMALL"
     assert errors["zalo-x"]["error_code"] == "INVALID_IMAGE"
     assert errors["zalo-x"]["score"] == errors["zalo-x"]["verdict"] == ""
+
+
+def test_verdicts_follow_the_model_thresholds(locked, tmp_path):
+    thresholds = {"binary": 0.5, "low": 0.45, "high": 0.55}
+    other = tmp_path / "other"
+    other.mkdir()
+    locked["model"], locked["model_manifest"] = write_model(other, thresholds)
+    write_protocol(locked)
+    output = tmp_path / "p.csv"
+    run(locked, output)
+    scored = [p for p in read_predictions(output)[1] if p["status"] == "ok"]
+    assert {p["verdict"] for p in scored} - {
+        "uncertain"
+    }  # narrower band decides more images
+    for prediction in scored:
+        assert prediction["verdict"] == expected_verdict(
+            float(prediction["score"]), 0.45, 0.55
+        )
 
 
 def test_scorer_failure_is_recorded_as_model_error(locked, tmp_path):
@@ -389,18 +540,85 @@ def test_scorer_failure_is_recorded_as_model_error(locked, tmp_path):
 
     output = tmp_path / "p.csv"
     assert run(locked, output, broken)["error"] == 18
-    with output.open(newline="", encoding="utf-8") as handle:
-        codes = {row["error_code"] for row in csv.DictReader(handle)}
+    codes = {row["error_code"] for row in read_predictions(output)[1]}
     assert codes == {"MODEL_ERROR", "INVALID_IMAGE"}
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (None, "protocol not found"),
+        ("", "not valid JSON"),
+        ("rác không phải JSON", "not valid JSON"),
+        ("[]", "must be a JSON object"),
+    ],
+)
+def test_unreadable_protocol_is_refused_before_loading_clip(
+    locked, tmp_path, content, message
+):
+    if content is None:
+        locked["protocol"].unlink()
+    else:
+        locked["protocol"].write_text(content, encoding="utf-8")
+    loaded = []
+    with pytest.raises(ev.RobustnessInputError, match=message):
+        ev.run_robustness(
+            locked["manifest"],
+            locked["model"],
+            locked["model_manifest"],
+            locked["protocol"],
+            tmp_path / "p.csv",
+            lambda: loaded.append(1),
+        )
+    assert loaded == []
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"status": "draft"}, "status must be locked"),
+        ({"schema_version": 2}, "schema_version must be 1"),
+        ({"split_review_ref": ""}, "split_review_ref are required"),
+        ({"thresholds": {"binary": 0.5, "low": 0.2, "high": 0.8}}, "thresholds differ"),
+        ({"profile": {}}, "profile differs"),
+        ({"cohorts": []}, "cohorts not registered"),
+    ],
+)
+def test_protocol_must_be_locked_for_exactly_these_inputs(
+    locked, tmp_path, overrides, message
+):
+    write_protocol(locked, **overrides)
+    with pytest.raises(ev.RobustnessInputError, match=message):
+        run(locked, tmp_path / "p.csv")
+    assert not locked["protocol"].with_name("protocol.json.used.json").exists()
+
+
+@pytest.mark.parametrize("artifact", ["model", "model_manifest", "manifest"])
+def test_protocol_must_name_the_files_given(locked, tmp_path, artifact):
+    protocol = write_protocol(locked)
+    protocol["artifacts"][artifact]["sha256"] = "0" * 64
+    locked["protocol"].write_text(json.dumps(protocol))
+    with pytest.raises(ev.RobustnessInputError, match=f"artifacts.{artifact}.sha256"):
+        run(locked, tmp_path / "p.csv")
+
+
+def test_a_locked_protocol_scores_only_once(locked, tmp_path):
+    run(locked, tmp_path / "first.csv")
+    used = json.loads(
+        locked["protocol"].with_name("protocol.json.used.json").read_text()
+    )
+    assert used["protocol_sha256"] == sha256_file(locked["protocol"])
+    with pytest.raises(ev.RobustnessInputError, match="already used"):
+        run(locked, tmp_path / "second.csv")
+    assert not (tmp_path / "second.csv").exists()
 
 
 def test_runner_refuses_a_model_manifest_for_another_model(locked, tmp_path):
     data = json.loads(locked["model_manifest"].read_text())
     locked["model_manifest"].write_text(json.dumps({**data, "model_sha256": "0" * 64}))
-    output = tmp_path / "p.csv"
-    with pytest.raises(ValueError, match="model_sha256"):
-        run(locked, output)
-    assert not output.exists() and not output.with_name("p.csv.partial").exists()
+    write_protocol(locked)
+    with pytest.raises(ev.RobustnessInputError, match="model_sha256"):
+        run(locked, tmp_path / "p.csv")
 
 
 def test_runner_stops_when_an_image_changed_after_listing(locked, tmp_path):
@@ -413,29 +631,68 @@ def test_runner_stops_when_an_image_changed_after_listing(locked, tmp_path):
     assert output.with_name("p.csv.partial").exists()  # kept as an unfinished run
 
 
-def test_runner_never_overwrites(locked, tmp_path):
-    output = tmp_path / "p.csv"
-    output.write_text("old")
-    with pytest.raises(FileExistsError):
-        run(locked, output)
-    assert output.read_text() == "old"
+@pytest.mark.parametrize("existing", ["p.csv", "p.csv.partial", "p.csv.run.json"])
+def test_runner_never_overwrites_outputs(locked, tmp_path, existing):
+    (tmp_path / existing).write_text("old")
+    with pytest.raises(FileExistsError, match=existing.replace(".", r"\.")):
+        run(locked, tmp_path / "p.csv")
+    assert (tmp_path / existing).read_text() == "old"
 
 
-def test_manifest_rows_must_be_complete_and_unique(locked):
-    rows = read_jsonl(locked["manifest"])
-    locked["manifest"].write_text(
-        "\n".join(json.dumps(r) for r in [*rows, rows[0]]) + "\n"
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda rows: rows + [rows[0]], "duplicate sample_id"),
+        (lambda rows: [{**rows[0], "label": True}], "integer 0 or 1"),
+        (lambda rows: [{**rows[0], "split": "val"}], "split must be test"),
+        (
+            lambda rows: [{k: v for k, v in rows[0].items() if k != "group_id"}],
+            "need fields",
+        ),
+        (
+            lambda rows: [
+                rows[0],
+                {**rows[0], "sample_id": "other", "group_id": "other"},
+            ],
+            "same image bytes in another group",
+        ),
+    ],
+)
+def test_manifest_rows_are_checked(locked, change, message):
+    rows = change(read_jsonl(locked["manifest"]))
+    locked["manifest"].write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    with pytest.raises(ev.RobustnessInputError, match=message):
+        ev.read_robustness_manifest(locked["manifest"])
+
+
+def test_cli_end_to_end_and_exit_codes(locked, tmp_path, monkeypatch, capsys):
+    loads = []
+    monkeypatch.setattr(
+        ev, "load_scorer", lambda path: loads.append(path) or FakeScorer()
     )
-    with pytest.raises(ValueError, match="unique ID"):
-        ev.read_robustness_manifest(locked["manifest"])
-    del rows[0]["group_id"]
-    locked["manifest"].write_text(json.dumps(rows[0]) + "\n")
-    with pytest.raises(ValueError, match="missing"):
-        ev.read_robustness_manifest(locked["manifest"])
-
-
-def test_cli_robustness_needs_all_inputs(tmp_path):
-    with pytest.raises(SystemExit):
-        ev.main(["--robustness", "--output", str(tmp_path / "p.csv")])
-    with pytest.raises(SystemExit):
-        ev.main(["--split", "val", "--robustness", "--output", str(tmp_path / "p.csv")])
+    output = tmp_path / "cli" / "predictions.csv"
+    argv = [
+        "--robustness",
+        "--manifest",
+        str(locked["manifest"]),
+        "--model",
+        str(locked["model"]),
+        "--model-manifest",
+        str(locked["model_manifest"]),
+        "--protocol",
+        str(locked["protocol"]),
+        "--output",
+        str(output),
+    ]
+    ev.main(argv)
+    assert loads == [locked["model"]]
+    assert len(read_predictions(output)[1]) == 18
+    run_log = json.loads(output.with_name("predictions.csv.run.json").read_text())
+    assert run_log["counts"] == {"ok": 16, "error": 2} and "git_commit" in run_log
+    with pytest.raises(SystemExit) as exit_info:  # the protocol is now used
+        ev.main([*argv[:-1], str(tmp_path / "again.csv")])
+    assert exit_info.value.code == 2 and loads == [locked["model"]]
+    with pytest.raises(SystemExit) as exit_info:
+        ev.main(["--robustness", "--output", str(tmp_path / "x.csv")])
+    assert exit_info.value.code == 2
+    assert "Traceback" not in capsys.readouterr().err
