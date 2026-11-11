@@ -5,16 +5,19 @@ Phụ trách: Loan
 ## Làm gì
 Tải, chuẩn hóa và chia tập dữ liệu. Nhãn lấy theo thư mục (real = 0, ai = 1).
 
-**Luồng ML mới (normalization version 1):** dùng chung `models.normalize`; loại ảnh GenImage cạnh ngắn <256 thay vì phóng to, CIFAKE vẫn giữ 32×32. Manifest mới thêm `norm_version`. Để không ghi đè dữ liệu/manifest cũ đang được nhóm review:
+**Bộ dữ liệu chính (T023, normalization version 1):** `data/labels.csv` là bộ **9.708 ảnh** (4.000 CIFAKE + 5.708 GenImage) giữ split của manifest 10.000 ảnh cũ, loại 292 ảnh thật có cạnh ngắn dưới 256 px thay vì phóng to. Đây là bộ model phục vụ API (e571) đã dùng ([lựa chọn ML](../docs/decisions/ml-selection.md)): khác bản Kiệt chọn (SHA256 `4bf8e490…`) chỉ ở thư mục ảnh đã chuẩn hóa và kiểu xuống dòng, từng dòng còn lại giống hệt. Nhóm giữ bộ này theo constitution mục II; không thay bù ảnh nhỏ (KAN-34 đã bỏ ngày 09/11).
+
+Tạo lại từ repo sạch (manifest 10.000 ảnh cũ nằm ở commit `58a21b5`):
 
 ```bash
-python -m scripts.prepare_data --output-dir .cache/ml-run/processed-v1 --labels .cache/ml-run/labels.csv --workers 2
-python -m scripts.check_data --labels .cache/ml-run/labels.csv
+python -m scripts.download_data cifake
+python -m scripts.download_data genimage
+git show 58a21b5:data/labels.csv > .cache/labels-10000.csv
+python -m scripts.prepare_data --split-from .cache/labels-10000.csv --output-dir <thư mục mới> --labels <labels mới> --workers 2
+python -m scripts.check_data --labels <labels mới>
 ```
 
-Output đã tồn tại thì chọn đường dẫn mới. `data/labels.csv` và số đo cũ bên dưới giữ làm tham chiếu, không phải kết quả sau loại ảnh nhỏ. Lần chạy mới có 9.708 ảnh (4.000 CIFAKE + 5.708 GenImage), loại 292 ảnh thật quá nhỏ; chi tiết trong [`models/README.md`](../models/README.md), [`docs/ml-handoff.md`](../docs/ml-handoff.md). Baseline T012 đã có trên main qua PR #24; nghiệm thu đối chiếu độc lập T013 vẫn cần nhóm review.
-
-Muốn giữ split của những ảnh còn hợp lệ theo manifest cũ, dùng `scripts.prepare_data --split-from data/labels.csv` cùng output/labels mới, không ghi đè bộ dùng tái lập model cũ. Raw giữ nguyên, ảnh không dùng ghi riêng trong rejection CSV. Đây là chế độ tạo candidate để review; xem [bản ứng viên giữ split](../docs/ml-preserved-split.md), gồm cảnh báo lịch sử holdout và kết quả kiểm chứng.
+`prepare_data` từ chối ghi vào thư mục đã tồn tại (kể cả `data/processed/` vì có `.gitkeep`), nên luôn dùng đường dẫn mới; `--split-from` khớp theo raw identity, không chia lại. Xem [bản ứng viên giữ split](../docs/ml-preserved-split.md) về cảnh báo lịch sử holdout. `metadata_audit.json` và `baseline_filesize.json` bên dưới vẫn đo trên bộ 10.000 ảnh cũ, chưa đo lại cho bộ này.
 
 Checker hiện yêu cầu manifest có sáu cột với `norm_version` ở cuối và đúng version hiện hành; manifest cũ thiếu version sẽ FAIL, không tự nâng version. `prepare_data` ghi riêng ảnh quá nhỏ vào `rejected_small.csv`, ảnh hỏng/decompression bomb vào `rejected_invalid.csv` và ảnh trùng vào `rejected_duplicate.csv`, trong thư mục output. Cả ba danh sách giữ đường dẫn, source, kích thước, lý do và version để QA đối chiếu.
 
@@ -23,7 +26,7 @@ Checker hiện yêu cầu manifest có sáu cột với `norm_version` ở cuố
 | `raw/` | Ảnh gốc tải về, không sửa |
 | `processed/` | Ảnh đã làm sạch, cùng JPEG, cùng chất lượng và kích thước |
 | `features/` | Kết quả CLIP (`.npy`) |
-| `labels.csv` | `filepath, label, source, split, raw_path` |
+| `labels.csv` | `filepath, label, source, split, raw_path, norm_version` |
 | `metadata_audit.json` | Kết quả kiểm tra rò rỉ metadata (gate) |
 | `processed_baseline.sha256` | Metadata mã băm của dữ liệu chuẩn hóa trước khi đổi pipeline (T012), chỉ gồm sha256, **không chứa ảnh** |
 | `baseline_filesize.json` | Dung lượng file theo nguồn (chỉ tham khảo độ chi tiết ảnh) |
@@ -44,7 +47,7 @@ Chạy lại cho cùng kết quả (seed 42). `download_data.py genimage` chạy
 ## Input / Output
 - Input: dataset công khai trên Hugging Face và ảnh tự thu thập.
   - CIFAKE: [`dragonintelligence/CIFAKE-image-dataset`](https://huggingface.co/datasets/dragonintelligence/CIFAKE-image-dataset), lấy 1.000 ảnh mỗi lớp ở mỗi split train/test.
-  - GenImage: 3.000 ảnh thật (ImageNet) + 1.000 ảnh mỗi nguồn Midjourney, GLIDE, SD v1.4.
+  - GenImage: tải 3.000 ảnh thật (ImageNet) + 1.000 ảnh mỗi nguồn Midjourney, GLIDE, SD v1.4; sau khi loại ảnh nhỏ còn 2.708 ảnh thật.
     - Ảnh thật, Midjourney, GLIDE: [`TheKernel01/Tiny-GenImage`](https://huggingface.co/datasets/TheKernel01/Tiny-GenImage) (bản thu nhỏ của GenImage).
     - SD v1.4: Tiny-GenImage không có, lấy từ split test của [`nebula/GenImage-arrow`](https://huggingface.co/datasets/nebula/GenImage-arrow) (shard `data-00004`, toàn ảnh AI).
 - Output: `processed/`, `labels.csv`, `metadata_audit.json`, `baseline_filesize.json`.
@@ -57,6 +60,18 @@ Chạy lại cho cùng kết quả (seed 42). `download_data.py genimage` chạy
 | `source` | `genimage_real`, `genimage_sd14`, `genimage_midjourney`, `genimage_glide`, `cifake_real`, `cifake_ai` |
 | `split` | `train`, `val`, `test` |
 | `raw_path` | Ảnh gốc tương ứng trong `raw/` |
+| `norm_version` | Phiên bản chuẩn hóa (`models.normalize.NORMALIZATION_VERSION`), hiện là `1` |
+
+Số ảnh theo split (bộ chính, sau `check_data`: 0 lỗi, 0 cảnh báo, 0 ảnh trùng hoặc gần trùng giữa train và val/test):
+
+| Nguồn | Train | Val | Test |
+|---|---:|---:|---:|
+| `genimage_real` | 1.888 | 421 | 399 |
+| `genimage_glide` | 700 | 150 | 150 |
+| `genimage_midjourney` | 700 | 150 | 150 |
+| `genimage_sd14` | 700 | 150 | 150 |
+| `cifake_real` | 850 | 150 | 1.000 |
+| `cifake_ai` | 850 | 150 | 1.000 |
 
 Lọc theo `source`: chỉ dùng `genimage_*` cho mô hình chính; `cifake_*` chỉ để chạy thử.
 
@@ -75,7 +90,7 @@ Lọc theo `source`: chỉ dùng `genimage_*` cho mô hình chính; `cifake_*` c
 | Ảnh thật gốc (3.000) | Số ảnh | Lưới nén cũ |
 |---|---|---|
 | Thu nhỏ (cạnh ngắn > 256) | 2.706 | Bị lệch |
-| Phóng to (cạnh ngắn < 256) | 292 | Bị lệch, nhưng ảnh mờ (xem Hạn chế) |
+| Cạnh ngắn < 256 | 292 | Bị loại (version 1), ghi vào `rejected_small.csv` |
 | Chỉ crop, không đổi kích thước (= 256) | 2 | Có thể còn; 1 ảnh lưới cũ trùng lưới mới |
 
 Cách này **giảm thiểu**, không chứng minh xóa hết dấu vết nén 2 lần.
@@ -97,7 +112,7 @@ Sau khi nén cùng chất lượng, dung lượng file phản ánh **độ chi t
 
 ### Hạn chế đã biết
 - **Ảnh AI mịn hơn ảnh thật**, rõ nhất ở GLIDE (ảnh gốc 256×256, ít chi tiết), rồi đến Midjourney. Đây là khác biệt nội dung, metadata đã sạch. Rủi ro: mô hình học "ảnh mịn = AI" và gọi oan ảnh thật ít chi tiết; khi đánh giá cần báo accuracy **theo từng `source`** và tỷ lệ gọi oan trên ảnh thật mịn.
-- **292/3.000 ảnh thật có cạnh ngắn dưới 256px** nên bị phóng to khi chuẩn hóa và mờ hơn các ảnh khác; ảnh AI không có trường hợp này. Rủi ro: mô hình học "ảnh mờ = ảnh thật". Tạm giữ, sẽ thay bằng ảnh thật có cạnh ngắn ≥ 256px.
+- **292/3.000 ảnh thật có cạnh ngắn dưới 256px** bị loại thay vì phóng to (version 1), nên không còn ảnh thật mờ do phóng to. Đổi lại GenImage hơi lệch lớp (52–53% ảnh AI mỗi split); nhóm quyết định không thay bù (KAN-34 đã bỏ).
 
 ## Lưu ý và giả định
 - Không commit ảnh và `.npy` (đã gitignore); chỉ commit `labels.csv` và README.
