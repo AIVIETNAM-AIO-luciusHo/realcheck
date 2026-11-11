@@ -61,7 +61,7 @@ docker compose up -d
 
 ## 4. Kiểm tra sau khi khởi động
 
-API nạp model mất khoảng 15–20 giây; trong lúc đó gateway trả 502 `API_UNAVAILABLE`.
+API nạp model mất khoảng 10–20 giây (đo local: 11–12 giây); trong lúc đó gateway trả 502 `API_UNAVAILABLE`.
 
 ```bash
 docker compose ps                            # api (healthy), ui (healthy), nginx (Up)
@@ -97,12 +97,16 @@ Mở `http://<lab>/` bằng trình duyệt, tải một ảnh JPEG điện tho�
 
 ```bash
 git fetch origin
+OLD=$(git rev-parse --short HEAD)
 git checkout <commit-mới>
 sed -i "s/^REALCHECK_TAG=.*/REALCHECK_TAG=$(git rev-parse --short HEAD)/" .env
 docker compose build
 docker compose up -d
+git diff --quiet "$OLD" HEAD -- nginx/nginx.conf || docker compose up -d --force-recreate nginx
 ```
 Image của commit cũ vẫn còn với tag cũ, dùng để rollback. Kiểm lại như mục 4 và ghi biên bản.
+
+`docker compose up -d` không tạo lại container Nginx khi chỉ có `nginx/nginx.conf` đổi: file được mount riêng lẻ, `git checkout` thay nó bằng file mới, và container có thể vẫn đọc nội dung cũ. Dòng cuối tạo lại Nginx khi cấu hình đổi giữa hai commit.
 
 ## 8. Cập nhật model
 
@@ -116,9 +120,11 @@ Sai checksum hoặc sai metadata thì API ghi `model_load_failed` và `/health` 
 
 | Quay lại | Cách làm | Thời gian gián đoạn |
 |---|---|---|
-| Mã và image | `git checkout <commit-cũ>`, đặt `REALCHECK_TAG=<commit-cũ>` trong `.env`, `docker compose up -d --no-build` | Thời gian API nạp lại model, khoảng 20 giây |
-| Model | Đặt lại `REALCHECK_MODEL_FILE=<file-cũ>`, `docker compose up -d api` | Như trên |
-| Commit cũ hơn bản thêm `REALCHECK_TAG` | Compose cũ dùng tag `latest`: `git checkout <commit-cũ>`, `docker compose up -d --build` (build lại, lớp pip đã cache) | Thêm thời gian build |
+| Mã và image | `git checkout <commit-cũ>`, đặt `REALCHECK_TAG=<commit-cũ>` trong `.env`, `docker compose up -d --no-build` | Thời gian API nạp lại model: 11,4 giây khi diễn tập local |
+| Model | Đặt lại `REALCHECK_MODEL_FILE=<file-cũ>`, `docker compose up -d api` | 11,9 giây khi diễn tập local |
+| Commit cũ hơn bản thêm `REALCHECK_TAG` | Compose cũ dùng tag `latest`: `git checkout <commit-cũ>`, `docker compose up -d --no-build` nếu image `latest` vẫn là bản đó, ngược lại `--build` | Thêm thời gian build nếu phải build |
+
+`nginx/nginx.conf` khác giữa hai commit thì chạy thêm `docker compose up -d --force-recreate nginx` (mục 7). Trong lúc API nạp lại, gateway trả 502 `API_UNAVAILABLE`.
 
 Sau rollback kiểm như mục 4 và ghi vào biên bản: commit, tag, model, lý do và thời điểm.
 
