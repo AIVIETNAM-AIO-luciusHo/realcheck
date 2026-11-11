@@ -18,6 +18,8 @@ Từ 15 test trở lên cho API, model và dữ liệu. Test chống phá: ảnh
 
 `test_ui.py` kiểm giao diện Streamlit bằng AppTest: một lần bấm một POST, không tự thử lại, các mức kết luận, lỗi HTTP và mất mạng, cách ly phiên, trang đánh giá; thêm hợp đồng với FastAPI thật (scorer giả). Cần `pip install -r streamlit/requirements.txt`. Chưa kiểm qua Nginx hay với model thật.
 
+`test_robustness.py` (ADV-07) kiểm manifest robustness: ảnh con giữ lineage cha, tham số đúng đặc tả (chất lượng JPEG đọc từ bảng lượng tử, pixel xoay/cắt/thu nhỏ/sáng so với phép biến đổi viết từ đặc tả), tái lập, EXIF orientation, ảnh cha trùng, ảnh cha lỗi hoặc dưới 256 px bị liệt kê trước khi ghi, không để thư mục mồ côi, cohort thiếu nguồn/sai nhãn/có GPS/hỏng/thiếu file, Zalo giữ group ảnh điện thoại; runner `--robustness`: cổng protocol (đọc được, `locked`, đúng hash, ngưỡng, profile, cohort), mỗi protocol chấm một lần, không nạp CLIP khi đầu vào sai, đúng cột, verdict theo ngưỡng của model, mã lỗi API, từ chối manifest sai và ghi đè, CLI đầu-cuối với mã thoát 2. Ảnh tổng hợp, scorer giả chạy chuẩn hóa thật, không cần CLIP.
+
 `test_ml_pipeline.py` kiểm chuẩn hóa JPEG/parity train-serve, ảnh nhỏ/ảnh điện thoại, fingerprint gắn version, cache sai model/đổi ảnh, xác suất không hợp lệ, cột AI theo `classes_`, và fit chỉ trên train. Bộ này chạy với `requirements.txt`, không cần `requirements-ml.txt`. Kiểm thử model thật được ghi riêng trong `docs/ml-handoff.md`.
 
 Test chuẩn hóa spec 001 (ảnh tổng hợp + mock CLIP, không cần mạng, dataset hay trọng số):
