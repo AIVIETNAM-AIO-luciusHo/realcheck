@@ -25,3 +25,5 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 ## ??i ch?ng shortcut ADV-10
 
 - [Thi?t k? v? t?i l?p #59](shortcut-adv10.md): JPEG b? sung, GLIDE resample, model e571 kh?a, validation v? CI theo group.
+
+- [JSON ADV-10](reports/shortcut-adv10.json): s? ?o validation th?t v? CI; ch?a QA ??c l?p.
