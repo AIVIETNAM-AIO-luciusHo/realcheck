@@ -22,8 +22,7 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 - [JSON bàn giao](reports/ml-api-handoff-20261110.json), [JSON parity lịch sử](reports/ml-recheck-20261110.json).
 - Dữ liệu mở rộng/train candidate được review riêng tại [PR B #61](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/61); PR tài liệu không phụ thuộc PR B.
 
-## ??i ch?ng shortcut ADV-10
+## Đối chứng shortcut ADV-10
 
-- [Thi?t k? v? t?i l?p #59](shortcut-adv10.md): JPEG b? sung, GLIDE resample, model e571 kh?a, validation v? CI theo group.
-
-- [JSON ADV-10](reports/shortcut-adv10.json): s? ?o validation th?t v? CI; ch?a QA ??c l?p.
+- [Thiết kế và kết quả #59](shortcut-adv10.md): model e571, validation/CI và giới hạn.
+- [JSON ADV-10](reports/shortcut-adv10.json): số đo thật, chưa QA độc lập.

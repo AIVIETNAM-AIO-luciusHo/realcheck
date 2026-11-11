@@ -65,4 +65,4 @@ Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan
 
 ## ADV-10 (#59)
 
-`test_shortcut_controls.py`: train/val isolation, raw/variant hashes, EXIF/JPEG/resample order, frozen/refit probe outputs, scorer parity/cache, grouped bootstrap v? saved-report consistency. Fixtures kh?ng c?n model, GPU ho?c m?ng.
+`test_shortcut_controls.py`: isolation train/val, hash, EXIF/JPEG/resample, probe fixed/refit, scorer parity/cache, group bootstrap và báo cáo. Fixture không cần mạng/GPU/model thật.

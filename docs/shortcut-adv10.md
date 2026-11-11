@@ -1,6 +1,6 @@
 # ADV-10 — đối chứng JPEG và resample GLIDE (#59)
 
-Trạng thái ban đầu: công cụ/fixture đang chuẩn bị; chưa có số đo ADV-10. Kiệt thực hiện, Lực review độc lập. Xem [issue #59](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/59). Báo cáo validation này không đổi model API hoặc nghiệm thu model-test.
+Trạng thái: đã chạy đối chứng validation, chờ Lực review độc lập; số đo/evidence ở cuối tài liệu. Kiệt thực hiện, Lực review độc lập. Xem [issue #59](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/59). Báo cáo validation này không đổi model API hoặc nghiệm thu model-test.
 
 ## Thiết kế khóa trước khi xem score
 
@@ -71,25 +71,25 @@ Số 84,54% trong issue thuộc test cũ/cohort khác, không gắn vào validat
 
 JPEG ghost/KAN-46/T027 deferred theo [#53](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/53). Độc lập #51/#52, không thay việc Loan bàn giao cohort/runner. Chưa QA độc lập hoặc duyệt release: `independent_qa_approved=false`, `release_approved=false`; Lực review rồi mới xem xét trạng thái #59.
 
-## K?t qu? th?t ? 11/11/2026
+## Kết quả thật — 11/11/2026
 
-?? ch?y, ch? L?c review ??c l?p. Code/run/analysis commit `6d1dfb3c08677e2a8e1435bed9e7d6acce546b31`, `dirty=false`. [JSON ??y ??](reports/shortcut-adv10.json) v? [g?i evidence GitHub](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/releases/tag/adv10-shortcut-e571-20261111). M?i b?ng d??i ??y l? **validation ?? ti?p x?c**, CI95% theo group; ??n v? ph?n tr?m, degradation d?ng ?i?m ph?n tr?m.
+Đã chạy, chờ Lực review độc lập. Code/run/analysis commit `6d1dfb3c08677e2a8e1435bed9e7d6acce546b31`, `dirty=false`. [JSON đầy đủ](reports/shortcut-adv10.json), [evidence ZIP và checksum](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/releases/tag/adv10-shortcut-e571-20261111). Tất cả bảng là validation đã tiếp xúc, đơn vị phần trăm với CI95%; degradation dùng điểm phần trăm.
 
-Preflight: 4.859 ?nh/group, 0 l?i; train3.988 v? val871. GLIDE850/850 PNG256?256, kh?ng c?n fit k?ch th??c; real2.309/2.309 JPEG c?n resize/crop (2.282 kh?ng vu?ng). Midjourney850 PNG1024?1024, SD1.4 850 PNG512?512. Group hi?n t?i kh?ng giao train/val theo raw/RGB pixel v? lineage ???c c?p. CSV l?ch s? c? 390/871 validation hi?n t?i t?ng l? train c?, 399 t?ng l? val c?, 82 t?ng l? test c?; ??y l? ??i chi?u ???ng d?n, kh?ng ch?ng nh?n near-duplicate ho?c l?ch s? ch?a cung c?p.
+Preflight: 4.859 ảnh/group, 0 lỗi; train3.988, val871. GLIDE850/850 PNG256×256; real2.309/2.309 JPEG cần resize/crop (2.282 không vuông); Midjourney850 PNG1024×1024; SD1.4 850 PNG512×512. Không có group giao train/val theo exact raw/pixel và lineage được cấp. CSV lịch sử có390/871 validation hiện tại từng là train cũ,399 từng val cũ,82 từng test cũ. Đây là đối chiếu đường dẫn, không chứng nhận near-duplicate/lịch sử chưa cung cấp.
 
-Inference: 3.484 d?ng ?nh/nh?nh, 1.621 post hash ri?ng ???c ch?m, 0 l?i; warmup1 v? parity4 ngo?i s? n?y. Parity b?n source maxdiff0. Th?i gian inference156,33s CPU (kh?ng g?m prepare/audit/check hash); SHA model/manifest/?nh kh?p sau run. Kh?ng ch?m ?nh train ho?c test b?ng CLIP.
+Inference: 3.484 dòng ảnh/nhánh,1.621 post hash riêng được chấm,0 lỗi; warmup1 và parity4 ngoài số này. Parity bốn source sai khác0. Thời gian inference156,33s CPU, không gồm prepare/audit/hash. Model và input hashes khớp sau run. Không chấm train hoặc test bằng CLIP.
 
-### Baseline dung l??ng tr??c/sau
+### Baseline dung lượng
 
-M?i c?p N=571/group571 (421 real +150 AI), train2.588. Probe ch? d?ng dung l??ng, kh?ng pixel. B?ng raw c? probe fit raw ri?ng; fixed post fit B/train, refit post fit train t?ng arm. Kh?ng ch?n probe d?a tr?n validation.
+Mỗi cặp N=571 (421 real +150 AI), group571; train2.588. Raw/post có probe riêng. Fixed post fit B/train; refit fit train từng arm. Không chọn probe theo validation.
 
-| C?p real?AI | Raw LR BA [CI95] | Raw tree BA [CI95] |
+| Cặp real–AI | Raw LR BA [CI95] | Raw tree BA [CI95] |
 |---|---|---|
 | genimage_glide | 69.90 [65.59; 74.14] | 77.53 [73.78; 81.39] |
 | genimage_midjourney | 98.19 [96.74; 99.43] | 97.86 [96.26; 99.22] |
 | genimage_sd14 | 98.26 [96.98; 99.29] | 97.95 [96.38; 99.19] |
 
-| C?p | Arm | Post LR fixed [CI95] | Post LR refit [CI95] | Post tree fixed [CI95] | Post tree refit [CI95] |
+| Cặp | Arm | Post LR fixed [CI95] | Post LR refit [CI95] | Post tree fixed [CI95] | Post tree refit [CI95] |
 |---|---|---|---|---|---|
 | genimage_glide | B | 81.43 [77.67; 85.09] | 81.43 [77.67; 85.09] | 81.78 [78.00; 85.47] | 81.78 [78.00; 85.47] |
 | genimage_glide | J | 81.43 [77.67; 85.09] | 81.54 [77.74; 85.16] | 81.78 [78.00; 85.47] | 81.90 [78.17; 85.55] |
@@ -104,9 +104,9 @@ M?i c?p N=571/group571 (421 real +150 AI), train2.588. Probe ch? d?ng dung l??ng
 | genimage_sd14 | R | 54.06 [49.13; 58.55] | 54.06 [49.13; 58.55] | 53.35 [48.66; 57.82] | 53.35 [48.66; 57.82] |
 | genimage_sd14 | JR | 54.06 [49.13; 58.55] | 54.17 [49.27; 58.70] | 53.68 [48.82; 58.15] | 53.80 [48.94; 58.25] |
 
-### Model kh?a v? thay ??i tr?n c?ng c?p
+### Model khóa và tác động trên cùng cặp
 
-| C?p | Arm | N | Accuracy [CI95] | Flip verdict [CI95] | Degradation B?arm [CI95], pp |
+| Cặp | Arm | N | Accuracy [CI95] | Flip verdict [CI95] | Degradation B−arm [CI95], pp |
 |---|---|---|---|---|---|
 | genimage_glide | B | 571 | 97.72 [96.50; 98.77] | 0.00 [0.00; 0.00] | -0.00 [-0.00; 0.00] |
 | genimage_glide | J | 571 | 97.72 [96.50; 98.77] | 0.53 [0.00; 1.23] | -0.00 [-0.00; 0.00] |
@@ -121,7 +121,7 @@ M?i c?p N=571/group571 (421 real +150 AI), train2.588. Probe ch? d?ng dung l??ng
 | genimage_sd14 | R | 571 | 97.72 [96.50; 98.77] | 0.00 [0.00; 0.00] | -0.00 [-0.00; 0.00] |
 | genimage_sd14 | JR | 571 | 97.90 [96.67; 98.95] | 0.18 [0.00; 0.53] | -0.18 [-0.53; 0.00] |
 
-Real kh?ng can thi?p n?n FPR9/421=2,14% gi?ng nhau theo thi?t k?; kh?ng d?ng ?i?u ?? l?m b?ng ch?ng robustness c?a real. Pair flip d?ng m?u s?571 c? 421 real gi? nguy?n; b?ng AI ri?ng b?n d??i tr?nh che khu?t t?c ??ng tr?n ?nh AI. Precision/recall/FPR/FNR/confusion/transition matrices v? CI t?ng source/c?p c? ??y ?? trong JSON.
+Real không bị can thiệp, FPR9/421=2,14% giống nhau theo thiết kế; không coi đây là chứng minh robustness của real. Pair flip có mẫu số571 gồm421 real giữ nguyên; bảng AI riêng giúp thấy tác động không bị loãng. Precision/recall/FPR/FNR/confusion/transition matrices và CI mọi source/cặp có trong JSON.
 
 | AI source | Arm | N | Recall AI [CI95] | Uncertain [CI95] | Flip AI [CI95] |
 |---|---|---|---|---|---|
@@ -138,35 +138,35 @@ Real kh?ng can thi?p n?n FPR9/421=2,14% gi?ng nhau theo thi?t k?; kh?ng d?ng ?i?
 | genimage_sd14 | R | 150 | 97.33 [94.67; 99.33] | 2.00 [0.00; 4.67] | 0.00 [0.00; 0.00] |
 | genimage_sd14 | JR | 150 | 98.00 [95.33; 100.00] | 1.33 [0.00; 3.33] | 0.67 [0.00; 2.00] |
 
-### Metadata v? controls
+### Metadata và controls
 
-| C?p | Raw A_eff [CI95] | Post B/J/R/JR A_eff [CI95] | Raw negative control | Positive control raw/post |
+| Cặp | Raw A_eff [CI95] | Post mọi arm A_eff [CI95] | Raw negative control | Positive raw/post |
 |---|---|---|---|---|
 | genimage_glide | 100.00 [100.00; 100.00] | 50.00 [50.00; 50.00] | 52.29 | 100 / 100 |
 | genimage_midjourney | 100.00 [100.00; 100.00] | 50.00 [50.00; 50.00] | 54.97 | 100 / 100 |
 | genimage_sd14 | 100.00 [100.00; 100.00] | 50.00 [50.00; 50.00] | 50.52 | 100 / 100 |
 
-To?n b?13 metadata post ??u h?ng ? m?i source/arm. A_eff0,5 [0,5;0,5] l? k?t qu? suy bi?n c?a b? ??c tr?ng n?y; kh?ng ch?ng minh ?nh s?ch shortcut. Positive control d?ng nh?n l? ch? ??ng kh?ng thu?c feature ?o th?t; negative control ch? ch?n ?o?n. Kh?ng thay ??i gate metadata ho?c ghi QA approved.
+Cả13 metadata post đều hằng, mọi source/arm. A_eff0,5 [0,5;0,5] là phép kiểm suy biến, không chứng minh dữ liệu sạch shortcut. Control nhãn lộ chủ động chỉ kiểm probe; negative control chỉ chẩn đoán. Không thay gate D03/D04.
 
-### Ph?n t?ch v? h?n ch?
+### Phân tích và hạn chế
 
-1. Gi? thuy?t v? kh?c bi?t k?ch th??c/??nh d?ng c? c? s? m? t?: to?n b? GLIDE l?256px PNG, real l?JPEG c?n fit/crop. Ph?p ?o n?y kh?ng x?c nh?n resize l? nguy?n nh?n m? h?nh ph?n lo?i.
+1. Khác biệt kích thước/định dạng được xác nhận ở mức mô tả: GLIDE256 PNG, real JPEG cần fit/crop. Chưa xác nhận resize là nguyên nhân phân loại của CLIP.
 
-2. N?n JPEG b? sung kh?ng l?m baseline LR fixed real?GLIDE gi?m (81,43%?81,43%). Resample r?i refit v?n82,71%. Hai can thi?p n?y **ch?a lo?i tr? shortcut n?n k?p/GLIDE**; kh?ng ???c vi?t r?ng model ?? h?c d?u v?t AI t?ng qu?t.
+2. JPEG bổ sung không giảm LR fixed real–GLIDE (81,43%→81,43%). Resample/refit vẫn82,71%. **Chưa loại trừ shortcut nén kép/GLIDE**; không kết luận model đã học dấu vết AI tổng quát.
 
-3. Midjourney post LR fixed67,27%?67,61% sau J; SD1.4 54,06%?54,06%, CI bao g?m50%. Kh?ng ph?t hi?n t?n hi?u b?ng probe n?y kh?ng ch?ng minh kh?ng t?n t?i t?n hi?u kh?c. Tree v? m?i mode/arm v?n ???c b?o, kh?ng ch?n ri?ng k?t qu? thu?n l?i.
+3. Midjourney post LR fixed67,27%→67,61% sau J. SD1.4 54,06%→54,06%, CI gồm50%. Probe không phát hiện tín hiệu không chứng minh mọi tín hiệu đều vắng mặt. Tree và các mode/arm đều được báo.
 
-4. Model tr?n c?ng c?p thay ??i nh?: GLIDE B/J97,72%, R98,07%; Midjourney B97,20%?J96,85%, degradation+0,35pp v?i CI[-0,35;+1,05]pp; SD1.4 B97,72%?J97,90%. ??y l? bi?n thi?n tr?n validation ?? ti?p x?c; kh?ng ph?i ch?ng nh?n kh? n?ng t?ng qu?t, c?ng kh?ng ch?ng minh shortcut kh?ng ?nh h??ng.
+4. Model pair GLIDE B/J97,72%, R98,07%; Midjourney B97,20%→J96,85%, degradation+0,35pp, CI[-0,35;+1,05]pp; SD1.4 B97,72%→J97,90%. Biến thiên nhỏ trên validation đã tiếp xúc không chứng minh khả năng tổng quát hoặc hết shortcut.
 
-5. Flip cao nh?t tr?n AI l?3/150=2% ? GLIDE J/R/JR; uncertain GLIDE J t?ng8/150?11/150. Midjourney J l?m recall143/150?141/150. Thay ??i ?t m?u, ph?i ??c c?ng CI v? transition matrix, kh?ng suy th?nh k?t lu?n nh?n qu?.
+5. Flip AI cao nhất3/150=2% ở GLIDE J/R/JR; uncertain GLIDE J tăng8/150→11/150. Midjourney J recall143/150→141/150. Đọc cùng CI/transition matrix, không suy nhân quả từ ít mẫu.
 
-6. ?nh real d?ng chung trong ba c?p v? m?i arm, kh?ng c?ng N th?nh m?t m?u ??c l?p l?n h?n. Kh?ng d?ng s? test l?ch s?84,54% l?m baseline m?i, kh?ng xem l?i384 test, kh?ng tune ho?c thay model API. JPEG ghost deferred v? QA ??c l?p c?n thi?u.
+6. Không cộng ba lần sử dụng cùng real/biến thể thành mẫu độc lập. Không dùng test lịch sử84,54% làm baseline mới, không mở lại384 test, không tune/thay model API. JPEG ghost deferred; near-duplicate và QA độc lập còn thiếu.
 
-### Ki?m ch?ng v? b?n giao
+### Kiểm chứng và bàn giao
 
-Ruff check qua; format115file. Full suite tr?n code cu?i: **676 passed, 0 failed, 2 skipped, 1 xfailed**, app coverage98,52% (271,60s). Hai skip Locust t?y ch?n, m?t strict xfail thread c? s?n tr?n main. Targeted72passed. CI PR#65 lint/test/ci-ok qua tr?n commitcode. Kh?ng l?p suite sau vi?c ch? th?m b?o c?o/t?i li?u; kh?ng c? thay ??i Python sau l??t ch?y.
+Ruff check qua; format115file. Full suite code cuối: **676 passed,0 failed,2 skipped,1 xfailed**, app coverage98,52%,271,60s; targeted72passed. Skip Locust tùy chọn và strict xfail thread có sẵn trên main. CI lint/test/ci-ok đã qua trên commitcode; các commit sau chỉ tài liệu/JSON, không đổi Python.
 
-?? ??i chi?u tr?c ti?p CSV:28 ? model,81 ? audit,3.484 outcomes, confusion/accuracy/BA/AUROC/flip/degradation kh?p; kh?ng NaN/Infinity/???ng d?n c? nh?n. ?? gi?i n?n ZIP, ki?m CRC/SHA v? ch?y summarize l?i kh?ng model/?nh: m?i s? ?o/provenance kh?p, ch? analysis UUID/time thay ??i. ??y l? ki?m n?i b? ph?a g?i, kh?ng QA ??c l?p.
+Đã đối chiếu CSV:28 ô model,81 ô audit,3.484 outcomes; confusion/accuracy/BA/AUROC/flip/degradation khớp; không NaN/Infinity/đường dẫn cá nhân. ZIP CRC/SHA khớp, giải nén rồi summarize không model/ảnh cho số đo/provenance giống hệt, chỉ analysis UUID/time mới. Đã tải lại GitHub asset, checksum ZIP khớp. Đây là kiểm nội bộ phía gửi, không QA độc lập.
 
 ```text
 Protocol SHA256: a760c99e64390c00acb861e82f9e26879db4734cd197c2c1c0e6133f6d03cca8
@@ -174,4 +174,4 @@ Report SHA256:   063216f4fb753d49cce0560ab3fa7ecc9e570dba4d1faff1be187721ad251a5
 Evidence ZIP:    04c60fe5b5c1ac6690e3b25f47bdef80ed4789a9a7da4fb7bf6f932b4518983c
 ```
 
-G?i4.218.718bytes c? protocol, manifests, predictions, log ti?n tr?nh, checksum, report v? h??ng d?n t? t?i t?nh/t?i ch?y. Kh?ng c? ?nh, weights, HF cache ho?c CSV Jira. [T?i evidence v? checksum](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/releases/tag/adv10-shortcut-e571-20261111). Tr?ng th?i #59: ?? ch?y, ch? review; kh?ng t? ??ng issue.
+Gói4.218.718bytes chứa protocol/manifests/predictions/log/checksum/report/hướng dẫn; không ảnh, weights, cache hoặc CSV Jira. [GitHub evidence](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/releases/tag/adv10-shortcut-e571-20261111). #59 đã chạy, chờ Lực review; không tự đóng issue.
