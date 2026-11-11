@@ -81,13 +81,15 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 |---|---|---|---|---|
 | 413 | `FILE_TOO_LARGE` (dùng lại) | Nginx | Body vượt `client_max_body_size` (D06) | Như bảng API |
 | 429 | `RATE_LIMITED` (mới) | Nginx | Vượt 10 request/giây mỗi IP (D13) | "Đang có quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại." |
-| 502 | `UPSTREAM_UNAVAILABLE` (mới) | Nginx | API không chạy hoặc từ chối kết nối | "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau." |
+| 502 | `API_UNAVAILABLE` (mới) | Nginx | API không chạy hoặc từ chối kết nối | "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau." |
 | 504 | `GATEWAY_TIMEOUT` (mới) | Nginx | API không trả lời trong `proxy_read_timeout` | "Hệ thống xử lý quá lâu. Vui lòng thử lại sau." |
 
 - Cùng envelope `{"error": {code, message, request_id}}`, `Content-Type: application/json`.
 - `request_id`: Nginx tạo bằng `$request_id`, gửi sang API qua header `X-Request-ID` và trả lại trong header response. API chỉ nhận UUID, và `$request_id` (32 ký tự hex) được API ghi lại ở dạng UUID có gạch nối.
 - 429 kèm `Retry-After: 1` (D13). Các lỗi khác không gửi `Retry-After`.
 - `GATEWAY_TIMEOUT` khác `MODEL_TIMEOUT`: `MODEL_TIMEOUT` do API trả khi model quá D11; `GATEWAY_TIMEOUT` nghĩa là cả API không trả lời kịp. `proxy_read_timeout` phải dài hơn tổng thời gian API (D11), và timeout của UI dài hơn proxy.
+- Đổi tên `UPSTREAM_UNAVAILABLE` (đề xuất 2026-11-09) thành `API_UNAVAILABLE` (2026-11-11): `scripts/check_gateway.py` coi chữ "upstream" trong body lỗi là lộ chi tiết nội bộ (FR-N03).
+- Đã cấu hình trong `nginx/nginx.conf` (MVP-05); vẫn `proposed` tới khi Lực, Loan duyệt.
 
 ## D06. Dung lượng file
 
@@ -113,6 +115,8 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Lưu ý:** timeout của Nginx và UI phải dài hơn timeout này. Thời gian khởi động và warmup tính riêng.
 
+**Gateway và UI (proposed, 2026-11-11):** Nginx `proxy_read_timeout` 15 giây cho `/v1/`, dư 5 giây cho giải mã và ghi response; UI 60 giây (`REALCHECK_API_TIMEOUT`). Đã đo qua gateway: API bị treo thì Nginx trả 504 `GATEWAY_TIMEOUT` sau 15,0 giây.
+
 ## D12. Cơ chế suy luận
 
 **Lựa chọn:** thread, 1 worker, 1 slot (`REALCHECK_INFERENCE_SLOTS`), không xếp hàng; hết slot trả 503.
@@ -134,6 +138,8 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 **Hệ quả đã biết:** Streamlit gọi API qua Nginx từ server, nên mọi phiên UI dùng chung IP của container Streamlit và chung giới hạn 10 request/giây. Không tuyên bố giới hạn theo từng trình duyệt (spec 000 mục 10).
 
 **Còn mở:** URL lab cụ thể và máy chạy demo; danh sách IP proxy tin cậy để trống vì không có proxy nào đứng trước Nginx.
+
+**Đã cấu hình (MVP-05, 2026-11-11):** `nginx/nginx.conf` áp rate limit cho `/v1/`; `/health`, `/docs`, `/openapi.json` và UI không bị giới hạn. Vẫn `proposed` tới khi Lực duyệt.
 
 ## Hợp đồng `score`
 

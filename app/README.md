@@ -46,6 +46,8 @@ Thiếu file, sai checksum, sai metadata hoặc thiếu torch: ghi log `model_lo
 Test tiêm scorer giả qua `create_app(scorer=...)`, hoặc hàm nạp qua `create_app(loader=...)`; `loader` chỉ chạy khi app đi qua lifespan. `create_app()` không có loader nên không nạp model.
 
 ## Chạy bằng Docker
+Chạy đủ API, UI và gateway Nginx thì dùng `docker compose up -d --build` (xem [`nginx/README.md`](../nginx/README.md)). Mục này mô tả chạy riêng container API.
+
 Image chứa API, code trong `models/` và dependency ML (torch bản CPU). **Không** chứa model, dữ liệu hay trọng số CLIP: cả ba mount từ máy chủ lúc chạy, chỉ đọc. Build từ gốc repo:
 ```bash
 docker build -t realcheck-api .

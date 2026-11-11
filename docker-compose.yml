@@ -1,0 +1,44 @@
+# Compose core MVP: API, UI Streamlit và gateway Nginx. Chỉ Nginx mở cổng ra máy chủ (D13).
+# Chạy từ gốc repo: docker compose up -d --build. Hướng dẫn và cách cấp model: nginx/README.md.
+name: realcheck
+
+services:
+  api:
+    build: .
+    image: realcheck-api
+    environment:
+      # Model đang dùng cho local/lab là reference e571 (issue #39); đổi file qua REALCHECK_MODEL_FILE.
+      REALCHECK_MODEL_PATH: /models/${REALCHECK_MODEL_FILE:-clip_probe_e571.joblib}
+      REALCHECK_INFERENCE_SLOTS: "1"
+    volumes:
+      - ./models:/models:ro
+      - ./.cache/huggingface:/hf-cache:ro
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  ui:
+    build: ./streamlit
+    image: realcheck-ui
+    environment:
+      REALCHECK_API_URL: http://nginx
+      REALCHECK_API_TIMEOUT: "60"
+    volumes:
+      # Trang Kết quả đánh giá: báo cáo model và hai file dữ liệu nhỏ, không mount ảnh trong data/.
+      - ./artifacts:/reports:ro
+      - ./data/labels.csv:/data/labels.csv:ro
+      - ./data/metadata_audit.json:/data/metadata_audit.json:ro
+    expose:
+      - "8501"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.28.0-alpine
+    ports:
+      - "${REALCHECK_HTTP_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - ui
+    restart: unless-stopped
