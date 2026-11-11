@@ -313,6 +313,8 @@ def test_thu_tu_anh_nho_thang_score_tra_sai_kieu():
         ("Canon", "Canon EOS 5D", "Canon EOS 5D"),
         ("NIKON CORPORATION", "NIKON D750", "NIKON D750"),
         ("CANON", "canon eos 5d", "canon eos 5d"),
+        ("Canon", "Canonical X", "Canon Canonical X"),
+        ("Sony", "SonyA7", "Sony SonyA7"),
         ("Canon Inc", "EOS 5D", "Canon Inc EOS 5D"),
         ("Canon", None, "Canon"),
         (None, "EOS 5D", "EOS 5D"),
