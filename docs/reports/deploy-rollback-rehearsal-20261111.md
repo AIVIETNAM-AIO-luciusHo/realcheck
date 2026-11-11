@@ -34,12 +34,26 @@ Rollback ở bước 3 và phục hồi ở bước 4 chạy lại đúng image 
 | SHA256 model e571 | `e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494` |
 | SHA256 `nginx/nginx.conf` | `5e11a2b865fde6c9b088438f3057b2bc39ad91d28b50766e5c4a711449fb3e2c` |
 | Worker, slot, thread CLIP | 1, 1, 4 |
-| Giới hạn CPU/RAM container | Chưa đặt |
+| Giới hạn CPU/RAM container | Chưa đặt lúc diễn tập; thêm sau (mục Bổ sung) |
 
 ## Phát hiện
 
 - **Nginx không tự nạp lại cấu hình khi đổi commit.** `nginx/nginx.conf` được mount như một file riêng; `git checkout` thay file, container có thể vẫn đọc bản cũ. Lần này hai commit có cùng `nginx.conf` nên không ảnh hưởng. Đã bổ sung vào `deploy.md` mục 7 và 9: `docker compose up -d --force-recreate nginx` khi cấu hình đổi.
 - Lần chạy đầu của script diễn tập hỏng giữa chừng do PowerShell 5.1 đọc script UTF-8 không BOM sai bảng mã; lỗi của script, không phải của quy trình. Kết quả trên là lần chạy lại đầy đủ.
+
+## Bổ sung theo issue #42 (KAN-55)
+
+Chạy local trên cùng máy sau khi gộp `main` `9e0b7d4`, image `d1bbc57`, model e571:
+
+| Mục | Kết quả |
+|---|---|
+| API dừng, request qua gateway | Trước: 502 sau 4,0 giây mỗi request (Nginx chờ phân giải tên `api`). Sau khi thêm `resolver_timeout 1s`: 502 `API_UNAVAILABLE` sau 1,6 giây, cả `GET /health` lẫn `POST /v1/analyze`. API chạy: `/health` qua gateway 23–25 ms |
+| Giới hạn tài nguyên (proposed) | Docker áp `api` 4 CPU / 2 GiB, `ui` 1 / 512 MiB, `nginx` 0,5 / 128 MiB |
+| Ảnh lớn dưới giới hạn | JPEG 4000×3000 và 5600×4200 (23,5 MP), mỗi cỡ 3 lần: 6/6 trả 200 trong 0,9–2,0 giây; RAM đỉnh API 609 MiB (lấy mẫu khoảng mỗi giây), không bị kill (`OOMKilled=false`, `RestartCount=0`) |
+| `scripts.smoke_api --delay 0.15` qua gateway | 24 ca, 0 lỗi, 0 cảnh báo |
+| `scripts.check_gateway --junit` | 6 ca đạt (dưới giới hạn, 429 có `Retry-After`, phục hồi, body 6 MB bị 413, biên 5.242.880/5.242.881 byte); ca API tắt chạy riêng ở dòng đầu bảng |
+
+Đây vẫn là bằng chứng local; issue #42 cần chạy lại `smoke_api` và `check_gateway --junit artifacts/integration.xml` trên máy lab.
 
 ## Chưa kiểm
 

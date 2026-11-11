@@ -10,11 +10,19 @@ Phụ trách: Quang. Áp dụng cho Compose core (API, UI Streamlit, gateway Ngi
 |---|---|
 | Hệ điều hành | Linux x86_64 có Docker Engine và Docker Compose v2, `git`, `curl`, `sha256sum` |
 | Ổ đĩa | Khoảng 5 GB: image API 2,3 GB, image UI, cache CLIP 0,6 GB, các image cũ giữ để rollback |
-| RAM | Container API dùng khoảng 500 MiB sau khi nạp model (đo local) |
-| CPU | CLIP dùng 4 thread (`torch.set_num_threads(4)`); 1 worker, 1 slot suy luận (D12) |
+| RAM | Ít nhất 3 GiB cho container (tổng giới hạn bên dưới); API dùng khoảng 400 MiB sau khi nạp model, đỉnh 609 MiB với ảnh 23,5 MP (đo local) |
+| CPU | Ít nhất 4 nhân: CLIP dùng 4 thread (`torch.set_num_threads(4)`); 1 worker, 1 slot suy luận (D12) |
 | Mạng | Chỉ mở cổng gateway (mặc định 80) cho mạng lab hoặc qua SSH tunnel (D13) |
 
-Chưa đặt giới hạn CPU/RAM cho container; chờ benchmark MVP-09 rồi mới chốt (D12).
+Giới hạn tài nguyên trong `docker-compose.yml` (proposed, chỉnh lại sau benchmark MVP-09):
+
+| Service | `cpus` | `mem_limit` | Đo local (đỉnh) |
+|---|---|---|---|
+| `api` | 4 | 2 GiB | 609 MiB |
+| `ui` | 1 | 512 MiB | 50 MiB |
+| `nginx` | 0,5 | 128 MiB | 9 MiB |
+
+Container vượt `mem_limit` bị kill và Docker chạy lại theo `restart: unless-stopped`; kiểm bằng `docker inspect --format '{{.State.OOMKilled}} {{.RestartCount}}' $(docker compose ps -q api)`.
 
 ## 2. Bố cục thư mục
 
@@ -61,7 +69,7 @@ docker compose up -d
 
 ## 4. Kiểm tra sau khi khởi động
 
-API nạp model mất khoảng 10–20 giây (đo local: 11–12 giây); trong lúc đó gateway trả 502 `API_UNAVAILABLE`.
+API nạp model mất khoảng 10–20 giây (đo local: 11–15 giây); trong lúc đó gateway trả 502 `API_UNAVAILABLE`, khoảng 1,6 giây mỗi request khi container API đã dừng (`resolver_timeout 1s`; trước đó 4 giây).
 
 ```bash
 docker compose ps                            # api (healthy), ui (healthy), nginx (Up)
@@ -88,8 +96,13 @@ Mở `http://<lab>/` bằng trình duyệt, tải một ảnh JPEG điện tho�
 
 ## 6. Khởi động lại và sự cố
 
-- Mọi service có `restart: unless-stopped`: Docker tự chạy lại container khi nó dừng hoặc khi máy khởi động lại.
-- API và UI có healthcheck; API báo `unhealthy` khi `/health` không trả 200 (thiếu model, model sai checksum).
+- Mọi service có `restart: unless-stopped`: Docker tự chạy lại container khi nó **dừng** hoặc khi máy khởi động lại.
+- API và UI có healthcheck; API báo `unhealthy` khi `/health` không trả 200 (thiếu model, model sai checksum). **Docker Compose không tự khởi động lại container `unhealthy`**: nạp model lỗi thì API vẫn chạy và trả 503 cho tới khi người vận hành sửa.
+- Theo dõi: `docker compose ps` hiện `(unhealthy)`; hoặc chạy định kỳ (cron mỗi phút) và báo khi khác `healthy`:
+  ```bash
+  docker inspect --format '{{.State.Health.Status}}' $(docker compose ps -q api)
+  ```
+  Gặp `unhealthy`: xem `docker compose logs api | grep model_`, sửa model hoặc `.env` theo mục 8, rồi `docker compose up -d api`.
 - Mọi `POST /v1/analyze` trả 503 `SERVICE_BUSY` kéo dài, còn `/health` vẫn 200: thread suy luận bị treo (D12). Xử lý: `docker compose restart api`.
 - Xem log: `docker compose logs -f api nginx`. Log Nginx và log API cùng `request_id`.
 
@@ -102,7 +115,7 @@ git checkout <commit-mới>
 sed -i "s/^REALCHECK_TAG=.*/REALCHECK_TAG=$(git rev-parse --short HEAD)/" .env
 docker compose build
 docker compose up -d
-git diff --quiet "$OLD" HEAD -- nginx/nginx.conf || docker compose up -d --force-recreate nginx
+git diff --quiet "$OLD" HEAD -- nginx/nginx.conf || docker compose up -d --no-deps --force-recreate nginx
 ```
 Image của commit cũ vẫn còn với tag cũ, dùng để rollback. Kiểm lại như mục 4 và ghi biên bản.
 
@@ -124,7 +137,7 @@ Sai checksum hoặc sai metadata thì API ghi `model_load_failed` và `/health` 
 | Model | Đặt lại `REALCHECK_MODEL_FILE=<file-cũ>`, `docker compose up -d api` | 11,9 giây khi diễn tập local |
 | Commit cũ hơn bản thêm `REALCHECK_TAG` | Compose cũ dùng tag `latest`: `git checkout <commit-cũ>`, `docker compose up -d --no-build` nếu image `latest` vẫn là bản đó, ngược lại `--build` | Thêm thời gian build nếu phải build |
 
-`nginx/nginx.conf` khác giữa hai commit thì chạy thêm `docker compose up -d --force-recreate nginx` (mục 7). Trong lúc API nạp lại, gateway trả 502 `API_UNAVAILABLE`.
+`nginx/nginx.conf` khác giữa hai commit thì chạy thêm `docker compose up -d --no-deps --force-recreate nginx` (mục 7); thiếu `--no-deps` thì Compose khởi động lại cả API và UI. Trong lúc API nạp lại, gateway trả 502 `API_UNAVAILABLE`.
 
 Sau rollback kiểm như mục 4 và ghi vào biên bản: commit, tag, model, lý do và thời điểm.
 

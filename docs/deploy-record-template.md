@@ -36,7 +36,8 @@ Người deploy: <tên>. Người kiểm độc lập: <tên>. Lệnh lấy thô
 | Thread CLIP | 4 |
 | Timeout model / gateway / UI | 10 s / 15 s / 60 s |
 | Rate limit | 10 r/s, burst 10 nodelay |
-| Giới hạn CPU/RAM container | Chưa đặt (chờ MVP-09) |
+| Giới hạn CPU/RAM container | api 4 CPU / 2 GiB, ui 1 / 512 MiB, nginx 0,5 / 128 MiB (proposed) |
+| RAM đỉnh đo trên máy lab (`docker stats`) | |
 
 ## Kiểm từ máy khác
 
