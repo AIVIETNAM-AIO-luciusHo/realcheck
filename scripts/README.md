@@ -57,3 +57,7 @@ python -m scripts.check_data --labels .cache/ml-preserve/labels.csv
 
 ## Lưu ý và giả định
 - Script phải chạy lại được và cho cùng kết quả.
+
+## Mở rộng dữ liệu và train mixed
+
+`download_expansion.py` tải mẫu có revision cố định, tái sử dụng pool/catalogue local và giữ provenance/resume journal. `train_expansion.py` screen ảnh, chống trùng lịch sử, chia validation theo nguồn/thiết bị, fit mixed probe rồi khóa model trước đánh giá OpenFake. Dùng `--prepare-only` để kiểm manifest trước fit. Artifact, lệnh thực tế và giới hạn lấy mẫu nằm trong [biên bản 10/11/2026](../docs/ml-data-expansion-20261110.md); cần giữ used marker và dữ liệu cũ để truy vết.

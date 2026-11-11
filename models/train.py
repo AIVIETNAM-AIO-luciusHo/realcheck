@@ -22,6 +22,7 @@ from sklearn.metrics import (
 )
 
 from models.clip_input import feature_contract
+from models.data_sources import DATASETS, RESERVED_UNSEEN, selected_sources
 from models.extract_features import load_features, sha256_file
 from models.normalize import NORMALIZATION_VERSION
 from models.run_info import run_info
@@ -50,6 +51,7 @@ def metrics(
     prediction = (probabilities >= binary_threshold).astype(int)
     uncertain = (probabilities >= low) & (probabilities <= high)
     real = y == 0
+    ai = y == 1
     decided = ~uncertain
     return {
         "n": len(y),
@@ -68,6 +70,12 @@ def metrics(
         "decided_n": int(decided.sum()),
         "decided_coverage": float(decided.mean()),
         "false_positive_rate": float(prediction[real].mean()) if real.any() else None,
+        "false_negative_rate": float((prediction[ai] == 0).mean())
+        if ai.any()
+        else None,
+        "likely_real_false_negative_rate": float((probabilities[ai] < low).mean())
+        if ai.any()
+        else None,
         "likely_ai_false_positive_rate": float((probabilities[real] > high).mean())
         if real.any()
         else None,
@@ -84,14 +92,17 @@ def train(
     evaluate_test: bool = False,
 ) -> dict:
     """Persist probe + provenance + checksums; return measured evaluation only."""
-    if dataset not in {"cifake", "genimage"}:
-        raise ValueError("dataset must be cifake or genimage")
-    if dataset == "genimage" and evaluate_test:
+    sources_to_train = selected_sources(dataset)
+    if dataset != "cifake" and evaluate_test:
         raise ValueError("Use models.evaluate with an approved lock for GenImage test")
     if not 0 < binary_threshold < 1:
         raise ValueError("binary_threshold must be between 0 and 1")
     features, rows, manifest = load_features(labels, feature_dir)
-    selected = np.array([row["source"].startswith(dataset + "_") for row in rows])
+    if dataset != "cifake" and any(
+        row["source"] in RESERVED_UNSEEN and row["split"] == "train" for row in rows
+    ):
+        raise ValueError("Reserved unseen generators cannot appear in train")
+    selected = np.array([row["source"] in sources_to_train for row in rows])
     x = features[selected]
     rows = [row for row, keep in zip(rows, selected) if keep]
     y = np.array([int(row["label"]) for row in rows])
@@ -216,7 +227,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--labels", type=Path, default=Path("data/labels.csv"))
     parser.add_argument("--features", type=Path, default=Path("data/features"))
-    parser.add_argument("--dataset", choices=["cifake", "genimage"], required=True)
+    parser.add_argument("--dataset", choices=DATASETS, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument(

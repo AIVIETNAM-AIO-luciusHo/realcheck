@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image
 
 from models.clip_input import FEATURE_DIM, encode_images, feature_contract, load_encoder
+from models.data_sources import SERVING_DATASETS
 from models.normalize import NORMALIZATION_VERSION, normalize_image
 
 DEFAULT_MODEL_PATH = Path(__file__).with_name("clip_probe.joblib")
@@ -64,10 +65,11 @@ def load_bundle(path: Path) -> dict:
     if not isinstance(bundle, dict) or not isinstance(bundle.get("metadata"), dict):
         raise TypeError("Legacy model lacks metadata; retrain with models.train")
     metadata = bundle["metadata"]
+    if metadata.get("dataset") not in SERVING_DATASETS:
+        raise ValueError("Incompatible model: dataset; retrain before serving")
     expected = {
         **feature_contract(),
         "norm_version": NORMALIZATION_VERSION,
-        "dataset": "genimage",
     }
     for key, value in expected.items():
         if metadata.get(key) != value:
