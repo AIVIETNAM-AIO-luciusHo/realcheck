@@ -24,7 +24,8 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
 | D13 Truy cập, rate limit | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt trước khi viết cấu hình Nginx (T024) |
 | D14 Profile tải | Chưa chốt | Lực | — | — | Lực chốt; `locust/baseline.conf` chỉ là đề xuất |
-| Hợp đồng `score` | proposed; ML đã ghi xác nhận kỹ thuật | Quang | Chờ Quang/Lực review | 2026-11-10 | [Xác nhận ML và bằng chứng](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml); chưa duyệt chung |
+| Hợp đồng `score` | proposed; ML đã ghi xác nhận kỹ thuật; Quang đã kiểm trên máy API | Quang | Chờ Lực review | 2026-11-11 | [Xác nhận ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), [kiểm trên máy API](#kiểm-trên-máy-api-issue-39); chưa duyệt chung |
+| Model phục vụ API (local/lab) | Kiệt chọn reference e571; Quang đã nhận và kiểm trên máy API | Kiệt | Quang (nhận), chờ Lực | 2026-11-11 | Không phải phê duyệt QA hay release; xem [mục Kiểm trên máy API](#kiểm-trên-máy-api-issue-39) |
 | Manifest phục vụ model | Chưa chốt | Loan | Kiệt, Lực | — | Xem [mục Manifest](#manifest) |
 | Chính sách audit | Chưa chốt | Loan, Lực | Quang tổng hợp | — | Xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
 | Phạm vi M1/M2 | proposed | Quang | Chờ cả nhóm | 2026-11-09 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
@@ -144,7 +145,24 @@ Ngưỡng D08 và lựa chọn manifest/holdout mới được ghi tại [ml-sel
 
 **Hiện trạng:** Kiệt đã ghi [xác nhận kỹ thuật phía ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), kèm smoke model thật trên main. Chờ Quang/Lực review nên vẫn `proposed`, không tự ghi QA/release approved.
 
-**Trả lời phía ML:** chọn reference e571 cho local/lab; giữ một slot vì chưa chứng nhận đa luồng; gói có profiler offline, FR-A06 telemetry API chưa làm. Xem [bàn giao #39](../ml-api-model-handoff.md). Chờ nghiệm thu trên máy Quang và review chung.
+**Trả lời phía ML:** chọn reference e571 cho local/lab; giữ một slot vì chưa chứng nhận đa luồng; gói có profiler offline, FR-A06 telemetry API chưa làm. Xem [bàn giao #39](../ml-api-model-handoff.md). Đã kiểm trên máy Quang (mục dưới); còn chờ review chung.
+
+### Kiểm trên máy API (issue #39)
+
+Quang kiểm ngày 2026-11-11 trên Windows 11, Python 3.11.9, torch 2.15.0+cpu, sentence-transformers 6.2.0, Pillow 13.0.0, CLIP revision `327ab6726d33c0e22f920c83f2ff9e4bd38ca37f` chạy offline (`HF_HUB_OFFLINE=1`). Code: `main` tại `aa20693` (đã có MVP-02 #37, B4 #38 và #61). Model chép vào `models/clip_probe_e571.joblib` (gitignored), nạp qua `REALCHECK_MODEL_PATH`.
+
+| Kiểm tra | Kết quả |
+|---|---|
+| ZIP `realcheck-api-model-e571-20261110-v2.zip` | 24.132 byte, SHA256 `baf7bd57…` khớp release |
+| `sha256sum -c SHA256SUMS` và `verification/clip_probe.joblib.sha256` | `OK` |
+| Model SHA256 | `e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494` |
+| Metadata (`load_bundle`) | `labels_sha256` `4bf8e490…`, `norm_version` `1`, ngưỡng `0.5 / 0.3 / 0.7` |
+| `python -m models.score` trên 4 ảnh gốc (2 thật, GLIDE, Midjourney) | Điểm hữu hạn trong `[0, 1]`; ảnh 100×100 ném `ImageTooSmall` |
+| `uvicorn app.main:app`, `REALCHECK_MODEL_PATH` trỏ tới model e571 | Nhận request sau 15,7 giây; `/health` 200 `model_ready=true`; 4 ảnh trả 200, điểm trùng CLI tới 8 chữ số thập phân; text giả `.jpg` trả 400 `INVALID_IMAGE` |
+
+- Đây là kiểm nhận artifact và khởi động, **không phải số đo accuracy**: 4 ảnh lấy từ `data/raw` và có thể thuộc tập train.
+- Chưa kiểm trong Docker/Linux, chưa kiểm tải hay nhiều slot.
+- `REALCHECK_MODEL_PATH` phải đặt rõ: mặc định `models/clip_probe.joblib` là model cũ `69810fd6…`, khác model e571.
 
 ## D01–D04. Dữ liệu và audit
 
@@ -205,5 +223,6 @@ Trạng thái: proposed, 2026-11-09.
 |---|---|
 | Lực | Duyệt mã lỗi gateway, body dư 64 KiB, D13; xác nhận hợp đồng `score`; cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau MVP-09 |
 | Loan | Xác nhận D05 và mã gateway cho UI; chốt D01, D03, D04 và manifest; cùng Lực chốt chính sách audit |
-| Kiệt | Đã ghi [lựa chọn model, contract, thread/timing và D02](../ml-api-model-handoff.md); theo dõi Quang xác nhận checksum/CLI và review chung |
+| Kiệt | Đã ghi [lựa chọn model, contract, thread/timing và D02](../ml-api-model-handoff.md); Quang đã xác nhận checksum/CLI (#39), còn review chung |
+| Quang | Đăng kết quả kiểm vào issue #39; tổng hợp các mục còn chờ |
 | Cả nhóm | Duyệt phạm vi M1/M2 và AC-26 |
