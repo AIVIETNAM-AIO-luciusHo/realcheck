@@ -378,3 +378,11 @@ def test_no_summary_line_when_only_some_posts_404(serve, fx, tmp_path, capsys):
     code, _ = run(serve(post("empty.jpg", _err(404, "NOT_FOUND"))), fx, tmp_path)
     assert code == 1
     assert "chưa tồn tại" not in capsys.readouterr().out
+
+
+def test_unknown_path_probe_stays_under_v1(serve, fx, tmp_path):
+    """Qua gateway, đường dẫn gốc không khớp thuộc UI (200); ca 404 phải nằm dưới /v1/."""
+    code, ev = run(serve(), fx, tmp_path)
+    assert code == 0
+    unknown = [q["path"] for q in ev["requests"] if "khong-co" in q["path"]]
+    assert unknown == ["/v1/khong-co-duong-nay"]
