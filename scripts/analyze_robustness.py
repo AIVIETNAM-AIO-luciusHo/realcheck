@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import hashlib
 import json
 import re
 import sys
@@ -10,7 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 
 from models.extract_features import sha256_file
 from models.run_info import run_info
@@ -82,7 +83,7 @@ def verdict(score):
     return VERDICTS[0] if score < 0.3 else VERDICTS[2] if score > 0.7 else VERDICTS[1]
 
 
-def validate_handoff(protocol_path, manifest_path, *, decode=False):
+def validate_handoff(protocol_path, manifest_path, *, decode=False, observations=None):
     """Verify bytes/lineage, never deserialize a model or run an encoder.
 
     Paths in protocol are relative to protocol; image paths are relative to manifest.
@@ -209,6 +210,14 @@ def validate_handoff(protocol_path, manifest_path, *, decode=False):
                     image.load()
                     if min(image.size) < 256:
                         images[sid] = "IMAGE_TOO_SMALL"
+                    if observations is not None:
+                        oriented = ImageOps.exif_transpose(image).convert("RGB")
+                        observations[sid] = {
+                            "size": list(oriented.size),
+                            "pixel_sha256": hashlib.sha256(
+                                str(oriented.size).encode() + oriented.tobytes()
+                            ).hexdigest(),
+                        }
             except (OSError, ValueError, Image.DecompressionBombError):
                 images[sid] = "INVALID_IMAGE"
         _require(
@@ -264,6 +273,92 @@ def validate_handoff(protocol_path, manifest_path, *, decode=False):
                 )
                 history_splits[old["group_id"]] = old["split"]
     return protocol, rows, snapshots, images
+
+
+def observed_transforms(rows, observations):
+    """Expose clamped/no-op variants without excluding any samples or tuning."""
+    by_id = {row["sample_id"]: row for row in rows}
+    cohorts = {}
+    for row in rows:
+        parent_id, sid = row["parent_id"], row["sample_id"]
+        if not parent_id or sid not in observations or parent_id not in observations:
+            continue
+        child, parent = observations[sid], observations[parent_id]
+        cohort = cohorts.setdefault(
+            row["cohort"],
+            {
+                "n_pairs_observed": 0,
+                "n_same_size": 0,
+                "n_identical_oriented_rgb": 0,
+                "n_clamped_geometry": 0,
+                "geometry_examples": [],
+            },
+        )
+        same_size = child["size"] == parent["size"]
+        identical = child["pixel_sha256"] == parent["pixel_sha256"]
+        cohort["n_pairs_observed"] += 1
+        cohort["n_same_size"] += int(same_size)
+        cohort["n_identical_oriented_rgb"] += int(identical)
+        kind, params = row["transform"]["kind"], row["transform"]["params"]
+        if kind in {"center_crop", "crop", "downscale"}:
+            requested = params.get("scale" if kind == "downscale" else "keep")
+            clamped = (
+                isinstance(requested, (float, int))
+                and not isinstance(requested, bool)
+                and 0 < requested < 1
+                and same_size
+            )
+            cohort["n_clamped_geometry"] += int(clamped)
+            if len(cohort["geometry_examples"]) < 20:
+                cohort["geometry_examples"].append(
+                    {
+                        "sample_id": sid,
+                        "parent_id": by_id[parent_id]["sample_id"],
+                        "parent_size": parent["size"],
+                        "child_size": child["size"],
+                        "effective_short_side_ratio": min(child["size"])
+                        / min(parent["size"]),
+                        "requested_ratio": requested,
+                        "identical_oriented_rgb": identical,
+                    }
+                )
+    return cohorts
+
+
+def preflight_report(protocol_path, manifest_path):
+    """A hash-bound technical receipt, never an authorization to open test data."""
+    observations = {}
+    protocol, rows, snapshots, failures = validate_handoff(
+        protocol_path, manifest_path, decode=True, observations=observations
+    )
+    report = {
+        "schema_version": 1,
+        "kind": "adv08_preflight",
+        "status": "ready" if not failures else "image_errors",
+        "ready_scope": "available_cohorts_only",
+        "preflight_is_not_run_authorization": True,
+        "run": _provenance(protocol),
+        "n_total": len(rows),
+        "image_failures": failures,
+        "missing_cohorts": [
+            c["name"] for c in protocol["cohorts"] if c["status"] == "missing"
+        ],
+        "model_sha256": MODEL_SHA256,
+        "model_manifest_sha256": protocol["artifacts"]["model_manifest"]["sha256"],
+        "manifest_sha256": protocol["artifacts"]["manifest"]["sha256"],
+        "protocol_sha256": sha256_file(protocol_path),
+        "runner": protocol["runner"],
+        "thresholds": THRESHOLDS,
+        "profile": protocol["profile"],
+        "inference_performed": False,
+        "observed_transforms": observed_transforms(rows, observations),
+    }
+    for path, expected in snapshots.items():
+        _require(sha256_file(path) == expected, "Input changed during preflight")
+    _require(
+        not _has_personal_path(json.dumps(report)), "Preflight contains a personal path"
+    )
+    return report
 
 
 def read_predictions(path, rows, protocol):
@@ -531,7 +626,10 @@ def _provenance(protocol):
 
 
 def analyze(protocol_path, manifest_path, predictions_path):
-    protocol, rows, snapshots, _ = validate_handoff(protocol_path, manifest_path)
+    observations = {}
+    protocol, rows, snapshots, image_failures = validate_handoff(
+        protocol_path, manifest_path, decode=True, observations=observations
+    )
     provenance = _provenance(protocol)
     snapshots[Path(predictions_path)] = sha256_file(predictions_path)
     identity = {
@@ -540,6 +638,10 @@ def analyze(protocol_path, manifest_path, predictions_path):
         "protocol_sha256": sha256_file(protocol_path),
     }
     predictions = read_predictions(predictions_path, rows, identity)
+    _require(
+        all(predictions[sid]["status"] == "error" for sid in image_failures),
+        "An invalid image has a successful prediction",
+    )
     by_id = {r["sample_id"]: r for r in rows}
     reports = []
     for cohort in protocol["cohorts"]:
@@ -598,6 +700,7 @@ def analyze(protocol_path, manifest_path, predictions_path):
         "bootstrap": BOOTSTRAP,
         "runner": protocol["runner"],
         "parent_exposure": protocol["parent_exposure"],
+        "observed_transforms": observed_transforms(rows, observations),
         "transition_order": list(VERDICTS),
         "cohorts": reports,
         "independent_qa_approved": False,
@@ -609,6 +712,7 @@ def analyze(protocol_path, manifest_path, predictions_path):
             "Accuracy degradation is parent minus child; other deltas are child minus parent",
             "Robustness changes are observations, not proof of JPEG or metadata shortcut causality",
             "No 90% OOD quality threshold, model selection or threshold tuning",
+            "Clamped crop/downscale can leave parent pixels unchanged; inspect observed_transforms before interpreting zero flips",
         ],
     }
     _require(
@@ -642,26 +746,8 @@ def main(argv=None):
         parser.error("Choose --preflight or supply --predictions")
     try:
         if args.preflight:
-            protocol, rows, snapshots, failures = validate_handoff(
-                args.protocol, args.manifest, decode=True
-            )
-            provenance = _provenance(protocol)
-            report = {
-                "status": "ready" if not failures else "image_errors",
-                "run": provenance,
-                "n_total": len(rows),
-                "image_failures": failures,
-                "missing_cohorts": [
-                    c["name"] for c in protocol["cohorts"] if c["status"] == "missing"
-                ],
-                "model_sha256": MODEL_SHA256,
-                "inference_performed": False,
-            }
-            for path, expected in snapshots.items():
-                _require(
-                    sha256_file(path) == expected, "Input changed during preflight"
-                )
-            code = 0 if not failures else 1
+            report = preflight_report(args.protocol, args.manifest)
+            code = 0 if report["status"] == "ready" else 1
         else:
             report = analyze(args.protocol, args.manifest, args.predictions)
             code = 0 if report["status"] == "complete_pending_independent_review" else 1

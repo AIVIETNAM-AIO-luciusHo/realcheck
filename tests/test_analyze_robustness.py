@@ -602,3 +602,81 @@ def test_non_object_model_manifest_is_invalid(handoff, value):
     refresh(h)
     with pytest.raises(ValueError, match="Model manifest must be an object"):
         ar.validate_handoff(h["protocol_path"], h["manifest"])
+
+
+def test_preflight_receipt_binds_exact_inputs_without_authorizing_inference(handoff):
+    h = handoff
+    report = ar.preflight_report(h["protocol_path"], h["manifest"])
+    assert report["kind"] == "adv08_preflight" and report["status"] == "ready"
+    assert report["protocol_sha256"] == ar.sha256_file(h["protocol_path"])
+    assert report["manifest_sha256"] == ar.sha256_file(h["manifest"])
+    assert (
+        report["model_manifest_sha256"]
+        == h["protocol"]["artifacts"]["model_manifest"]["sha256"]
+    )
+    assert report["runner"] == h["protocol"]["runner"]
+    assert report["ready_scope"] == "available_cohorts_only"
+    assert report["missing_cohorts"] and report["preflight_is_not_run_authorization"]
+    assert report["inference_performed"] is False
+
+
+@pytest.mark.parametrize(
+    "kind,parameter", [("center_crop", "keep"), ("downscale", "scale")]
+)
+def test_clamped_geometry_is_observed_without_removing_samples(kind, parameter):
+    rows = [
+        {"sample_id": "parent", "parent_id": None},
+        {
+            "sample_id": "child",
+            "parent_id": "parent",
+            "cohort": kind,
+            "transform": {"kind": kind, "params": {parameter: 0.5, "min_side": 256}},
+        },
+    ]
+    observations = {
+        "parent": {"size": [256, 256], "pixel_sha256": "same"},
+        "child": {"size": [256, 256], "pixel_sha256": "same"},
+    }
+    result = ar.observed_transforms(rows, observations)[kind]
+    assert result["n_pairs_observed"] == result["n_same_size"] == 1
+    assert result["n_identical_oriented_rgb"] == result["n_clamped_geometry"] == 1
+    assert result["geometry_examples"][0]["effective_short_side_ratio"] == 1
+    assert len(rows) == 2  # no post-score filtering of degenerate interventions
+    observations["parent"]["size"] = [512, 512]
+    observations["parent"]["pixel_sha256"] = "different"
+    result = ar.observed_transforms(rows, observations)[kind]
+    assert result["n_clamped_geometry"] == result["n_identical_oriented_rgb"] == 0
+    assert result["geometry_examples"][0]["effective_short_side_ratio"] == 0.5
+
+
+def test_decode_observations_use_oriented_pixels_and_survive_analysis(handoff):
+    h = handoff
+    observations = {}
+    ar.validate_handoff(
+        h["protocol_path"], h["manifest"], decode=True, observations=observations
+    )
+    assert len(observations) == len(h["rows"])
+    assert observations["parents-0"]["size"] == [256, 256]
+    report = ar.analyze(h["protocol_path"], h["manifest"], h["pred_path"])
+    assert report["observed_transforms"]["jpeg90"]["n_pairs_observed"] == 2
+
+
+def test_analysis_rejects_success_for_image_that_fails_preflight(handoff):
+    h = handoff
+    child = h["rows"][2]
+    Image.new("RGB", (64, 64), "red").save(h["tmp"] / child["path"])
+    child["sha256"] = ar.sha256_file(h["tmp"] / child["path"])
+    refresh(h)
+    for prediction in h["predictions"]:
+        prediction["manifest_sha256"] = ar.sha256_file(h["manifest"])
+        prediction["protocol_sha256"] = ar.sha256_file(h["protocol_path"])
+    write_predictions(h["pred_path"], h["predictions"])
+    with pytest.raises(ValueError, match="invalid image has a successful"):
+        ar.analyze(h["protocol_path"], h["manifest"], h["pred_path"])
+    h["predictions"][2].update(
+        status="error", score="", verdict="", error_code="IMAGE_TOO_SMALL"
+    )
+    write_predictions(h["pred_path"], h["predictions"])
+    report = ar.analyze(h["protocol_path"], h["manifest"], h["pred_path"])
+    child_report = next(c for c in report["cohorts"] if c["name"] == "jpeg90")
+    assert report["status"] == "incomplete" and child_report["n_failed"] == 1

@@ -62,3 +62,5 @@ python -m scripts.check_data --labels .cache/ml-preserve/labels.csv
 ## Mở rộng dữ liệu và train mixed
 
 `download_expansion.py` tải mẫu có revision cố định, tái sử dụng pool/catalogue local và giữ provenance/resume journal. `train_expansion.py` screen ảnh, chống trùng lịch sử, chia validation theo nguồn/thiết bị, fit mixed probe rồi khóa model trước đánh giá OpenFake. Dùng `--prepare-only` để kiểm manifest trước fit. Artifact, lệnh thực tế và giới hạn lấy mẫu nằm trong [biên bản 10/11/2026](../docs/ml-data-expansion-20261110.md); cần giữ used marker và dữ liệu cũ để truy vết.
+
+ADV-08 kiểm tương thích #74: preflight xuất receipt gắn hash protocol/manifest/model, chỉ xác nhận kỹ thuật của cohort hiện có; không thay cổng protocol/used-marker của runner. Report có `observed_transforms` để chỉ rõ crop/downscale bị clamp/no-op ở cha256px. Xem [runbook và điểm chờ](../docs/robustness-adv08.md).
