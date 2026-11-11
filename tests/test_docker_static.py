@@ -92,7 +92,7 @@ def test_base_image_khop_phien_ban_python_cua_ci(dockerfile):
     ci_versions = set(
         re.findall(
             r'python-version:\s*"?([\d.]+)"?',
-            (ROOT / ".github/workflows/ci.yml").read_text(),
+            (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"),
         )
     )
     assert len(ci_versions) == 1, (
@@ -166,7 +166,7 @@ def test_bien_moi_truong_model_va_cache_offline(dockerfile):
 def test_torch_ghim_dung_phien_ban_va_dung_index_cpu(dockerfile):
     pinned = re.findall(
         r"^torch==(\S+)$",
-        (ROOT / "models/requirements-ml.txt").read_text(),
+        (ROOT / "models/requirements-ml.txt").read_text(encoding="utf-8"),
         re.MULTILINE,
     )
     assert len(pinned) == 1, (
