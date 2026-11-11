@@ -386,3 +386,21 @@ def test_unknown_path_probe_stays_under_v1(serve, fx, tmp_path):
     assert code == 0
     unknown = [q["path"] for q in ev["requests"] if "khong-co" in q["path"]]
     assert unknown == ["/v1/khong-co-duong-nay"]
+
+
+def test_delay_sleeps_between_requests_but_not_before_the_first(
+    serve, fx, tmp_path, monkeypatch
+):
+    sleeps = []
+    monkeypatch.setattr("scripts.smoke_api.time.sleep", sleeps.append)
+    code, ev = run(serve(), fx, tmp_path, "--delay", "0.15")
+    assert code == 0
+    assert sleeps and set(sleeps) == {0.15}
+    assert len(sleeps) == len(ev["requests"]) - 1
+
+
+def test_default_has_no_delay(serve, fx, tmp_path, monkeypatch):
+    sleeps = []
+    monkeypatch.setattr("scripts.smoke_api.time.sleep", sleeps.append)
+    assert run(serve(), fx, tmp_path)[0] == 0
+    assert sleeps == []
