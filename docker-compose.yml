@@ -5,7 +5,8 @@ name: realcheck
 services:
   api:
     build: .
-    image: realcheck-api
+    # Tag theo commit để giữ image cũ cho rollback (docs/deploy.md); mặc định latest.
+    image: realcheck-api:${REALCHECK_TAG:-latest}
     environment:
       # Model đang dùng cho local/lab là reference e571 (issue #39); đổi file qua REALCHECK_MODEL_FILE.
       REALCHECK_MODEL_PATH: /models/${REALCHECK_MODEL_FILE:-clip_probe_e571.joblib}
@@ -15,11 +16,14 @@ services:
       - ./.cache/huggingface:/hf-cache:ro
     expose:
       - "8000"
+    # Giới hạn tài nguyên (proposed, chỉnh lại sau benchmark MVP-09): CLIP dùng 4 thread.
+    cpus: 4
+    mem_limit: 2g
     restart: unless-stopped
 
   ui:
     build: ./streamlit
-    image: realcheck-ui
+    image: realcheck-ui:${REALCHECK_TAG:-latest}
     environment:
       REALCHECK_API_URL: http://nginx
       REALCHECK_API_TIMEOUT: "60"
@@ -30,6 +34,8 @@ services:
       - ./data/metadata_audit.json:/data/metadata_audit.json:ro
     expose:
       - "8501"
+    cpus: 1
+    mem_limit: 512m
     restart: unless-stopped
 
   nginx:
@@ -41,4 +47,6 @@ services:
     depends_on:
       - api
       - ui
+    cpus: 0.5
+    mem_limit: 128m
     restart: unless-stopped

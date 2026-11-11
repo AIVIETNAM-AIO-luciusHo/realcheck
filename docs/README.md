@@ -28,6 +28,11 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 - [Thiết kế và kết quả #59](shortcut-adv10.md): model e571, validation/CI và giới hạn.
 - [JSON ADV-10](reports/shortcut-adv10.json): số đo thật, chưa QA độc lập.
 
+## Triển khai
+
+- [Deploy core lên máy lab](deploy.md): cài, kiểm, cập nhật mã và model, rollback (MVP-08); [mẫu biên bản deploy](deploy-record-template.md).
+- [Diễn tập deploy, rollback, phục hồi (11/11)](reports/deploy-rollback-rehearsal-20261111.md): chạy local, chưa phải bằng chứng trên server.
+
 ## Biên bản QA
 
 - [Kiểm với model thật trên Linux (11/11)](qa/local-real-model-verification-20261111.md): smoke, gateway, Docker, Compose, baseline Locust sơ bộ; ảnh tổng hợp, chưa phải nghiệm thu.
