@@ -103,6 +103,16 @@ Biến môi trường, giá trị mặc định xem `settings.py`. Lý do chọn
 curl -F "file=@anh.jpg" http://localhost:8000/v1/analyze
 ```
 
+## Luồng gọi `score`
+Theo hợp đồng C2 và C4 của spec 001:
+1. Route đọc file có giới hạn byte, rồi chuyển sang worker thread của `InferenceService`.
+2. `decode_image` gọi `Image.open` và `load()` **đúng một lần**, kiểm định dạng, pixel, cạnh và số khung từ header trước khi giải mã.
+3. `read_exif` đọc hãng và model máy từ ảnh vừa giải mã, **trước** khi gọi scorer, vì chuẩn hóa trong `score()` xóa EXIF.
+4. Gọi `score(image)` với chính ảnh đó: ảnh gốc, chưa resize, chưa nén lại, chưa đổi mode màu, còn nguyên EXIF. Xoay theo orientation, chuyển RGB, cắt 256×256 và nén JPEG 95 đều nằm trong `models.normalize`, `app/` không làm bước nào.
+5. Kiểm điểm hữu hạn trong `[0, 1]`, rồi `decide_verdict` và `build_reason`.
+
+`tests/test_api_score_input.py` kiểm bằng scorer giả rằng ảnh scorer nhận trùng từng pixel với file gốc, giữ format, mode và EXIF, và chỉ được giải mã một lần.
+
 ## Lưu ý và giả định
 - Độ bao phủ test của `app/` từ 70% trở lên.
 - Đổi schema response phải sửa tài liệu trong cùng PR.
