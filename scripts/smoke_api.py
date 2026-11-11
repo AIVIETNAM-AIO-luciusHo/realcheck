@@ -64,12 +64,17 @@ class Unreachable(Exception):
 
 
 class Runner:
-    def __init__(self, client: httpx.Client, fixtures: Path, timeout: float):
+    def __init__(
+        self, client: httpx.Client, fixtures: Path, timeout: float, delay: float = 0.0
+    ):
         self.client, self.fixtures, self.timeout = client, fixtures, timeout
+        self.delay = delay
         self.results: list[dict] = []
         self.requests: list[dict] = []
 
     def send(self, method, path, files=None, label=None):
+        if self.delay and self.requests:
+            time.sleep(self.delay)  # giãn cách để không vượt rate limit của gateway
         started = time.perf_counter()
         try:
             resp = self.client.request(method, path, files=files)
@@ -279,7 +284,9 @@ def run_checks(
         error_problems(resp, 422, "MULTIPLE_FILES"),
         "422 MULTIPLE_FILES",
     )
-    resp = r.send("GET", "/khong-co-duong-nay")
+    resp = r.send(
+        "GET", "/v1/khong-co-duong-nay"
+    )  # dưới /v1/ để cùng đúng qua gateway, nơi / thuộc UI
     r.record(
         "GET đường dẫn lạ",
         "404 NOT_FOUND",
@@ -344,6 +351,12 @@ def main(argv: list[str] | None = None) -> int:
     # 60 s dài hơn timeout model D11 (10 s); Nginx/UI cũng phải dài hơn 10 s.
     ap.add_argument("--timeout", type=float, default=60.0, help="giây mỗi request")
     ap.add_argument(
+        "--delay",
+        type=float,
+        default=0.0,
+        help="giây nghỉ giữa hai request; dùng 0.15 khi chạy qua Nginx (10 r/s)",
+    )
+    ap.add_argument(
         "--no-docs", action="store_true", help="bỏ qua /docs, /openapi.json"
     )
     ap.add_argument(
@@ -366,7 +379,7 @@ def main(argv: list[str] | None = None) -> int:
     started = datetime.now(UTC).isoformat()
     fatal = None
     with httpx.Client(base_url=args.base_url, timeout=args.timeout) as client:
-        runner = Runner(client, args.fixtures, args.timeout)
+        runner = Runner(client, args.fixtures, args.timeout, args.delay)
         try:
             run_checks(
                 runner,

@@ -14,6 +14,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
 | D05 Lỗi gateway | proposed | Quang | Chờ Lực, Loan | 2026-11-09 | Duyệt mã mới trước khi sửa code |
+| D05 Làm rõ 5 câu (issue #43) | proposed; Quang đã chọn | Quang | Chờ Lực | 2026-11-11 | Lực review và khóa bằng test; xem [mục Làm rõ](#làm-rõ-issue-43) |
 | D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 | — |
 | D06 Body dư multipart | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt 64 KiB |
 | D07 Số pixel | approved | Quang | Lực | 2026-11-04 | — |
@@ -24,7 +25,8 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
 | D13 Truy cập, rate limit | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt trước khi viết cấu hình Nginx (T024) |
 | D14 Profile tải | Chưa chốt | Lực | — | — | Lực chốt; `locust/baseline.conf` chỉ là đề xuất |
-| Hợp đồng `score` | proposed; ML đã ghi xác nhận kỹ thuật | Quang | Chờ Quang/Lực review | 2026-11-10 | [Xác nhận ML và bằng chứng](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml); chưa duyệt chung |
+| Hợp đồng `score` | proposed; ML đã ghi xác nhận kỹ thuật; Quang đã kiểm trên máy API | Quang | Chờ Lực review | 2026-11-11 | [Xác nhận ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), [kiểm trên máy API](#kiểm-trên-máy-api-issue-39); chưa duyệt chung |
+| Model phục vụ API (local/lab) | Kiệt chọn reference e571; Quang đã nhận và kiểm trên máy API | Kiệt | Quang (nhận), chờ Lực | 2026-11-11 | Không phải phê duyệt QA hay release; xem [mục Kiểm trên máy API](#kiểm-trên-máy-api-issue-39) |
 | Manifest phục vụ model | Chưa chốt | Loan | Kiệt, Lực | — | Xem [mục Manifest](#manifest) |
 | Chính sách audit | Chưa chốt | Loan, Lực | Quang tổng hợp | — | Xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
 | Phạm vi M1/M2 | proposed | Quang | Chờ cả nhóm | 2026-11-09 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
@@ -72,6 +74,34 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Hạn chế đã biết:** JPEG nhúng nhiều ảnh (MPO, ví dụ gain map HDR từ một số điện thoại) bị Pillow nhận là `MPO` nhiều khung hình nên trả 415 theo đúng bảng trên. Chưa đo tỷ lệ ảnh điện thoại thật bị ảnh hưởng.
 
+### Làm rõ (issue #43)
+
+Quang chọn ngày 2026-11-11, trả lời 5 câu Lực hỏi khi viết test hợp đồng; chờ Lực review.
+
+**1. `INVALID_REQUEST`:** request không có phần file ảnh (body JSON, trường `file` là chuỗi chữ, sai tên trường, content-type không phải multipart) là 422 `MISSING_FILE`. `INVALID_REQUEST` dành cho body không đọc được (multipart hỏng) và lỗi validation khác, **luôn 422**; trước đây multipart hỏng trả 400, đã sửa cho khớp bảng trên.
+
+**2 và 4. Thứ tự kiểm tra:** request vi phạm nhiều quy tắc thì nhận lỗi của bước đầu tiên nó vi phạm:
+
+1. Thiếu file hoặc nhiều file: 422 `MISSING_FILE`, `MULTIPLE_FILES`.
+2. Không cần giải mã: 400 `EMPTY_FILE`, 413 `FILE_TOO_LARGE`.
+3. Model: 503 `MODEL_NOT_READY`, rồi 503 `SERVICE_BUSY`.
+4. Đọc header và giải mã ảnh, theo đúng thứ tự: 400 `INVALID_IMAGE` khi không nhận ra ảnh (hoặc 413 `TOO_MANY_PIXELS` khi header lớn tới mức Pillow chặn ngay lúc mở), 415 `UNSUPPORTED_FORMAT`, 413 `TOO_MANY_PIXELS`, 415 nhiều khung hình, 400 `INVALID_IMAGE` khi giải mã lỗi.
+5. Trong `score()`: 422 `IMAGE_TOO_SMALL`, 500 `MODEL_ERROR`.
+
+Bước 1–2 chạy trước và không chiếm slot. Giải mã nằm trong slot (MVP-02), nên model chưa sẵn sàng được báo trước lỗi giải mã. Ví dụ: GIF 100×100 là 415, không phải 422; khi chưa có model, file rỗng là 400 còn text giả `.jpg` là 503.
+
+**3. Chuỗi `exif`:** chỉ gồm hãng (`Make`) và model máy (`Model`), không GPS hay serial.
+
+| EXIF | `exif` |
+|---|---|
+| Hãng và model | `"<Hãng> <Model>"`; model đã bắt đầu bằng từ đầu tiên của hãng thì chỉ trả model (`Canon` + `Canon EOS 5D` → `Canon EOS 5D`; `NIKON CORPORATION` + `NIKON D750` → `NIKON D750`) |
+| Chỉ hãng hoặc chỉ model | Giá trị đó (`Canon`, `EOS 5D`) |
+| Không có, rỗng hoặc đọc lỗi | `Không có thông tin máy chụp` |
+
+Mỗi giá trị bỏ ký tự điều khiển, gộp khoảng trắng và cắt còn tối đa 64 ký tự.
+
+**5. Kiểu của điểm:** `score()` phải trả float, của Python hoặc numpy (`float32`, `float64`). `str`, `int`, `bool`, `None` hay mảng nhiều phần tử là 500 `MODEL_ERROR`, không ép kiểu: số nguyên 0/1 thường là nhãn lớp từ `predict()` chứ không phải xác suất.
+
 ### Lỗi do gateway trả (proposed, 2026-11-09)
 
 Đề xuất của Quang cho MVP-01. **Chưa sửa code:** chỉ thêm vào enum `ErrorCode` và `streamlit/` sau khi Lực, Loan duyệt, vì UI của Loan đọc `error.code`.
@@ -80,13 +110,15 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 |---|---|---|---|---|
 | 413 | `FILE_TOO_LARGE` (dùng lại) | Nginx | Body vượt `client_max_body_size` (D06) | Như bảng API |
 | 429 | `RATE_LIMITED` (mới) | Nginx | Vượt 10 request/giây mỗi IP (D13) | "Đang có quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại." |
-| 502 | `UPSTREAM_UNAVAILABLE` (mới) | Nginx | API không chạy hoặc từ chối kết nối | "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau." |
+| 502 | `API_UNAVAILABLE` (mới) | Nginx | API không chạy hoặc từ chối kết nối | "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau." |
 | 504 | `GATEWAY_TIMEOUT` (mới) | Nginx | API không trả lời trong `proxy_read_timeout` | "Hệ thống xử lý quá lâu. Vui lòng thử lại sau." |
 
 - Cùng envelope `{"error": {code, message, request_id}}`, `Content-Type: application/json`.
 - `request_id`: Nginx tạo bằng `$request_id`, gửi sang API qua header `X-Request-ID` và trả lại trong header response. API chỉ nhận UUID, và `$request_id` (32 ký tự hex) được API ghi lại ở dạng UUID có gạch nối.
 - 429 kèm `Retry-After: 1` (D13). Các lỗi khác không gửi `Retry-After`.
 - `GATEWAY_TIMEOUT` khác `MODEL_TIMEOUT`: `MODEL_TIMEOUT` do API trả khi model quá D11; `GATEWAY_TIMEOUT` nghĩa là cả API không trả lời kịp. `proxy_read_timeout` phải dài hơn tổng thời gian API (D11), và timeout của UI dài hơn proxy.
+- Đổi tên `UPSTREAM_UNAVAILABLE` (đề xuất 2026-11-09) thành `API_UNAVAILABLE` (2026-11-11): `scripts/check_gateway.py` coi chữ "upstream" trong body lỗi là lộ chi tiết nội bộ (FR-N03).
+- Đã cấu hình trong `nginx/nginx.conf` (MVP-05); vẫn `proposed` tới khi Lực, Loan duyệt.
 
 ## D06. Dung lượng file
 
@@ -112,6 +144,8 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Lưu ý:** timeout của Nginx và UI phải dài hơn timeout này. Thời gian khởi động và warmup tính riêng.
 
+**Gateway và UI (proposed, 2026-11-11):** Nginx `proxy_read_timeout` 15 giây cho `/v1/`, dư 5 giây cho giải mã và ghi response; UI 60 giây (`REALCHECK_API_TIMEOUT`). Đã đo qua gateway: API bị treo thì Nginx trả 504 `GATEWAY_TIMEOUT` sau 15,0 giây.
+
 ## D12. Cơ chế suy luận
 
 **Lựa chọn:** thread, 1 worker, 1 slot (`REALCHECK_INFERENCE_SLOTS`), không xếp hàng; hết slot trả 503.
@@ -134,6 +168,8 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Còn mở:** URL lab cụ thể và máy chạy demo; danh sách IP proxy tin cậy để trống vì không có proxy nào đứng trước Nginx.
 
+**Đã cấu hình (MVP-05, 2026-11-11):** `nginx/nginx.conf` áp rate limit cho `/v1/`; `/health`, `/docs`, `/openapi.json` và UI không bị giới hạn. Vẫn `proposed` tới khi Lực duyệt.
+
 ## Hợp đồng `score`
 
 Ngưỡng D08 và lựa chọn manifest/holdout mới được ghi tại [ml-selection.md](ml-selection.md). Bảng API/UI hiện có khớp các mốc Kiệt chọn; việc đó không thay thế xác nhận QA hoặc kết quả model-test.
@@ -144,7 +180,24 @@ Ngưỡng D08 và lựa chọn manifest/holdout mới được ghi tại [ml-sel
 
 **Hiện trạng:** Kiệt đã ghi [xác nhận kỹ thuật phía ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), kèm smoke model thật trên main. Chờ Quang/Lực review nên vẫn `proposed`, không tự ghi QA/release approved.
 
-**Trả lời phía ML:** chọn reference e571 cho local/lab; giữ một slot vì chưa chứng nhận đa luồng; gói có profiler offline, FR-A06 telemetry API chưa làm. Xem [bàn giao #39](../ml-api-model-handoff.md). Chờ nghiệm thu trên máy Quang và review chung.
+**Trả lời phía ML:** chọn reference e571 cho local/lab; giữ một slot vì chưa chứng nhận đa luồng; gói có profiler offline, FR-A06 telemetry API chưa làm. Xem [bàn giao #39](../ml-api-model-handoff.md). Đã kiểm trên máy Quang (mục dưới); còn chờ review chung.
+
+### Kiểm trên máy API (issue #39)
+
+Quang kiểm ngày 2026-11-11 trên Windows 11, Python 3.11.9, torch 2.15.0+cpu, sentence-transformers 6.2.0, Pillow 13.0.0, CLIP revision `327ab6726d33c0e22f920c83f2ff9e4bd38ca37f` chạy offline (`HF_HUB_OFFLINE=1`). Code: `main` tại `aa20693` (đã có MVP-02 #37, B4 #38 và #61). Model chép vào `models/clip_probe_e571.joblib` (gitignored), nạp qua `REALCHECK_MODEL_PATH`.
+
+| Kiểm tra | Kết quả |
+|---|---|
+| ZIP `realcheck-api-model-e571-20261110-v2.zip` | 24.132 byte, SHA256 `baf7bd57…` khớp release |
+| `sha256sum -c SHA256SUMS` và `verification/clip_probe.joblib.sha256` | `OK` |
+| Model SHA256 | `e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494` |
+| Metadata (`load_bundle`) | `labels_sha256` `4bf8e490…`, `norm_version` `1`, ngưỡng `0.5 / 0.3 / 0.7` |
+| `python -m models.score` trên 4 ảnh gốc (2 thật, GLIDE, Midjourney) | Điểm hữu hạn trong `[0, 1]`; ảnh 100×100 ném `ImageTooSmall` |
+| `uvicorn app.main:app`, `REALCHECK_MODEL_PATH` trỏ tới model e571 | Nhận request sau 15,7 giây; `/health` 200 `model_ready=true`; 4 ảnh trả 200, điểm trùng CLI tới 8 chữ số thập phân; text giả `.jpg` trả 400 `INVALID_IMAGE` |
+
+- Đây là kiểm nhận artifact và khởi động, **không phải số đo accuracy**: 4 ảnh lấy từ `data/raw` và có thể thuộc tập train.
+- Chưa kiểm trong Docker/Linux, chưa kiểm tải hay nhiều slot.
+- `REALCHECK_MODEL_PATH` phải đặt rõ: mặc định `models/clip_probe.joblib` là model cũ `69810fd6…`, khác model e571.
 
 ## D01–D04. Dữ liệu và audit
 
@@ -205,5 +258,6 @@ Trạng thái: proposed, 2026-11-09.
 |---|---|
 | Lực | Duyệt mã lỗi gateway, body dư 64 KiB, D13; xác nhận hợp đồng `score`; cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau MVP-09 |
 | Loan | Xác nhận D05 và mã gateway cho UI; chốt D01, D03, D04 và manifest; cùng Lực chốt chính sách audit |
-| Kiệt | Đã ghi [lựa chọn model, contract, thread/timing và D02](../ml-api-model-handoff.md); theo dõi Quang xác nhận checksum/CLI và review chung |
+| Kiệt | Đã ghi [lựa chọn model, contract, thread/timing và D02](../ml-api-model-handoff.md); Quang đã xác nhận checksum/CLI (#39), còn review chung |
+| Quang | Đăng kết quả kiểm vào issue #39; tổng hợp các mục còn chờ |
 | Cả nhóm | Duyệt phạm vi M1/M2 và AC-26 |
