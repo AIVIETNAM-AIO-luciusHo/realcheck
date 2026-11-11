@@ -72,7 +72,8 @@ def read_exif(image: Image.Image) -> str:
         model = _clean_exif_text(exif.get(EXIF_MODEL))
     except Exception:  # noqa: BLE001 - EXIF chỉ là bằng chứng phụ, không làm hỏng request
         return MISSING_EXIF
-    if make and model.casefold().startswith(make.split()[0].casefold()):
+    # So nguyên từ đầu, không theo tiền tố: "Canon" + "Canonical X" vẫn giữ tên hãng.
+    if make and model and model.split()[0].casefold() == make.split()[0].casefold():
         return model
     return " ".join(filter(None, (make, model))) or MISSING_EXIF
 

@@ -507,3 +507,45 @@ def test_connect_error_midway_is_failed_case_not_exit2(gw, fixture, capsys):
         "Phục hồi sau khi upstream trở lại",
     }
     assert "ConnectError" in res["Upstream tắt/chậm trả lỗi gateway sạch"][1]
+
+
+def _junit(path):
+    import xml.etree.ElementTree as ET
+
+    cases_ = list(ET.parse(path).getroot().iter("testcase"))
+    tags = {c.get("name"): [x.tag for x in c] for c in cases_}
+    return cases_, tags
+
+
+def test_junit_green_only_when_upstream_checked(gw, fixture, tmp_path):
+    """G04: đủ ca, có phục hồi upstream, không failure/skipped/error."""
+    f, out = gw(), tmp_path / "integration.xml"
+
+    def ask(prompt):
+        f.opts["upstream"] = "down" if f.opts["upstream"] == "up" else "up"
+
+    argv = ["--upstream", "prompt", "--only", "boundary", "--junit", str(out)]
+    assert run(f, fixture, *argv, ask=ask) == 0
+    cases_, tags = _junit(out)
+    assert len(cases_) >= 3 and all(t == [] for t in tags.values())
+    assert any(name.startswith("Phục hồi") for name in tags)
+
+
+def test_junit_marks_skipped_upstream_and_failures(gw, fixture, tmp_path):
+    out = tmp_path / "a.xml"
+    bad = gw(rate_limit=False)
+    assert (
+        run(bad, fixture, "--upstream", "skip", "--only", "rate", "--junit", str(out))
+        == 1
+    )
+    _, tags = _junit(out)
+    assert tags["Vượt giới hạn trả 429 (không 5xx)"] == ["failure"]
+    assert ["skipped"] in tags.values()
+
+
+def test_junit_unreachable_gateway_is_an_error_not_green(fixture, tmp_path):
+    out = tmp_path / "b.xml"
+    argv = ["--base-url", "http://127.0.0.1:1", "--fixture", fixture, *ARGS]
+    assert main([*argv, "--upstream", "skip", "--junit", str(out)]) == 2
+    _, tags = _junit(out)
+    assert ["error"] in tags.values()

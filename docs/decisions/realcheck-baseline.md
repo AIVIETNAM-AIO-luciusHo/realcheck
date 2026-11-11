@@ -94,11 +94,13 @@ Bước 1–2 chạy trước và không chiếm slot. Giải mã nằm trong sl
 
 | EXIF | `exif` |
 |---|---|
-| Hãng và model | `"<Hãng> <Model>"`; model đã bắt đầu bằng từ đầu tiên của hãng thì chỉ trả model (`Canon` + `Canon EOS 5D` → `Canon EOS 5D`; `NIKON CORPORATION` + `NIKON D750` → `NIKON D750`) |
+| Hãng và model | `"<Hãng> <Model>"`; từ đầu tiên của model trùng từ đầu tiên của hãng (so nguyên từ, không phân biệt hoa thường) thì chỉ trả model (`Canon` + `Canon EOS 5D` → `Canon EOS 5D`; `NIKON CORPORATION` + `NIKON D750` → `NIKON D750`; `Canon` + `Canonical X` → `Canon Canonical X`) |
 | Chỉ hãng hoặc chỉ model | Giá trị đó (`Canon`, `EOS 5D`) |
 | Không có, rỗng hoặc đọc lỗi | `Không có thông tin máy chụp` |
 
-Mỗi giá trị bỏ ký tự điều khiển, gộp khoảng trắng và cắt còn tối đa 64 ký tự.
+Mỗi giá trị bỏ ký tự điều khiển, gộp khoảng trắng và cắt còn tối đa 64 ký tự, **trước** khi so tên hãng và ghép. Giới hạn áp cho từng giá trị, nên cả chuỗi `exif` tối đa 129 ký tự (64 + dấu cách + 64). Thẻ EXIF không phải ASCII bị Pillow ghi thành `?` khi lưu file, nên ký tự tiếng Việt trong `Make`/`Model` thường không đến được API nguyên vẹn.
+
+Sửa ngày 2026-11-11 theo review của Lực: bỏ lặp tên hãng chuyển từ so tiền tố ký tự sang so nguyên từ; ghi rõ giới hạn 129 ký tự.
 
 **5. Kiểu của điểm:** `score()` phải trả float, của Python hoặc numpy (`float32`, `float64`). `str`, `int`, `bool`, `None` hay mảng nhiều phần tử là 500 `MODEL_ERROR`, không ép kiểu: số nguyên 0/1 thường là nhãn lớp từ `predict()` chứ không phải xác suất.
 

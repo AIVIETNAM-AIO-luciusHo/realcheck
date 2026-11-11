@@ -28,3 +28,8 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 
 - [Thiết kế và kết quả #59](shortcut-adv10.md): model e571, validation/CI và giới hạn.
 - [JSON ADV-10](reports/shortcut-adv10.json): số đo thật, chưa QA độc lập.
+
+## Biên bản QA
+
+- [Kiểm với model thật trên Linux (11/11)](qa/local-real-model-verification-20261111.md): smoke, gateway, Docker, Compose, baseline Locust sơ bộ; ảnh tổng hợp, chưa phải nghiệm thu.
+- [Review KAN-25: nạp model](qa/kan-25-model-loading-review.md): đối chiếu tiêu chí, vấn đề cần sửa trước bàn giao.
