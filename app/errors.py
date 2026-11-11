@@ -102,7 +102,10 @@ async def handle_validation_error(
 async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
     if exc.status_code >= 500:
         return error_response(request, ErrorCode.INTERNAL_ERROR, status=exc.status_code)
-    code = _CODE_BY_HTTP_STATUS.get(exc.status_code, ErrorCode.INVALID_REQUEST)
+    code = _CODE_BY_HTTP_STATUS.get(exc.status_code)
+    if code is None:
+        # D05 (issue #43): INVALID_REQUEST luôn 422, kể cả 400 của framework khi multipart hỏng.
+        return error_response(request, ErrorCode.INVALID_REQUEST)
     return error_response(
         request,
         code,

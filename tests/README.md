@@ -36,6 +36,8 @@ Test chuẩn hóa spec 001 (ảnh tổng hợp + mock CLIP, không cần mạng,
 
 Chạy riêng: `pytest tests/test_normalize.py tests/test_score_normalization.py tests/test_extract_features.py tests/test_normalize_large.py tests/test_too_small.py`.
 
+`test_api_d05_issue43.py` khóa năm câu trả lời issue #43 (D05) bằng test chặt, mỗi ca đúng một mã lỗi và đúng số lần gọi scorer: thiếu file là `MISSING_FILE`, thứ tự lỗi từng cặp liền kề (request, bytes, model/slot, giải mã, `score()`), chuỗi `exif` (hãng, model, bỏ lặp, cắt 64 ký tự), 400/413 đứng trước 503 và lỗi giải mã đứng sau 503, kiểu của score. Hai test `test_mo_ho_*` cũ trong `test_analyze.py` đã thành `test_body_json_la_422_missing_file` và `test_scorer_tra_kieu_khong_phai_float_la_500_model_error`. Chưa kiểm với loader thật đang nạp dở.
+
 Công cụ kiểm thử tích hợp KAN-29: `test_smoke_api.py` chạy `scripts/smoke_api.py` với server HTTP giả (stdlib, thread) cho kịch bản đúng hợp đồng (thoát 0), body/mã lỗi sai (thoát 1, nêu đúng ca), cổng đóng hoặc thiếu fixture (thoát 2); `test_make_fixtures.py` kiểm kích thước, EXIF, 0 byte, đúng 5.242.880 và +1 byte, sha256 giống nhau giữa hai lần sinh. Không cần mạng ngoài hay model; chưa thay thế lần smoke thật với `/v1/analyze` và model thật.
 
 - Cột AI được kiểm cho cả `classes_=[0,1]` và `[1,0]` với hai xác suất khác nhau; hardcode cột 0 hoặc 1 đều làm test thất bại.

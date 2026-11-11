@@ -9,7 +9,7 @@ Dùng create_app(scorer=<giả>) + TestClient, ảnh tổng hợp bằng Pillow,
 model thật. Không dùng skip/xfail.
 
 Không test SERVICE_BUSY (503) và MODEL_TIMEOUT (504): thuộc InferenceService (D11, D12),
-ticket khác. Các điểm D05 còn mơ hồ nằm riêng trong nhóm "mơ hồ" ở cuối file.
+ticket khác. Năm điểm D05 từng mơ hồ đã được chốt ở issue #43 và khóa ở cuối file này và ở test_api_d05_issue43.py.
 """
 
 import io
@@ -462,35 +462,26 @@ def test_scorer_khong_duoc_goi_voi_dau_vao_khong_hop_le(spy, case, status):
     assert spy.calls == 0
 
 
-# ---------- Điểm D05 còn mơ hồ: tách riêng, không đoán (xem TASK_REPORT_REBASE_T016_KAN27.md) ----------
+# ---------- D05 đã chốt ở issue #43: khóa chặt, mỗi ca đúng một kết quả ----------
+# Các test thứ tự lỗi, exif, 503 nằm ở tests/test_api_d05_issue43.py.
 
 
-def test_mo_ho_body_json_la_422_envelope(spy):
-    """D05 chỉ ghi INVALID_REQUEST là 'Yêu cầu sai khác'; không nói rõ ca nào.
-
-    Chỉ khẳng định phần chắc chắn: 422 + envelope + chưa gọi scorer. Mã cụ thể là câu hỏi
-    cho Quang: body JSON là MISSING_FILE hay INVALID_REQUEST?
-    """
+def test_body_json_la_422_missing_file(spy):
+    """Issue #43 câu 1: body JSON không có phần file là 422 MISSING_FILE."""
     r = make_client(spy).post(URL, json={"file": "abc"})
-    assert r.status_code == 422, r.text
-    assert r.json()["error"]["code"] in {"MISSING_FILE", "INVALID_REQUEST"}
-    assert r.json()["error"]["request_id"] == r.headers["X-Request-ID"]
+    assert_error(r, 422, "MISSING_FILE")
     assert spy.calls == 0
 
 
 @pytest.mark.parametrize(
-    "value", ["0.5", 1, 0, True], ids=["chuoi", "int1", "int0", "bool"]
+    "value",
+    ["0.5", 1, 0, True, False, None],
+    ids=["chuoi", "int1", "int0", "true", "false", "none"],
 )
-def test_mo_ho_scorer_tra_kieu_khong_phai_float(value):
-    """D05 chỉ nói NaN/inf/ngoài [0,1] là MODEL_ERROR; kiểu str/int/bool chưa được chốt.
-
-    Chỉ khẳng định phần chắc chắn: không bao giờ 5xx lộ chi tiết hay envelope sai; hoặc 200
-    đúng bốn trường, hoặc 500 MODEL_ERROR. Câu hỏi cho Quang: có ép kiểu hay từ chối?
-    """
+def test_scorer_tra_kieu_khong_phai_float_la_500_model_error(value):
+    """Issue #43 câu 5: chỉ float Python hoặc numpy; kiểu khác là 500 MODEL_ERROR."""
     spy = SpyScorer(value)
     r = post(make_client(spy), encode())
+    assert_error(r, 500, "MODEL_ERROR")
     assert spy.calls == 1
-    if r.status_code == 200:
-        assert set(r.json()) == SUCCESS_KEYS
-    else:
-        assert_error(r, 500, "MODEL_ERROR")
+    assert "verdict" not in r.text

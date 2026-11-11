@@ -14,6 +14,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
 | D05 Lỗi gateway | proposed | Quang | Chờ Lực, Loan | 2026-11-09 | Duyệt mã mới trước khi sửa code |
+| D05 Làm rõ 5 câu (issue #43) | proposed; Quang đã chọn | Quang | Chờ Lực | 2026-11-11 | Lực review và khóa bằng test; xem [mục Làm rõ](#làm-rõ-issue-43) |
 | D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 | — |
 | D06 Body dư multipart | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt 64 KiB |
 | D07 Số pixel | approved | Quang | Lực | 2026-11-04 | — |
@@ -73,6 +74,34 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Hạn chế đã biết:** JPEG nhúng nhiều ảnh (MPO, ví dụ gain map HDR từ một số điện thoại) bị Pillow nhận là `MPO` nhiều khung hình nên trả 415 theo đúng bảng trên. Chưa đo tỷ lệ ảnh điện thoại thật bị ảnh hưởng.
 
+### Làm rõ (issue #43)
+
+Quang chọn ngày 2026-11-11, trả lời 5 câu Lực hỏi khi viết test hợp đồng; chờ Lực review.
+
+**1. `INVALID_REQUEST`:** request không có phần file ảnh (body JSON, trường `file` là chuỗi chữ, sai tên trường, content-type không phải multipart) là 422 `MISSING_FILE`. `INVALID_REQUEST` dành cho body không đọc được (multipart hỏng) và lỗi validation khác, **luôn 422**; trước đây multipart hỏng trả 400, đã sửa cho khớp bảng trên.
+
+**2 và 4. Thứ tự kiểm tra:** request vi phạm nhiều quy tắc thì nhận lỗi của bước đầu tiên nó vi phạm:
+
+1. Thiếu file hoặc nhiều file: 422 `MISSING_FILE`, `MULTIPLE_FILES`.
+2. Không cần giải mã: 400 `EMPTY_FILE`, 413 `FILE_TOO_LARGE`.
+3. Model: 503 `MODEL_NOT_READY`, rồi 503 `SERVICE_BUSY`.
+4. Đọc header và giải mã ảnh, theo đúng thứ tự: 400 `INVALID_IMAGE` khi không nhận ra ảnh (hoặc 413 `TOO_MANY_PIXELS` khi header lớn tới mức Pillow chặn ngay lúc mở), 415 `UNSUPPORTED_FORMAT`, 413 `TOO_MANY_PIXELS`, 415 nhiều khung hình, 400 `INVALID_IMAGE` khi giải mã lỗi.
+5. Trong `score()`: 422 `IMAGE_TOO_SMALL`, 500 `MODEL_ERROR`.
+
+Bước 1–2 chạy trước và không chiếm slot. Giải mã nằm trong slot (MVP-02), nên model chưa sẵn sàng được báo trước lỗi giải mã. Ví dụ: GIF 100×100 là 415, không phải 422; khi chưa có model, file rỗng là 400 còn text giả `.jpg` là 503.
+
+**3. Chuỗi `exif`:** chỉ gồm hãng (`Make`) và model máy (`Model`), không GPS hay serial.
+
+| EXIF | `exif` |
+|---|---|
+| Hãng và model | `"<Hãng> <Model>"`; model đã bắt đầu bằng từ đầu tiên của hãng thì chỉ trả model (`Canon` + `Canon EOS 5D` → `Canon EOS 5D`; `NIKON CORPORATION` + `NIKON D750` → `NIKON D750`) |
+| Chỉ hãng hoặc chỉ model | Giá trị đó (`Canon`, `EOS 5D`) |
+| Không có, rỗng hoặc đọc lỗi | `Không có thông tin máy chụp` |
+
+Mỗi giá trị bỏ ký tự điều khiển, gộp khoảng trắng và cắt còn tối đa 64 ký tự.
+
+**5. Kiểu của điểm:** `score()` phải trả float, của Python hoặc numpy (`float32`, `float64`). `str`, `int`, `bool`, `None` hay mảng nhiều phần tử là 500 `MODEL_ERROR`, không ép kiểu: số nguyên 0/1 thường là nhãn lớp từ `predict()` chứ không phải xác suất.
+
 ### Lỗi do gateway trả (proposed, 2026-11-09)
 
 Đề xuất của Quang cho MVP-01. **Chưa sửa code:** chỉ thêm vào enum `ErrorCode` và `streamlit/` sau khi Lực, Loan duyệt, vì UI của Loan đọc `error.code`.
@@ -81,13 +110,15 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 |---|---|---|---|---|
 | 413 | `FILE_TOO_LARGE` (dùng lại) | Nginx | Body vượt `client_max_body_size` (D06) | Như bảng API |
 | 429 | `RATE_LIMITED` (mới) | Nginx | Vượt 10 request/giây mỗi IP (D13) | "Đang có quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại." |
-| 502 | `UPSTREAM_UNAVAILABLE` (mới) | Nginx | API không chạy hoặc từ chối kết nối | "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau." |
+| 502 | `API_UNAVAILABLE` (mới) | Nginx | API không chạy hoặc từ chối kết nối | "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau." |
 | 504 | `GATEWAY_TIMEOUT` (mới) | Nginx | API không trả lời trong `proxy_read_timeout` | "Hệ thống xử lý quá lâu. Vui lòng thử lại sau." |
 
 - Cùng envelope `{"error": {code, message, request_id}}`, `Content-Type: application/json`.
 - `request_id`: Nginx tạo bằng `$request_id`, gửi sang API qua header `X-Request-ID` và trả lại trong header response. API chỉ nhận UUID, và `$request_id` (32 ký tự hex) được API ghi lại ở dạng UUID có gạch nối.
 - 429 kèm `Retry-After: 1` (D13). Các lỗi khác không gửi `Retry-After`.
 - `GATEWAY_TIMEOUT` khác `MODEL_TIMEOUT`: `MODEL_TIMEOUT` do API trả khi model quá D11; `GATEWAY_TIMEOUT` nghĩa là cả API không trả lời kịp. `proxy_read_timeout` phải dài hơn tổng thời gian API (D11), và timeout của UI dài hơn proxy.
+- Đổi tên `UPSTREAM_UNAVAILABLE` (đề xuất 2026-11-09) thành `API_UNAVAILABLE` (2026-11-11): `scripts/check_gateway.py` coi chữ "upstream" trong body lỗi là lộ chi tiết nội bộ (FR-N03).
+- Đã cấu hình trong `nginx/nginx.conf` (MVP-05); vẫn `proposed` tới khi Lực, Loan duyệt.
 
 ## D06. Dung lượng file
 
@@ -113,6 +144,8 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Lưu ý:** timeout của Nginx và UI phải dài hơn timeout này. Thời gian khởi động và warmup tính riêng.
 
+**Gateway và UI (proposed, 2026-11-11):** Nginx `proxy_read_timeout` 15 giây cho `/v1/`, dư 5 giây cho giải mã và ghi response; UI 60 giây (`REALCHECK_API_TIMEOUT`). Đã đo qua gateway: API bị treo thì Nginx trả 504 `GATEWAY_TIMEOUT` sau 15,0 giây.
+
 ## D12. Cơ chế suy luận
 
 **Lựa chọn:** thread, 1 worker, 1 slot (`REALCHECK_INFERENCE_SLOTS`), không xếp hàng; hết slot trả 503.
@@ -134,6 +167,8 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 **Hệ quả đã biết:** Streamlit gọi API qua Nginx từ server, nên mọi phiên UI dùng chung IP của container Streamlit và chung giới hạn 10 request/giây. Không tuyên bố giới hạn theo từng trình duyệt (spec 000 mục 10).
 
 **Còn mở:** URL lab cụ thể và máy chạy demo; danh sách IP proxy tin cậy để trống vì không có proxy nào đứng trước Nginx.
+
+**Đã cấu hình (MVP-05, 2026-11-11):** `nginx/nginx.conf` áp rate limit cho `/v1/`; `/health`, `/docs`, `/openapi.json` và UI không bị giới hạn. Vẫn `proposed` tới khi Lực duyệt.
 
 ## Hợp đồng `score`
 
