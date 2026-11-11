@@ -19,19 +19,35 @@ API nhận 1 ảnh, kiểm tra hợp lệ, gọi `score(image)` từ `models/`, 
 
 Endpoint: `POST /v1/analyze`, `GET /health`, `GET /docs`, `GET /openapi.json`. Giai đoạn nâng cao: `GET /metrics`.
 
+## Model đang dùng
+API local/lab dùng **reference e571** do Kiệt chọn (issue #39), SHA256 `e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494`. Model không nằm trong Git.
+
+1. Tải `realcheck-api-model-e571-20261110-v2.zip` từ GitHub release `api-model-reference-e571-20261110`, kiểm SHA256 của ZIP với số ghi trong release, giải nén rồi chạy `sha256sum -c SHA256SUMS` ở thư mục gốc của gói.
+2. Chép `model/clip_probe.joblib` và `model/clip_probe.joblib.sha256` vào `models/` với tên `clip_probe_e571.joblib` và `clip_probe_e571.joblib.sha256`. `models/*.joblib` đã gitignore.
+3. Luôn đặt `REALCHECK_MODEL_PATH` tới file đó. Mặc định `models/clip_probe.joblib` là model cũ `69810fd6…`, khác e571.
+
+Joblib chạy được mã khi nạp: chỉ dùng file từ release của nhóm và đã khớp checksum.
+
 ## Cách chạy
-Từ thư mục gốc repo:
-```bash
+Từ thư mục gốc repo (PowerShell):
+```powershell
 pip install -r requirements.txt -r models/requirements-ml.txt
-uvicorn app.main:app
+$env:HF_HOME = (Resolve-Path .cache/huggingface).Path
+$env:REALCHECK_MODEL_PATH = (Resolve-Path models/clip_probe_e571.joblib).Path
+$env:HF_HUB_OFFLINE = '1'
+uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-Lúc khởi động, lifespan gọi `models.score.load_scorer` một lần trên worker thread: kiểm checksum, metadata, rồi warmup CLIP. Server chỉ nhận request sau khi nạp xong (Kiệt đo local khoảng 30 giây). Cần `models/clip_probe.joblib` cùng file `.sha256`, hoặc đặt `REALCHECK_MODEL_PATH`, và trọng số CLIP đã cache (xem [`models/README.md`](../models/README.md)).
+Lần đầu cần mạng để tải trọng số CLIP vào `.cache/huggingface`: chạy `python -c "from models.clip_input import load_encoder; load_encoder()"` khi chưa đặt `HF_HUB_OFFLINE` (xem [`models/README.md`](../models/README.md)).
+
+Lúc khởi động, lifespan gọi `models.score.load_scorer` một lần trên worker thread: kiểm checksum, metadata, rồi warmup CLIP. Server chỉ nhận request sau khi nạp xong, khoảng 16 giây trên máy của Quang. Kiểm tra: `/health` trả 200 `{"status":"ok","model_ready":true}`, mở `http://127.0.0.1:8000/docs`.
 
 Thiếu file, sai checksum, sai metadata hoặc thiếu torch: ghi log `model_load_failed`, server vẫn chạy và `/health` trả 503. Không có chế độ model giả, không nạp lại model trong request. Chỉ cài `requirements.txt` thì server luôn ở trạng thái này. Nạp xong ghi log `model_loaded` kèm thời gian.
 
 Test tiêm scorer giả qua `create_app(scorer=...)`, hoặc hàm nạp qua `create_app(loader=...)`; `loader` chỉ chạy khi app đi qua lifespan. `create_app()` không có loader nên không nạp model.
 
 ## Chạy bằng Docker
+Chạy đủ API, UI và gateway Nginx thì dùng `docker compose up -d --build` (xem [`nginx/README.md`](../nginx/README.md)). Mục này mô tả chạy riêng container API.
+
 Image chứa API, code trong `models/` và dependency ML (torch bản CPU). **Không** chứa model, dữ liệu hay trọng số CLIP: cả ba mount từ máy chủ lúc chạy, chỉ đọc. Build từ gốc repo:
 ```bash
 docker build -t realcheck-api .
@@ -41,16 +57,17 @@ Cung cấp model cho container:
 
 | Mount vào | Từ máy chủ | Biến môi trường trong image |
 |---|---|---|
-| `/models` | Thư mục có `clip_probe.joblib` và `clip_probe.joblib.sha256` (thường là `models/`) | `REALCHECK_MODEL_PATH=/models/clip_probe.joblib` |
-| `/hf-cache` | Cache Hugging Face đã tải đúng revision CLIP (thường là `.cache/huggingface`) | `HF_HOME=/hf-cache`, `HF_HUB_OFFLINE=1` |
+| `/models` | Thư mục `models/` chứa `clip_probe_e571.joblib` và `.sha256` | `REALCHECK_MODEL_PATH`; image mặc định `/models/clip_probe.joblib`, nên đặt lại khi chạy |
+| `/hf-cache` | Thư mục gốc của cache Hugging Face (`.cache/huggingface`), giữ nguyên cấu trúc `hub/` | `HF_HOME=/hf-cache`, `HF_HUB_OFFLINE=1` |
 
-Container không tải gì từ mạng lúc khởi động, nên trọng số CLIP phải được tải trước trên máy chủ (xem [`models/README.md`](../models/README.md)). Model khác tên thì đặt lại `-e REALCHECK_MODEL_PATH=/models/<tên>.joblib`, file `.sha256` cùng tên phải nằm cạnh.
+Container không tải gì từ mạng lúc khởi động, nên trọng số CLIP phải được tải trước trên máy chủ. Mount cả thư mục gốc của cache, không mount riêng thư mục snapshot.
 
 Chạy (PowerShell; bash thay `${PWD}` bằng `$PWD` và `` ` `` bằng `\`):
 ```powershell
 docker run --rm -p 8000:8000 `
   -v "${PWD}/models:/models:ro" `
   -v "${PWD}/.cache/huggingface:/hf-cache:ro" `
+  -e REALCHECK_MODEL_PATH=/models/clip_probe_e571.joblib `
   --name realcheck-api realcheck-api
 ```
 Kiểm tra: `curl http://localhost:8000/health` và mở `http://localhost:8000/docs`.
@@ -58,7 +75,8 @@ Kiểm tra: `curl http://localhost:8000/health` và mở `http://localhost:8000/
 - Không mount model thì container vẫn chạy, `/docs` trả 200, `/health` trả 503 và log `model_load_failed`. Healthcheck của image báo `unhealthy` trong trường hợp này.
 - Healthcheck gọi `/health` mỗi 30 giây, chờ 120 giây lúc khởi động để kịp nạp và warmup CLIP.
 - Container chạy bằng user không phải root (uid 10001), nên các file mount phải cho phép đọc.
-- **Kiểm tra với model thật hoàn tất ở ticket B3:** nạp `clip_probe.joblib` thật, warmup CLIP từ cache chỉ đọc và chấm điểm ảnh thật trong container chưa được kiểm.
+- Đã kiểm với model e571 thật (B3, 2026-11-11, Docker Desktop trên Windows): cache CLIP mount chỉ đọc vẫn nạp được; nhận request sau khoảng 18 giây; `/health` 200 và healthcheck `healthy`; container dùng khoảng 500 MiB RAM; `docker stop` dừng gọn trong khoảng 2 giây.
+- Điểm trong container có thể lệch rất nhỏ so với chạy trên Windows (đã thấy tối đa `2,4e-7`), do khác nền tảng; verdict không đổi.
 
 ## Giới hạn suy luận, timeout và shutdown
 - Mỗi request giữ một slot trong cả lúc giải mã, đọc EXIF và chấm điểm. Hết slot trả 503 `SERVICE_BUSY` ngay, không xếp hàng. `/health` không dùng slot nên vẫn trả lời khi đang bận.
@@ -91,7 +109,7 @@ Biến môi trường, giá trị mặc định xem `settings.py`. Lý do chọn
 | `REALCHECK_INFERENCE_SLOTS` | 1 | Số ảnh xử lý đồng thời |
 | `REALCHECK_THRESHOLD_LOW` | 0.3 | Dưới ngưỡng này là `likely_real` |
 | `REALCHECK_THRESHOLD_HIGH` | 0.7 | Trên ngưỡng này là `likely_ai` |
-| `REALCHECK_MODEL_PATH` | `models/clip_probe.joblib` | File model; cần file `.sha256` cùng tên bên cạnh |
+| `REALCHECK_MODEL_PATH` | `models/clip_probe.joblib` (model cũ) | File model; cần file `.sha256` cùng tên bên cạnh. Model đang dùng: `models/clip_probe_e571.joblib` |
 
 ## Input / Output
 - Input: `multipart/form-data`, đúng một file ở trường `file`. Chỉ nhận JPEG hoặc PNG một khung hình, xác định theo nội dung file, không theo đuôi. Tối đa 5.242.880 byte, 24 MP, cạnh dài 10.000 px; cạnh ngắn tối thiểu 256 px.
@@ -102,6 +120,16 @@ Biến môi trường, giá trị mặc định xem `settings.py`. Lý do chọn
 ```bash
 curl -F "file=@anh.jpg" http://localhost:8000/v1/analyze
 ```
+
+## Luồng gọi `score`
+Theo hợp đồng C2 và C4 của spec 001:
+1. Route đọc file có giới hạn byte, rồi chuyển sang worker thread của `InferenceService`.
+2. `decode_image` gọi `Image.open` và `load()` **đúng một lần**, kiểm định dạng, pixel, cạnh và số khung từ header trước khi giải mã.
+3. `read_exif` đọc hãng và model máy từ ảnh vừa giải mã, **trước** khi gọi scorer, vì chuẩn hóa trong `score()` xóa EXIF.
+4. Gọi `score(image)` với chính ảnh đó: ảnh gốc, chưa resize, chưa nén lại, chưa đổi mode màu, còn nguyên EXIF. Xoay theo orientation, chuyển RGB, cắt 256×256 và nén JPEG 95 đều nằm trong `models.normalize`, `app/` không làm bước nào.
+5. Kiểm điểm hữu hạn trong `[0, 1]`, rồi `decide_verdict` và `build_reason`.
+
+`tests/test_api_score_input.py` kiểm bằng scorer giả rằng ảnh scorer nhận trùng từng pixel với file gốc, giữ format, mode và EXIF, và chỉ được giải mã một lần.
 
 ## Lưu ý và giả định
 - Độ bao phủ test của `app/` từ 70% trở lên.

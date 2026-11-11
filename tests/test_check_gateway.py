@@ -42,6 +42,7 @@ class Fake:
             "code413": "FILE_TOO_LARGE",
             "status413": 413,
             "flood_500": False,
+            "flood_busy": "",  # mã lỗi 503 trả ở request flood thứ 3
             "flood_drop": False,
             "under_status": 200,
             "strict_limit": False,
@@ -151,6 +152,8 @@ class Fake:
             n = self.flood
         if flood and o["flood_500"] and n == 3:
             return self.err(500, "INTERNAL_ERROR")
+        if flood and o["flood_busy"] and n == 3:
+            return self.err(503, o["flood_busy"])
         if flood and o["flood_drop"] and n == 3:
             return None
         if not flood and len(body) < 1000:
@@ -286,6 +289,8 @@ def test_no_rate_limit_fails(gw, fixture, capsys):
         ({"no_rid": {429}}, "Vượt giới hạn", "X-Request-ID"),
         ({"no_rid": {200}}, "Dưới giới hạn", "X-Request-ID"),
         ({"flood_500": True}, "Vượt giới hạn", "5xx"),
+        ({"flood_busy": "BAD_GATEWAY"}, "Vượt giới hạn", "5xx"),
+        ({"flood_busy": "SERVICE_BUSY", "bad_env": {503}}, "Vượt giới hạn", "5xx"),
         ({"flood_drop": True}, "Vượt giới hạn", "không nhận được phản hồi"),
         ({"server_hdr": {429: "nginx/1.25.3"}}, "Vượt giới hạn", "header server"),
         ({"bad_env": {413}}, "Body", "envelope"),
@@ -319,6 +324,15 @@ def test_under_limit_status_checked(gw, fixture, capsys):
         "lỗi",
         "lần 1: HTTP 503; lần 2: HTTP 503; lần 3: HTTP 503",
     )
+
+
+def test_api_service_busy_during_flood_is_not_a_gateway_failure(gw, fixture, capsys):
+    """D12: slot đầy trả 503 SERVICE_BUSY có envelope; không phải lỗi gateway."""
+    code = run(
+        gw(flood_busy="SERVICE_BUSY"), fixture, "--upstream", "skip", "--only", "rate"
+    )
+    assert code == 0
+    assert cases(capsys)["Vượt giới hạn trả 429 (không 5xx)"][0] == "đạt"
 
 
 def test_no_recovery_after_rate_limit_fails(gw, fixture, capsys):

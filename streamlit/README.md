@@ -25,6 +25,8 @@ streamlit run streamlit/app.py
 | `REALCHECK_API_TIMEOUT` | `60` | Thời gian chờ API (giây), tạm, chờ D11 |
 | `REALCHECK_EVAL_REPORT` | `artifacts/evaluation.json` | Đường dẫn báo cáo đánh giá |
 
+Chạy bằng Docker cùng API và Nginx: `docker compose up -d --build` ở gốc repo rồi mở `http://localhost/` (xem [`nginx/README.md`](../nginx/README.md)). Image UI build từ `streamlit/Dockerfile`; trong Compose UI gọi API qua `http://nginx`.
+
 Kiểm thử: `pip install -r requirements.txt -r streamlit/requirements.txt`, rồi `pytest tests/test_ui.py -q`. Test dùng HTTP giả và FastAPI thật với scorer giả, chưa gồm Nginx và model thật.
 
 ## Input / Output

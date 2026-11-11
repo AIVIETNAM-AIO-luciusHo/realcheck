@@ -243,3 +243,6 @@ TASK_REPORT.md
 TEST_REPORT.md
 PENDING_SETUP.md
 .claude/
+
+# Local dataset expansion images, caches and reports with machine-specific paths.
+outputs/data-expansion-20261110/

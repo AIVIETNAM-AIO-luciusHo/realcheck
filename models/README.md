@@ -132,3 +132,9 @@ python -m models.evaluate --labels data/labels-release.csv --features .cache/ml-
 `protocol.json.used.json` được tạo độc quyền **trước** inference, kể cả lần lỗi; lần sau cùng protocol bị từ chối. Đây là chống chạy lại vô ý tại cùng đường dẫn, không phải registry toàn hệ thống. Không xóa marker hoặc copy protocol để lựa lần test đẹp hơn. Nếu lỗi kỹ thuật cần replay, giữ bằng chứng lần lỗi và xin reviewer thống nhất cách ghi nhận replay trước; không tune lại model/ngưỡng bằng test.
 
 Ban đầu người dùng xác nhận chưa chốt manifest và chưa mở GenImage test. Sau khi chọn candidate giữ split từ bản 10.000 và ngưỡng đã ghi, Kiệt yêu cầu train/test ngay dù QA độc lập còn chờ. Lần thử nghiệm đã có artifact và số đo thật; chưa thay xác nhận release. Xem [hồ sơ bốn task ML](../docs/ml-normalization-release.md) và [kết quả lần chạy](../docs/ml-final-experiment.md).
+
+## Mở rộng dữ liệu ngày 10/11/2026
+
+Đã train candidate `realcheck_mixed_v3` trên 9.936 ảnh, giữ CLIP/normalization và GenImage validation cũ; [số liệu, artifact và giới hạn](../docs/ml-data-expansion-20261110.md). `models.data_sources` khai báo source/label và dataset dùng chung cho extract/train/loader; mixed v3 nhận các nguồn GenImage, OpenFake và Community, không nhận CIFAKE vào fit. BigGAN/VQDM là audit-only; mixed v2 tiếp tục loại SD14. GenImage test vẫn chỉ qua protocol riêng; `train --evaluate-test` chỉ dành CIFAKE.
+
+`load_bundle`/`load_scorer` nhận bundle mixed có checksum/profile đúng; việc này không thay đường dẫn model, registry hay phê duyệt phục vụ của Backend. Candidate mới cải thiện Reddit nhưng giảm GenImage validation/core; chưa đề xuất thay artifact hiện hành.
