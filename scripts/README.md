@@ -24,7 +24,8 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 | `check_gateway.py` | Lực | `python -m scripts.check_gateway --base-url http://localhost --fixture <ảnh> --rate <r/s> --burst <n> --upstream prompt\|skip [--wait-seconds N] [--cooldown s] [--only under rate body boundary] [--poll-interval s] [--require-retry-after] [--out json]`: kiểm gateway chỉ bằng HTTP (KAN-54): dưới giới hạn 200, vượt giới hạn 429 (không 5xx, không đặt X-Forwarded-For), 413 body vượt 5.242.880 B, X-Request-ID, upstream tắt/chậm trả 502/503/504 envelope không lộ nội bộ rồi phục hồi (người chạy tự tắt/bật upstream, script chỉ hỏi/chờ). `--rate`, `--burst` bắt buộc (D13 chưa chốt, script không tự đặt). Ca biên đúng 5.242.880 B (AC-09) chỉ kiểm gateway không chặn 413/429/5xx. Quét rò rỉ ở 429, 413, 502/503/504 theo FR-N03 (chỉ cấm traceback và chi tiết nội bộ, không cấm tên phần mềm): body (cả bản đã giải mã JSON) chứa traceback, `File "`, tên upstream; header `Server` chỉ lỗi khi có SỐ PHIÊN BẢN (`nginx/1.25.3`; `Server: nginx` thì xanh); `X-Powered-By` có mặt là lỗi. Thêm ca biên +1 B (413). Không gắn `X-Forwarded-For`. Timeout hoặc ngắt kết nối sau khi đã có phản hồi là ca lỗi (thoát 1, vẫn in kết quả và ghi `--out`). Thoát 0 đạt, 1 có ca lỗi, 2 thiếu tham số/fixture, không tới được gateway hoặc stdin đóng khi `--upstream prompt` (kết quả đã có vẫn in). Mẫu biên bản: `docs/qa/gateway-report-template.md` |
 | `baseline_filesize.py` | Loan | Dung lượng file theo nguồn, chỉ tham khảo độ chi tiết ảnh (không phải gate) |
 | `metadata_audit.py` | Loan | Đoán thật/AI chỉ từ metadata, raw và post; gate post `A_eff <= 0.55`, không đạt thì thoát mã 1 (bản nháp T007) |
-| `evaluate.py` | Loan | `python -m scripts.evaluate --split val --output <file>`: báo cáo validation theo source, ngưỡng lấy từ model, không ghi đè output. GenImage test dùng `models.evaluate` với protocol đã duyệt và lịch sử holdout; `--split test` ở script này chỉ dùng cho CIFAKE smoke test |
+| `evaluate.py` | Loan | `python -m scripts.evaluate --split val --output <file>`: báo cáo validation theo source, ngưỡng lấy từ model, không ghi đè output. GenImage test dùng `models.evaluate` với protocol đã duyệt và lịch sử holdout; `--split test` ở script này chỉ dùng cho CIFAKE smoke test. `--robustness`: chấm manifest robustness, xem mục Robustness bên dưới |
+| `robustness_manifest.py` | Loan | ADV-07/ADV-06: tạo biến thể từ ảnh test cha và liệt kê cohort điện thoại, AI mới, Zalo thành manifest JSONL; xem mục Robustness |
 | `verify_ml.py` | Kiệt | Model thật: parity tensor train/serve, score từ raw so feature cache, ảnh lớn/mode ảnh/ảnh nhỏ; chỉ lấy mẫu validation |
 | `analyze_robustness.py` | Kiệt | ADV-08/#52: `--preflight` kiểm protocol/hash/lineage/history/ảnh, hoặc đọc predictions CSV để tính metrics, flip/degradation matched và CI bootstrap theo group. Không inference, không tạo biến thể; chờ runner #51. Exit0 hợp lệ/đủ cohort chờ QA, 1 partial, 2 input invalid; không ghi đè. [Contract và lệnh](../docs/robustness-adv08.md) |
 
@@ -52,12 +53,38 @@ python -m scripts.check_data --labels .cache/ml-preserve/labels.csv
 
 `verify_ml` chỉ lấy mẫu validation, từ chối nếu thiếu nguồn GenImage/ảnh validation, tensor lệch, score lệch, encoder chưa frozen hoặc ảnh nhỏ vẫn được chấp nhận. Báo cáo có UUID, lệnh gọi, commit, trạng thái dirty, Python và OS; test mock không thay thế lần chạy model thật. Xem [truy vết và tái lập](../docs/ml-reproducibility.md).
 
+## Robustness (ADV-06, ADV-07)
+Chỉ để đánh giá model đã khóa (#39); không chọn model hay ngưỡng bằng các cohort này. Output và ảnh để trong `.cache/`, không đưa vào Git.
+
+1. Biến thể từ ảnh test cha. `parents.csv` có cột `path` (tính từ file CSV), `label`, `source`, `group_id` lấy từ manifest lineage đã chốt:
+   ```bash
+   python -m scripts.robustness_manifest variants --parents parents.csv --output .cache/robustness/variants.jsonl
+   ```
+   Mỗi ảnh cha sinh 7 ảnh con giữ `group_id`, `label`, `source` của cha (AC-18): `jpeg90/70/50` (chỉ đổi chất lượng JPEG), `rotate` 90° ngược chiều kim đồng hồ, `crop` giữ 80% ở giữa, `downscale` 0,5, `brightness` ×1,3. `crop` và `downscale` không làm cạnh ngắn dưới 256 px, nên ảnh cha 256 px gần như không đổi kích thước. Ảnh hình học và độ sáng lưu PNG để chỉ có đúng một thay đổi. Ảnh cha trùng byte phải cùng group và chỉ liệt kê một lần. Mọi ảnh cha được kiểm trước khi ghi: thiếu cột, sai nhãn, không có file, không giải mã được hoặc cạnh ngắn dưới 256 px đều bị liệt kê hết và không ghi gì. Lỗi khi đang ghi thì xóa thư mục ảnh con vừa tạo.
+2. Cohort thực tế: mỗi thư mục có `sources.csv` với cột `file`, `source` (thiết bị hoặc công cụ AI), `label`; Zalo thêm `parent_file` (tên file trong cohort điện thoại) nếu là bản gửi lại của ảnh đó, khi đó ảnh Zalo giữ group và source của ảnh gốc:
+   ```bash
+   python -m scripts.robustness_manifest cohort --name phone --dir <thư mục> --output .cache/robustness/phone.jsonl
+   python -m scripts.robustness_manifest cohort --name zalo --dir <thư mục> --parent-manifest .cache/robustness/phone.jsonl --output .cache/robustness/zalo.jsonl
+   ```
+   `phone` phải nhãn 0, `ai_new` nhãn 1. Từ chối và liệt kê mọi ảnh thiếu nguồn/nhãn, không giải mã được, có vị trí GPS trong EXIF, trùng, hoặc có trong CSV mà không có file. Việc loại ảnh có người hay thông tin riêng tư vẫn phải làm bằng mắt trước khi lưu. Lỗi đầu vào của cả hai lệnh thoát mã 2, không in traceback.
+3. Gộp manifest: đường dẫn ảnh tính từ file manifest, nên chỉ gộp bằng `cat variants.jsonl phone.jsonl ... > manifest.jsonl` khi các manifest nằm **cùng thư mục** (như các lệnh trên). Khóa protocol ADV-08 (`docs/robustness-adv08.md` của #64) với SHA256 của model, model manifest và manifest này, rồi chấm:
+   ```bash
+   python -m scripts.evaluate --robustness --manifest .cache/robustness/manifest.jsonl --model <model.joblib> --model-manifest <manifest.json> --protocol <protocol.json> --output .cache/robustness/predictions.csv
+   ```
+   Cổng chặn tập test, kiểm hết **trước khi nạp CLIP**: protocol phải là JSON `schema_version` 1, `status` `locked`, có `manifest_lock_ref`, `split_review_ref`, đúng profile và ngưỡng của model, `artifacts.{model,model_manifest,manifest}.sha256` khớp đúng các file truyền vào, và mọi cohort trong manifest được đăng ký `present` với cùng `transform`. Manifest phải đủ cột, nhãn là số nguyên 0/1, `split=test`, `sample_id` không trùng, ảnh trùng byte cùng group. Mỗi protocol chỉ chấm một lần: `<protocol>.used.json` được ghi trước ảnh đầu tiên và không được xóa để chạy lại. Lỗi đầu vào thoát mã 2 với thông báo rõ.
+
+   Mỗi ảnh chấm qua đúng đường API (`app.uploads.analyze_image`, `app.verdict.decide_verdict`), một dòng `sample_id,group_id,parent_id,label,status,score,verdict,error_code,model_sha256,manifest_sha256,protocol_sha256`. Ảnh lỗi ghi `status=error` với mã lỗi API. Không ghi đè `<output>`, `<output>.partial` hay `<output>.run.json`. Dòng ghi dần vào `<output>.partial`, chỉ đổi tên khi chạy xong và hash đầu vào không đổi; ảnh đổi byte giữa chừng dừng lần chạy (thoát 1) và giữ file partial. Log chạy ở `<output>.run.json`. Metrics và flip rate do `scripts.analyze_robustness` (ADV-08) tính từ file này.
+
 ## Input / Output
 - Input: `data/labels.csv`, `models/clip_probe.joblib`.
 - Output: bảng số đo, `labels.csv`.
 
 ## Lưu ý và giả định
 - Script phải chạy lại được và cho cùng kết quả.
+
+## ADV-10 (#59)
+
+`python -m scripts.shortcut_controls {prepare,run,summarize}`: đối chứng JPEG/resample GLIDE, probe fit train và model khóa đánh giá validation. [Lệnh và giới hạn](../docs/shortcut-adv10.md). Không dùng CLI audit cũ để mở test.
 
 ## Mở rộng dữ liệu và train mixed
 

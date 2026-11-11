@@ -2,9 +2,9 @@
 
 ## Trạng thái kiểm lại ngày 11/11/2026
 
-Main đã kiểm: `db6cfbfcc0a8d345fe8fde31fa44e81d9c82d215`, đã đồng bộ vào nhánh `nhap-issuse-52`. Loan đã có [PR #74](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/74), head `624912361b026e0f24cd326cd8b0e708ad78add6`, chưa merge; main vẫn chưa có `--robustness`. Thông tin cũ “chưa có runner PR” không còn đúng.
+Main đã đồng bộ: `7cb0f2b`, đã merge PR #74 (runner ADV-07) và PR #65 (ADV-10). CLI `scripts.evaluate --robustness` hiện đã có trên main. Xung đột README được giải quyết bằng cách giữ mô tả test của cả ADV-08 và ADV-10.
 
-**Chưa chạy #52 thật:** thiếu manifest cohort/cha chốt, lineage/history cùng namespace và bàn giao #50. [Review của Lực](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/74#issuecomment-6792962129) đã được Loan sửa cổng protocol trong6249123; còn chờ re-review/chốt sử dụng bản runner. Model e571 đã có/checksum khớp, không phải điểm chờ. Không cần server hoặc đợi issue #39 đóng để kiểm offline artifact đã bàn giao.
+**Chưa chạy #52 thật:** thiếu manifest cohort/cha chốt, lineage/history cùng namespace và bàn giao #50. [Review của Lực](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/74#issuecomment-6792962129) đã được Loan sửa cổng protocol trong6249123; runner đã merge vào main; điểm chờ còn lại là dữ liệu/manifest chốt. Model e571 đã có/checksum khớp, không phải điểm chờ. Không cần server hoặc đợi issue #39 đóng để kiểm offline artifact đã bàn giao.
 
 Phạm vi chỉ #52: Kiệt kiểm bàn giao/phân tích, Loan làm #50/#51, Lực review #49. T023 ở đây thuộc **spec 000 / AC-26**, khác migration T023 spec001. Helper không nạp model/encoder, không tạo ảnh hoặc inference. [Status JSON](reports/robustness-adv08-status.json) giữ metrics=null và QA/release=false. ADV-10 #59 trên validation là diagnostic riêng, không dùng thay cohort #52.
 
@@ -59,7 +59,7 @@ sample_id,group_id,parent_id,label,status,score,verdict,error_code,model_sha256,
 ## Việc phải sửa/chốt trước lượt chính
 
 - **#51 / PR #74 bản6249123:** đã kiểm nội dung JSON/protocol, schema/status/refs, hash model/model-manifest/manifest, profile/ngưỡng và cohort transform trước load scorer; có `.used.json` và chặn output/partial/run-log tồn tại. Fixture mới xác nhận protocol rác bị từ chối với0 loader/scorer calls. Bản8db5573 trước đó cho16fake calls đã được sửa; không tiếp tục coi đó là blocker hiện tại.
-- Bản mới cũng bổ sung kiểm tham số JPEG/rotation/geometry, label/split và CLI đầu-cuối. Chạy lại46tests upstream +3tests tích hợp producer/consumer: **49passed,0failed**,17,31s. Đây là kiểm synthetic, không thay review độc lập của Lực hoặc chứng nhận dataset thật. Runner chưa merge vào main được kiểm.
+- Bản mới cũng bổ sung kiểm tham số JPEG/rotation/geometry, label/split và CLI đầu-cuối. Chạy lại46tests upstream +3tests tích hợp producer/consumer: **49passed,0failed**,17,31s. Đây là kiểm synthetic, không thay review độc lập của Lực hoặc chứng nhận dataset thật. Runner hiện đã merge; kết quả synthetic không thay QA dữ liệu thật.
 - **#50/#51:** bàn giao manifest chốt/hash, parent IDs, số thực nhận/source/label, lineage/history có `group_id` cùng namespace. CSV labels main chưa có group_id; không tự dùng tên file hoặc hash ngẫu nhiên làm lịch sử đã kiểm. Nguồn chưa có đăng ký missing; chỉ chạy phần đã được chốt, báo incomplete nếu thiếu cohort.
 - **Thao tác thực tế:** #74 clamp crop/downscale để cạnh ngắn≥256. Fixture cha256 cho cả2/2 crop và2/2 downscale giữ nguyên pixels. Không gọi flip0 trên những ảnh này là bền vững trước giảm kích thước. Scale0.5 cần cha cạnh ngắn≥512; keep0.8 cần≥320. Chốt nhóm áp dụng hoặc ghi no-op trước score; không tự phóng GLIDE256 hoặc lọc mẫu sau score.
 - **#52 đã bổ sung:** preflight receipt có model/model-manifest/manifest/protocol hash, runner identity, profile/ngưỡng và missing list. `ready_scope=available_cohorts_only`, `preflight_is_not_run_authorization=true`: chỉ kiểm kỹ thuật, không thay quyết định chốt/approval/used-marker. Runner phải kiểm receipt/inputs nếu tích hợp; snapshot #74 được kiểm chưa đọc receipt này.
@@ -83,7 +83,7 @@ $env:TRANSFORMERS_OFFLINE = '1'
 python -m scripts.analyze_robustness --protocol .cache/adv08/input/protocol.json --manifest .cache/adv08/input/manifest.jsonl --preflight --output .cache/adv08/run-01/preflight.json
 
 # Chỉ sau khi bản runner #74 được chốt/review và manifest/lineage được bàn giao.
-# Interface quan sát ở #74, chưa có trên main tại lần kiểm:
+# Interface của #74 hiện đã có trên main:
 # python -m scripts.evaluate --robustness --manifest .cache/adv08/input/manifest.jsonl --model <e571.joblib> --model-manifest <model-manifest.json> --protocol .cache/adv08/input/protocol.json --output .cache/adv08/run-01/predictions.csv
 # Helper dưới đây KHÔNG tạo predictions.csv.
 python -m scripts.analyze_robustness --protocol .cache/adv08/input/protocol.json --manifest .cache/adv08/input/manifest.jsonl --predictions .cache/adv08/run-01/predictions.csv --output .cache/adv08/run-01/artifacts/robustness.json
@@ -131,4 +131,7 @@ Kiểm lại sau main mới và PR #74: targeted helper/evaluator **76 passed, 0
 
 Full suite sau cập nhật helper và merge main `db6cfbf`: **805 passed,0 failed,2 skipped,1 xfailed**, app coverage**99,42%**,182,96s. Ruff check/format qua (123files). Hai skip Locust tùy chọn và strict xfail thread có sẵn; không thêm skip/xfail. Đây là kiểm code/fixture, không số đo robustness. Các số684/71 phía trên là lịch sử lượt trước main mới.
 
-Cập nhật cuối sau khi PR #74 đổi head trong lúc kiểm: đã kiểm lại snapshot6249123, **49passed** (46upstream +3compatibility), không còn tái hiện protocol rác vào scorer. Điểm chờ chính còn lại là manifest/lineage/cohort chốt và re-review runner, không còn “chưa có runner” hoặc “runner chỉ hash protocol”.
+Cập nhật cuối sau khi PR #74 đổi head trong lúc kiểm: đã kiểm lại snapshot6249123, **49passed** (46upstream +3compatibility), không còn tái hiện protocol rác vào scorer. Điểm chờ chính còn lại là manifest/lineage/cohort chốt, không còn “chưa có runner” hoặc “runner chỉ hash protocol”.
+
+
+Sau đồng bộ main `7cb0f2b` (đã merge #74 và #65): helper/evaluator/runner **122 passed,0 failed,0 skipped**,35,72s; Ruff check/format qua129files. Chỉ giải quyết README và cập nhật trạng thái bàn giao, không đổi logic Python. Không lặp full suite local cho thay đổi tài liệu này; full suite805 ở main cũ vẫn được ghi theo commit riêng phía trên. CI chạy lại trên merge commit. Chưa chạy robustness thật khi thiếu manifest/lineage chốt.
