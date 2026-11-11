@@ -152,13 +152,32 @@ def check_request_id_ok(ck: Checker, rate, anchor_sleep):
     )
 
 
+def is_service_busy(resp) -> bool:
+    """503 do API tạo (D12): đúng mã SERVICE_BUSY và envelope hợp lệ."""
+    if resp.status_code != 503:
+        return False
+    try:
+        code = resp.json()["error"]["code"]
+    except (ValueError, KeyError, TypeError):
+        return False
+    return code == "SERVICE_BUSY" and not envelope_problems(resp, False)
+
+
 def check_rate(ck: Checker, rate, burst, cooldown, retry_after, sleep):
     n = 2 * (math.ceil(rate) + burst) + 10
     with ThreadPoolExecutor(max_workers=16) as pool:
         rs = list(pool.map(lambda _: ck.post(b"x", "flood.jpg"), range(n)))
-    codes = [None if isinstance(r, Exception) else r.status_code for r in rs]
     r429 = [r for r in rs if not isinstance(r, Exception) and r.status_code == 429]
-    bad = sorted({c for c in codes if c is not None and c >= 500})
+    # D12: API hết slot trả 503 SERVICE_BUSY; đó là lỗi của API, không phải của gateway.
+    bad = sorted(
+        {
+            r.status_code
+            for r in rs
+            if not isinstance(r, Exception)
+            and r.status_code >= 500
+            and not is_service_busy(r)
+        }
+    )
     broken = sorted({type(r).__name__ for r in rs if isinstance(r, Exception)})
     ps = []
     if not r429:
