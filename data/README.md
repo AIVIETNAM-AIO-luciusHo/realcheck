@@ -117,6 +117,16 @@ Sau khi nén cùng chất lượng, dung lượng file phản ánh **độ chi t
 ## Lưu ý và giả định
 - Không commit ảnh và `.npy` (đã gitignore); chỉ commit `labels.csv` và README.
 - Dữ liệu chỉ dùng cho học tập; trích dẫn GenImage, CIFAKE trong báo cáo. Tiny-GenImage có giấy phép CC BY-NC-SA 4.0.
+- Giấy phép các nguồn của bộ mở rộng (PR #61, kiểm ở [ADV-09](../docs/data-review-adv09.md)); dùng chung thì theo điều kiện chặt nhất là **phi thương mại, chia sẻ cùng giấy phép**, không phát hành lại ảnh:
+
+  | Nguồn | Giấy phép | Ghi chú |
+  |---|---|---|
+  | OpenFake | CC BY-NC 4.0 | Thẻ dataset trên Hugging Face |
+  | Community Forensics-Small | CC BY-NC-SA 4.0 | Bản mirror dùng để lấy COCO, VISION, FFHQ, Landscapes HQ |
+  | COCO | Chú thích CC BY 4.0; ảnh theo điều khoản Flickr của từng ảnh | Nhóm COCO không sở hữu bản quyền ảnh; người dùng tự chịu trách nhiệm |
+  | FFHQ | Bộ dữ liệu CC BY-NC-SA 4.0 (NVIDIA); từng ảnh theo giấy phép Flickr riêng | Không dùng để phát triển nhận dạng khuôn mặt |
+  | VISION | CC BY-SA 4.0 theo README của bộ | Phải trích dẫn bài báo EURASIP 2017 |
+  | Landscapes HQ | **Chưa xác nhận** | Ảnh lấy từ Unsplash và Flickr; trang tổng hợp ghi "Other" |
 - CIFAKE trên Hugging Face gán `0 = FAKE, 1 = REAL`; script đã đổi về quy ước của nhóm.
 - Tránh chụp mặt người lạ.
 - Gate dữ liệu là kiểm tra metadata (post `A_eff <= 0.55`), không phải dung lượng file. Gate đạt không chứng minh hết mọi shortcut trong pixel.
