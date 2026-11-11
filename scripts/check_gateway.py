@@ -19,6 +19,7 @@ import math
 import re
 import sys
 import time
+import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
@@ -314,6 +315,26 @@ def check_upstream(ck: Checker, wait, ask, recovery_timeout, poll):
         time.sleep(poll)
 
 
+def write_junit(path, results, upstream_skipped, aborted):
+    """JUnit cho gate G04 (check_mvp_gates): mỗi ca là một testcase. Upstream bỏ qua hoặc chạy dở thì
+    không bao giờ xanh: skipped / error, để thiếu bằng chứng không thành "đạt"."""
+    suite = ET.Element("testsuite", name="gateway", tests=str(len(results)))
+    for r in results:
+        case = ET.SubElement(suite, "testcase", classname="gateway", name=r["case"])
+        if r["status"] == "lỗi":
+            ET.SubElement(case, "failure", message=r["actual"])
+    extra = []
+    if upstream_skipped:
+        extra.append(("skipped", "--upstream skip: tắt/bật upstream chưa kiểm"))
+    if aborted:
+        extra.append(("error", "chạy dở: không tới được gateway hoặc stdin đóng"))
+    for tag, message in extra:
+        case = ET.SubElement(suite, "testcase", classname="gateway", name=message)
+        ET.SubElement(case, tag, message=message)
+    suite.set("tests", str(len(results) + len(extra)))
+    ET.ElementTree(suite).write(path, encoding="utf-8", xml_declaration=True)
+
+
 def run(args, ask=input, sleep=time.sleep) -> int:
     if args.rate <= 0 or args.burst < 0:
         print(
@@ -366,6 +387,8 @@ def run(args, ask=input, sleep=time.sleep) -> int:
         print(
             "[bỏ qua] Upstream tắt/chậm và phục hồi: --upstream skip, mục này CHƯA kiểm."
         )
+    if args.junit:
+        write_junit(args.junit, ck.results, args.upstream == "skip", rc is not None)
     if args.out:
         parts = urlsplit(args.base_url)
         base = urlunsplit(parts._replace(netloc=parts.netloc.rpartition("@")[2]))
@@ -444,6 +467,9 @@ def main(argv=None, ask=input, sleep=time.sleep) -> int:
         help="chỉ chạy các ca HTTP này (mặc định tất cả)",
     )
     ap.add_argument("--out")
+    ap.add_argument(
+        "--junit", help="ghi JUnit XML cho gate G04 (artifacts/integration.xml)"
+    )
     return run(ap.parse_args(argv), ask, sleep)
 
 
