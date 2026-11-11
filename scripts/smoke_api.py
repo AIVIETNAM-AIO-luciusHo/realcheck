@@ -279,7 +279,9 @@ def run_checks(
         error_problems(resp, 422, "MULTIPLE_FILES"),
         "422 MULTIPLE_FILES",
     )
-    resp = r.send("GET", "/khong-co-duong-nay")
+    resp = r.send(
+        "GET", "/v1/khong-co-duong-nay"
+    )  # dưới /v1/ để cùng đúng qua gateway, nơi / thuộc UI
     r.record(
         "GET đường dẫn lạ",
         "404 NOT_FOUND",
