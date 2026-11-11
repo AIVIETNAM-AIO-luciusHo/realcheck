@@ -82,10 +82,20 @@ def analyze_image(data: bytes, settings: Settings, scorer: Scorer) -> tuple[floa
     image = decode_image(data, settings)
     exif = read_exif(image)
     try:
-        score = float(scorer(image))
+        value = scorer(image)
     except ImageTooSmall as exc:
         raise ApiError(ErrorCode.IMAGE_TOO_SMALL) from exc
+    score = _as_score(value)
     # NaN làm mọi phép so đều sai, lọt tới decide_verdict sẽ thành uncertain.
     if not 0 <= score <= 1:
         raise ValueError(f"Score ngoài [0, 1]: {score}")
     return score, exif
+
+
+def _as_score(value: object) -> float:
+    """Chỉ nhận float Python hoặc numpy (D05, issue #43); int 0/1 thường là nhãn lớp."""
+    dtype_kind = getattr(getattr(value, "dtype", None), "kind", None)
+    is_numpy_float = dtype_kind == "f" and getattr(value, "ndim", None) == 0
+    if not (isinstance(value, float) or is_numpy_float):
+        raise TypeError(f"Score phải là float, nhận {type(value).__name__}")
+    return float(value)

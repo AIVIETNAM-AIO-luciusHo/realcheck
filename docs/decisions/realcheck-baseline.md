@@ -14,6 +14,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
 | D05 Lỗi gateway | proposed | Quang | Chờ Lực, Loan | 2026-11-09 | Duyệt mã mới trước khi sửa code |
+| D05 Làm rõ 5 câu (issue #43) | proposed; Quang đã chọn | Quang | Chờ Lực | 2026-11-11 | Lực review và khóa bằng test; xem [mục Làm rõ](#làm-rõ-issue-43) |
 | D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 | — |
 | D06 Body dư multipart | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt 64 KiB |
 | D07 Số pixel | approved | Quang | Lực | 2026-11-04 | — |
@@ -72,6 +73,34 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 **Ghi chú đã duyệt:** ranh giới 400 và 415 (file không phải ảnh là 400, ảnh sai định dạng là 415); ba mã `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INVALID_REQUEST` được thêm ngoài gợi ý của D05 để lỗi framework cùng định dạng.
 
 **Hạn chế đã biết:** JPEG nhúng nhiều ảnh (MPO, ví dụ gain map HDR từ một số điện thoại) bị Pillow nhận là `MPO` nhiều khung hình nên trả 415 theo đúng bảng trên. Chưa đo tỷ lệ ảnh điện thoại thật bị ảnh hưởng.
+
+### Làm rõ (issue #43)
+
+Quang chọn ngày 2026-11-11, trả lời 5 câu Lực hỏi khi viết test hợp đồng; chờ Lực review.
+
+**1. `INVALID_REQUEST`:** request không có phần file ảnh (body JSON, trường `file` là chuỗi chữ, sai tên trường, content-type không phải multipart) là 422 `MISSING_FILE`. `INVALID_REQUEST` dành cho body không đọc được (multipart hỏng) và lỗi validation khác, **luôn 422**; trước đây multipart hỏng trả 400, đã sửa cho khớp bảng trên.
+
+**2 và 4. Thứ tự kiểm tra:** request vi phạm nhiều quy tắc thì nhận lỗi của bước đầu tiên nó vi phạm:
+
+1. Thiếu file hoặc nhiều file: 422 `MISSING_FILE`, `MULTIPLE_FILES`.
+2. Không cần giải mã: 400 `EMPTY_FILE`, 413 `FILE_TOO_LARGE`.
+3. Model: 503 `MODEL_NOT_READY`, rồi 503 `SERVICE_BUSY`.
+4. Đọc header và giải mã ảnh, theo đúng thứ tự: 400 `INVALID_IMAGE` khi không nhận ra ảnh (hoặc 413 `TOO_MANY_PIXELS` khi header lớn tới mức Pillow chặn ngay lúc mở), 415 `UNSUPPORTED_FORMAT`, 413 `TOO_MANY_PIXELS`, 415 nhiều khung hình, 400 `INVALID_IMAGE` khi giải mã lỗi.
+5. Trong `score()`: 422 `IMAGE_TOO_SMALL`, 500 `MODEL_ERROR`.
+
+Bước 1–2 chạy trước và không chiếm slot. Giải mã nằm trong slot (MVP-02), nên model chưa sẵn sàng được báo trước lỗi giải mã. Ví dụ: GIF 100×100 là 415, không phải 422; khi chưa có model, file rỗng là 400 còn text giả `.jpg` là 503.
+
+**3. Chuỗi `exif`:** chỉ gồm hãng (`Make`) và model máy (`Model`), không GPS hay serial.
+
+| EXIF | `exif` |
+|---|---|
+| Hãng và model | `"<Hãng> <Model>"`; model đã bắt đầu bằng từ đầu tiên của hãng thì chỉ trả model (`Canon` + `Canon EOS 5D` → `Canon EOS 5D`; `NIKON CORPORATION` + `NIKON D750` → `NIKON D750`) |
+| Chỉ hãng hoặc chỉ model | Giá trị đó (`Canon`, `EOS 5D`) |
+| Không có, rỗng hoặc đọc lỗi | `Không có thông tin máy chụp` |
+
+Mỗi giá trị bỏ ký tự điều khiển, gộp khoảng trắng và cắt còn tối đa 64 ký tự.
+
+**5. Kiểu của điểm:** `score()` phải trả float, của Python hoặc numpy (`float32`, `float64`). `str`, `int`, `bool`, `None` hay mảng nhiều phần tử là 500 `MODEL_ERROR`, không ép kiểu: số nguyên 0/1 thường là nhãn lớp từ `predict()` chứ không phải xác suất.
 
 ### Lỗi do gateway trả (proposed, 2026-11-09)
 
