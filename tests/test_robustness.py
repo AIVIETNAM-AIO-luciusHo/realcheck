@@ -621,14 +621,31 @@ def test_runner_refuses_a_model_manifest_for_another_model(locked, tmp_path):
         run(locked, tmp_path / "p.csv")
 
 
-def test_runner_stops_when_an_image_changed_after_listing(locked, tmp_path):
+def test_runner_refuses_a_changed_image_before_spending_the_protocol(locked, tmp_path):
+    """Hash all images before CLIP loads and before .used.json: one bad byte must not burn the protocol."""
     first = locked["manifest"].parent / locked["rows"][0]["path"]
     first.write_bytes(first.read_bytes() + b"\0")
-    output = tmp_path / "p.csv"
-    with pytest.raises(ValueError, match="changed since listing"):
-        run(locked, output)
+    output, loaded = tmp_path / "p.csv", []
+    with pytest.raises(ev.RobustnessInputError, match="changed since listing"):
+        ev.run_robustness(
+            locked["manifest"],
+            locked["model"],
+            locked["model_manifest"],
+            locked["protocol"],
+            output,
+            lambda: loaded.append(1),
+        )
+    assert loaded == []
     assert not output.exists()
-    assert output.with_name("p.csv.partial").exists()  # kept as an unfinished run
+    assert not output.with_name("p.csv.partial").exists()
+    assert not locked["protocol"].with_name("protocol.json.used.json").exists()
+
+
+def test_runner_refuses_a_missing_image_before_spending_the_protocol(locked, tmp_path):
+    (locked["manifest"].parent / locked["rows"][0]["path"]).unlink()
+    with pytest.raises(ev.RobustnessInputError, match="not readable"):
+        run(locked, tmp_path / "p.csv")
+    assert not locked["protocol"].with_name("protocol.json.used.json").exists()
 
 
 @pytest.mark.parametrize("existing", ["p.csv", "p.csv.partial", "p.csv.run.json"])
