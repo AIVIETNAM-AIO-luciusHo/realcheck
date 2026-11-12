@@ -8,6 +8,8 @@ Từ 15 test trở lên cho API, model và dữ liệu. Test chống phá: ảnh
 ## Cách chạy
 `pytest --cov=app --cov-fail-under=70`
 
+ADV-08/#52: `python -m pytest tests/test_analyze_robustness.py tests/test_evaluate.py -q` kiểm protocol/hash/lineage, metrics matched, missing/error và bootstrap theo group bằng ảnh/predictions tổng hợp. Không cần CLIP/GPU, không thay bằng chứng chạy robustness thật hoặc QA độc lập #49. Xem [contract bàn giao](../docs/robustness-adv08.md).
+
 ## Input / Output
 - Input: code trong `app/`, `models/`, pipeline dữ liệu.
 - Output: kết quả pass/fail và độ bao phủ.
@@ -68,6 +70,8 @@ Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan
 
 `test_check_gateway.py` (KAN-54): chạy `scripts/check_gateway.py` với gateway giả (stdlib, thread, cổng 0, HTTP/1.1, backlog 128) và khẳng định đúng ca lỗi theo từng hành vi sai: thiếu 429, envelope/X-Request-ID sai ở 200/429/413, sai mã/status 413, 5xx hoặc ngắt kết nối trong flood, không phục hồi, Retry-After, header Server lộ, ca biên, upstream lộ/treo/không phục hồi (ca lỗi, vẫn in kết quả và ghi JSON), stdin đóng, cổng đóng và tham số thiếu (thoát 2). Chưa chạy với Nginx thật.
 
+
+ADV-08 bổ sung regression cho receipt preflight, no-op/clamped crop/downscale, observed oriented pixels và từ chối prediction thành công trên ảnh không đạt preflight. Fixtures tổng hợp, không mạng/model thật.
 
 ## ADV-10 (#59)
 
