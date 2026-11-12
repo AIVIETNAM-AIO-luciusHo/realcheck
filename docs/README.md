@@ -38,3 +38,4 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 
 - [Kiểm với model thật trên Linux (11/11)](qa/local-real-model-verification-20261111.md): smoke, gateway, Docker, Compose, baseline Locust sơ bộ; ảnh tổng hợp, chưa phải nghiệm thu.
 - [Review KAN-25: nạp model](qa/kan-25-model-loading-review.md): đối chiếu tiêu chí, vấn đề cần sửa trước bàn giao.
+- [Chạy thử chuỗi robustness (12/11)](qa/robustness-chain-dry-run.md): biến thể, chấm, phân tích trên dữ liệu tổng hợp; điểm lệch và checklist trước khi chạy thật.
