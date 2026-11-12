@@ -130,3 +130,7 @@ Sau khi nén cùng chất lượng, dung lượng file phản ánh **độ chi t
 - CIFAKE trên Hugging Face gán `0 = FAKE, 1 = REAL`; script đã đổi về quy ước của nhóm.
 - Tránh chụp mặt người lạ.
 - Gate dữ liệu là kiểm tra metadata (post `A_eff <= 0.55`), không phải dung lượng file. Gate đạt không chứng minh hết mọi shortcut trong pixel.
+
+## Metadata bàn giao bộ mở rộng (#54)
+
+[run-v2 của realcheck_mixed_v3](metadata/realcheck_mixed_v3/run-v2/README.md) có `labels.csv`, `selection.jsonl`, dHash và dung lượng byte của raw/ảnh chuẩn hóa để Loan audit không cần ảnh. Giữ nguyên mẫu/nhãn/split, bỏ prefix máy cá nhân; kèm checksum và trả lời phạm vi hai manifest lịch sử. Đây là metadata audit, không thay manifest huấn luyện/cache gốc và không tự chứng nhận hết leakage.

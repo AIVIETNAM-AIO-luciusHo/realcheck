@@ -1,0 +1,82 @@
+{
+  "dataset": "realcheck_mixed_v3",
+  "source_run_directory": "run-v2",
+  "handoff_date": "2026-11-12",
+  "source_input_sha256": {
+    "labels.csv": "2997cdb9a7899f6daa4807fe024b87bf4150ef2286473676fa59d31ef2a22c5d",
+    "selection.jsonl": "96600baa314010febf9701721c1f6f92ce115f9d2e9ddb64aaa65916bab8c089",
+    "selection-summary.json": "964c0e343ea04babc72e46569736f65b776c18456b1cf96015bbd50984d27429",
+    "policy.json": "2da175fd9680b58eadcc501b31c8df075e80a016f828fd5634621b719b5c75c9",
+    "run.json": "fd53ddaa55638e38bacf01c7234212b67473566908d9b4a2b6f893e2eb91258f"
+  },
+  "source_run_commit": "9a3ca19e7f8eee273476bcf3ea8f3c4c6510c483",
+  "source_run_git_dirty": true,
+  "source_training_script_sha256": "f9141eafca1621557e1f8490b838f4e7fb417fd66b9fdce6b8b036b7a95880ed",
+  "labels_rows": 12645,
+  "selection_rows": 12805,
+  "unique_image_pairs_verified": 14525,
+  "labels_split_counts": {
+    "train": 9936,
+    "val": 1860,
+    "test": 849
+  },
+  "selection_cohort_counts": {
+    "expanded_train": 9936,
+    "new_validation": 989,
+    "core_test": 1040,
+    "reddit_test": 840
+  },
+  "dhash_basis": "Existing scripts.check_data.dhash on decoded normalized filepath image; grayscale LANCZOS 9x8, horizontal adjacent > comparison, 64-bit big-endian unsigned integer",
+  "stored_selection_dhash_matches": 12805,
+  "selected_raw_and_normalized_hashes_match": 12805,
+  "file_size_unit": "bytes",
+  "file_size_basis": "normalized filepath file bytes",
+  "raw_file_size_basis": "raw_path original file bytes",
+  "paths": "filepath/raw_path are logical relative to a provisioned data root, not relative to metadata file and not personal absolute paths",
+  "upstream_metadata_redactions": [],
+  "history_references_in_selection_code": [
+    {
+      "local_reference_relative_to_original_repo": "../outputs/realcheck-preserved-split/labels.csv",
+      "sha256_at_handoff": "4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad",
+      "rows": 9708,
+      "genimage_rows": 5708,
+      "genimage_split_counts": {
+        "train": 3988,
+        "test": 849,
+        "val": 871
+      }
+    },
+    {
+      "local_reference_relative_to_original_repo": ".cache/ml-run/labels.csv",
+      "sha256_at_handoff": "72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5",
+      "rows": 9708,
+      "genimage_rows": 5708,
+      "genimage_split_counts": {
+        "train": 3996,
+        "test": 856,
+        "val": 856
+      }
+    }
+  ],
+  "history_limitations": [
+    "Baseline history checksum is pinned in original policy.json; second history checksum is measured at handoff and was not pinned by run-v2 policy.",
+    "Training command resumes an existing selection.jsonl when present; run.json does not log a separate protected() invocation or every history file hash.",
+    "No supplied val1309/independent1603/closed-test manifests were compared by the original selector.",
+    "Metadata handoff does not certify absence of leakage or resolve the independent concerns in #54/#81."
+  ],
+  "row_order_and_membership_preserved": true,
+  "labels_or_splits_changed": false,
+  "images_or_model_weights_included": false,
+  "training_or_inference_performed": false,
+  "independent_qa_approved": false,
+  "handoff_validation": {
+    "labels_and_selection_membership_order_preserved": true,
+    "all_original_nonpath_fields_preserved": true,
+    "new_train_validation_join_rows": 10925,
+    "evaluation_rows_excluded_from_training_manifest": 1880,
+    "all_byte_sizes_positive_and_match_files": true,
+    "dhash_uint64_preserved_without_float_conversion": true,
+    "personal_absolute_paths_or_image_payloads_found": 0,
+    "training_or_inference_performed": false
+  }
+}
