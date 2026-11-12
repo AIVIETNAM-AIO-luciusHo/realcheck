@@ -168,6 +168,11 @@ Sửa ngày 2026-11-11 theo review của Lực: bỏ lặp tên hãng chuyển t
 
 **Hệ quả đã biết:** Streamlit gọi API qua Nginx từ server, nên mọi phiên UI dùng chung IP của container Streamlit và chung giới hạn 10 request/giây. Không tuyên bố giới hạn theo từng trình duyệt (spec 000 mục 10).
 
+**Vì sao mạng lab hoặc SSH tunnel, không TLS (2026-11-11, issue #42):**
+- TLS cần chứng chỉ mà client tin. Chứng chỉ tự ký buộc `scripts/smoke_api.py`, `scripts/check_gateway.py` và Locust phải cấu hình tin chứng chỉ riêng; demo chỉ dùng trong lab nên không cần mã hóa ra Internet.
+- Hệ quả của SSH tunnel: mọi client đi qua tunnel vào Nginx từ cùng một địa chỉ (tiến trình `sshd` trên máy lab), nên dùng chung 10 request/giây. **Locust đo tải phải chạy từ một máy trong mạng lab** (có IP riêng), không qua tunnel; bài đo rate limit tách riêng khỏi bài đo hiệu năng (D14).
+- Mở ra Internet thì phải có TLS, cần quyết định mới.
+
 **Còn mở:** URL lab cụ thể và máy chạy demo; danh sách IP proxy tin cậy để trống vì không có proxy nào đứng trước Nginx.
 
 **Đã cấu hình (MVP-05, 2026-11-11):** `nginx/nginx.conf` áp rate limit cho `/v1/`; `/health`, `/docs`, `/openapi.json` và UI không bị giới hạn. Vẫn `proposed` tới khi Lực duyệt.

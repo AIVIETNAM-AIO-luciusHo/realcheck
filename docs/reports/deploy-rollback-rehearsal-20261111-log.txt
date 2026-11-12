@@ -1,0 +1,309 @@
+23:25:43.977 == Chuẩn bị: dừng stack khác, tạo worktree <deploy-dir> tại ed51cee
+23:25:43.989 > docker compose down
+23:25:44.247 > git -C <repo> -c core.longpaths=true worktree add --detach <deploy-dir> ed51cee
+23:25:44.596   Preparing worktree (detached HEAD ed51cee)
+23:25:44.598   HEAD is now at ed51cee Merge pull request #78 from AIVIETNAM-AIO-luciusHo/luc/qa-evidence-docs
+23:25:47.375   model trong deploy: e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494
+23:25:47.384 == Bước 1: deploy bản cũ ed51cee (compose cũ, image tag latest)
+23:25:47.384 > docker compose up -d --build
+23:25:52.175    Image realcheck-api Building 
+23:25:52.177    Image realcheck-ui Building 
+23:25:52.180   #1 [internal] load local bake definitions
+23:25:52.182   #1 reading from stdin 1.32kB done
+23:25:52.184   #1 DONE 0.0s
+23:25:52.189   #2 [ui internal] load build definition from Dockerfile
+23:25:52.191   #2 transferring dockerfile: 1.08kB 0.0s done
+23:25:52.205   #2 DONE 0.0s
+23:25:52.211   #3 [api internal] load build definition from Dockerfile
+23:25:52.213   #3 transferring dockerfile: 1.47kB done
+23:25:52.218   #3 DONE 0.0s
+23:25:52.227   #4 [api internal] load metadata for docker.io/library/python:3.11-slim
+23:25:52.232   #4 DONE 1.1s
+23:25:52.240   #5 [ui internal] load .dockerignore
+23:25:52.242   #5 transferring context: 101B 0.0s done
+23:25:52.245   #5 DONE 0.0s
+23:25:52.253   #6 [api internal] load .dockerignore
+23:25:52.256   #6 transferring context: 353B done
+23:25:52.259   #6 DONE 0.0s
+23:25:52.264   #7 [ui internal] load build context
+23:25:52.270   #7 DONE 0.0s
+23:25:52.277   #8 [api internal] load build context
+23:25:52.280   #8 DONE 0.0s
+23:25:52.285   #9 [api 1/6] FROM docker.io/library/python:3.11-slim@sha256:07d4824036af339fa1b6ef769cc99d9c10a141769538b52b3b597c84f7a7b535
+23:25:52.289   #9 resolve docker.io/library/python:3.11-slim@sha256:07d4824036af339fa1b6ef769cc99d9c10a141769538b52b3b597c84f7a7b535 0.0s done
+23:25:52.292   #9 resolve docker.io/library/python:3.11-slim@sha256:07d4824036af339fa1b6ef769cc99d9c10a141769538b52b3b597c84f7a7b535 0.0s done
+23:25:52.295   #9 DONE 0.1s
+23:25:52.302   #7 [ui internal] load build context
+23:25:52.307   #7 transferring context: 36.28kB 0.0s done
+23:25:52.309   #7 DONE 0.1s
+23:25:52.311   #8 [api internal] load build context
+23:25:52.319   #8 transferring context: 78.78kB 0.1s done
+23:25:52.323   #8 DONE 0.1s
+23:25:52.329   #10 [ui 3/6] COPY requirements.txt ./
+23:25:52.330   #10 CACHED
+23:25:52.341   #11 [ui 5/6] COPY . .
+23:25:52.345   #11 CACHED
+23:25:52.354   #12 [ui 4/6] RUN pip install -r requirements.txt
+23:25:52.356   #12 CACHED
+23:25:52.356   #13 [ui 6/6] RUN useradd --create-home --uid 10001 realcheck
+23:25:52.363   #13 CACHED
+23:25:52.371   #14 [api 2/6] WORKDIR /app
+23:25:52.375   #14 CACHED
+23:25:52.382   #15 [api 4/8] COPY models/requirements-ml.txt requirements-ml.txt
+23:25:52.388   #15 CACHED
+23:25:52.394   #16 [api 3/8] COPY requirements.txt ./
+23:25:52.397   #16 CACHED
+23:25:52.404   #17 [api 6/8] COPY app/ app/
+23:25:52.405   #17 CACHED
+23:25:52.406   #18 [api 7/8] COPY models/*.py models/
+23:25:52.432   #18 CACHED
+23:25:52.438   #19 [api 5/8] RUN pip install --index-url https://download.pytorch.org/whl/cpu torch==2.15.0     && pip install -r requirements.txt -r requirements-ml.txt
+23:25:52.439   #19 CACHED
+23:25:52.442   #20 [api 8/8] RUN useradd --create-home --uid 10001 realcheck
+23:25:52.444   #20 CACHED
+23:25:52.446   #21 [ui] exporting to image
+23:25:52.446   #21 exporting layers done
+23:25:52.451   #21 exporting manifest sha256:d8b3d11c78b79612f352b19ac8205028b7d4c2bc4d201d15a6a21fcf2006d855 done
+23:25:52.453   #21 exporting config sha256:7f65e62ca9446a4fdfc747012e7c6e8f5b88fdb47286e484d134537909eb7a2a done
+23:25:52.455   #21 exporting attestation manifest sha256:5480d35c06b9bbc8a756a8ef9347261efe6240b404e6ff8e469c0b91adb3fc6c 0.1s done
+23:25:52.457   #21 exporting manifest list sha256:ef647a4406a2eb2662ed7c7f55df27afd455839eb36d9fe97767b6b21497e666
+23:25:52.459   #21 exporting manifest list sha256:ef647a4406a2eb2662ed7c7f55df27afd455839eb36d9fe97767b6b21497e666 0.1s done
+23:25:52.461   #21 naming to docker.io/library/realcheck-ui:latest 0.0s done
+23:25:52.463   #21 unpacking to docker.io/library/realcheck-ui:latest
+23:25:52.463   #21 unpacking to docker.io/library/realcheck-ui:latest 0.0s done
+23:25:52.465   #21 DONE 0.3s
+23:25:52.471   #22 [api] exporting to image
+23:25:52.471   #22 exporting layers done
+23:25:52.471   #22 exporting manifest sha256:968d91ddba5bddce6290fd0494e7e2aa135e69bc9b583143007e0bee4268abe1 done
+23:25:52.471   #22 exporting config sha256:fc174919d730728ec5d5b3396d5d3b5c346a2f863222170851ad2a5ccd77be5d 0.0s done
+23:25:52.477   #22 exporting attestation manifest sha256:be7a22a2a4db084964a16267d4f45f4ffb34d3b044abb24a1152d93f3da8d4d9 0.1s done
+23:25:52.479   #22 exporting manifest list sha256:f4ac426b289fbcd791a180e411b462fa647ddd732914d52844ec1e21ebac1fb3 0.1s done
+23:25:52.480   #22 naming to docker.io/library/realcheck-api:latest 0.0s done
+23:25:52.480   #22 unpacking to docker.io/library/realcheck-api:latest 0.0s done
+23:25:52.485   #22 DONE 0.3s
+23:25:52.485   #23 [ui] resolving provenance for metadata file
+23:25:52.485   #23 DONE 0.0s
+23:25:52.485   #24 [api] resolving provenance for metadata file
+23:25:52.485   #24 DONE 0.0s
+23:25:52.495    Image realcheck-api Built 
+23:25:52.497    Image realcheck-ui Built 
+23:25:52.497    Network realcheck_default Creating 
+23:25:52.503    Network realcheck_default Creating 
+23:25:52.504    Network realcheck_default Created 
+23:25:52.506    Network realcheck_default Created 
+23:25:52.507    Container realcheck-ui-1 Creating 
+23:25:52.509    Container realcheck-api-1 Creating 
+23:25:52.509    Container realcheck-api-1 Created 
+23:25:52.509    Container realcheck-ui-1 Created 
+23:25:52.509    Container realcheck-nginx-1 Creating 
+23:25:52.515    Container realcheck-nginx-1 Created 
+23:25:52.515    Container realcheck-ui-1 Starting 
+23:25:52.519    Container realcheck-api-1 Starting 
+23:25:52.519    Container realcheck-ui-1 Started 
+23:25:52.519    Container realcheck-api-1 Started 
+23:25:52.519    Container realcheck-nginx-1 Starting 
+23:25:52.519    Container realcheck-nginx-1 Started 
+23:25:52.600   health: 502
+23:26:03.979   health: 200 {"status":"ok","model_ready":true}
+23:26:03.989 [deploy cũ] health 200 sau 11.5s; không trả 200 trong 11.4s
+23:26:04.375   api chạy image realcheck-api sha256:f4ac426b289fbcd791a180e411b462fa647ddd732914d52844ec1e21ebac1fb3
+23:26:04.684   ui chạy image realcheck-ui sha256:ef647a4406a2eb2662ed7c7f55df27afd455839eb36d9fe97767b6b21497e666
+23:26:04.761   thư mục deploy ở commit ed51cee
+23:26:06.034 [deploy cũ] POST /v1/analyze ok_valid.png -> 200 {"verdict":"likely_ai","score":0.9994385838508606,"exif":"Không có thông tin máy chụp","reason":"Điểm mô hình 
+23:26:06.045 == Bước 2: cập nhật lên d1bbc57 theo deploy.md mục 7
+23:26:06.047 > git checkout --detach d1bbc57
+23:26:06.238   Previous HEAD position was ed51cee Merge pull request #78 from AIVIETNAM-AIO-luciusHo/luc/qa-evidence-docs
+23:26:06.240   HEAD is now at d1bbc57 feat: tag Compose images per deploy and document lab rollout
+23:26:06.246 > docker compose build
+23:26:09.058    Image realcheck-ui:d1bbc57 Building 
+23:26:09.061    Image realcheck-api:d1bbc57 Building 
+23:26:09.064   #1 [internal] load local bake definitions
+23:26:09.067   #1 reading from stdin 1.34kB done
+23:26:09.071   #1 DONE 0.0s
+23:26:09.077   #2 [ui internal] load build definition from Dockerfile
+23:26:09.080   #2 transferring dockerfile: 1.08kB done
+23:26:09.085   #2 DONE 0.0s
+23:26:09.089   #3 [api internal] load build definition from Dockerfile
+23:26:09.094   #3 transferring dockerfile: 1.47kB done
+23:26:09.096   #3 DONE 0.0s
+23:26:09.102   #4 [ui internal] load metadata for docker.io/library/python:3.11-slim
+23:26:09.108   #4 DONE 0.7s
+23:26:09.112   #5 [api internal] load .dockerignore
+23:26:09.116   #5 transferring context: 353B done
+23:26:09.119   #5 DONE 0.0s
+23:26:09.122   #6 [ui internal] load .dockerignore
+23:26:09.124   #6 transferring context: 101B done
+23:26:09.126   #6 DONE 0.1s
+23:26:09.126   #7 [api internal] load build context
+23:26:09.126   #7 DONE 0.0s
+23:26:09.135   #8 [ui internal] load build context
+23:26:09.135   #8 DONE 0.0s
+23:26:09.139   #9 [ui 1/8] FROM docker.io/library/python:3.11-slim@sha256:07d4824036af339fa1b6ef769cc99d9c10a141769538b52b3b597c84f7a7b535
+23:26:09.141   #9 resolve docker.io/library/python:3.11-slim@sha256:07d4824036af339fa1b6ef769cc99d9c10a141769538b52b3b597c84f7a7b535 0.0s done
+23:26:09.143   #9 resolve docker.io/library/python:3.11-slim@sha256:07d4824036af339fa1b6ef769cc99d9c10a141769538b52b3b597c84f7a7b535 0.0s done
+23:26:09.144   #9 DONE 0.0s
+23:26:09.147   #7 [api internal] load build context
+23:26:09.147   #7 transferring context: 852B done
+23:26:09.151   #7 DONE 0.0s
+23:26:09.151   #8 [ui internal] load build context
+23:26:09.151   #8 transferring context: 269B done
+23:26:09.151   #8 DONE 0.0s
+23:26:09.151   #10 [api 4/8] COPY models/requirements-ml.txt requirements-ml.txt
+23:26:09.151   #10 CACHED
+23:26:09.151   #11 [api 5/8] RUN pip install --index-url https://download.pytorch.org/whl/cpu torch==2.15.0     && pip install -r requirements.txt -r requirements-ml.txt
+23:26:09.151   #11 CACHED
+23:26:09.168   #12 [api 3/8] COPY requirements.txt ./
+23:26:09.168   #12 CACHED
+23:26:09.168   #13 [api 6/8] COPY app/ app/
+23:26:09.177   #13 CACHED
+23:26:09.177   #14 [api 7/8] COPY models/*.py models/
+23:26:09.177   #14 CACHED
+23:26:09.186   #15 [api 8/8] RUN useradd --create-home --uid 10001 realcheck
+23:26:09.187   #15 CACHED
+23:26:09.191   #16 [ui 3/6] COPY requirements.txt ./
+23:26:09.191   #16 CACHED
+23:26:09.191   #17 [ui 5/6] COPY . .
+23:26:09.191   #17 CACHED
+23:26:09.202   #18 [ui 4/6] RUN pip install -r requirements.txt
+23:26:09.202   #18 CACHED
+23:26:09.202   #19 [api 2/8] WORKDIR /app
+23:26:09.202   #19 CACHED
+23:26:09.202   #20 [ui 6/6] RUN useradd --create-home --uid 10001 realcheck
+23:26:09.212   #20 CACHED
+23:26:09.212   #21 [ui] exporting to image
+23:26:09.212   #21 exporting layers done
+23:26:09.219   #21 exporting manifest sha256:d8b3d11c78b79612f352b19ac8205028b7d4c2bc4d201d15a6a21fcf2006d855 done
+23:26:09.219   #21 exporting config sha256:7f65e62ca9446a4fdfc747012e7c6e8f5b88fdb47286e484d134537909eb7a2a 0.0s done
+23:26:09.219   #21 exporting attestation manifest sha256:001a9e2e47b4947108526ac90d32881a8e2f292c9689a91979de05b5aa5d9758
+23:26:09.219   #21 exporting attestation manifest sha256:001a9e2e47b4947108526ac90d32881a8e2f292c9689a91979de05b5aa5d9758 0.1s done
+23:26:09.219   #21 exporting manifest list sha256:4363ce6594c06026c7690dafa3579344ddcf264c2938562158186b2990b5b09a 0.1s done
+23:26:09.219   #21 naming to docker.io/library/realcheck-ui:d1bbc57 done
+23:26:09.227   #21 unpacking to docker.io/library/realcheck-ui:d1bbc57 0.0s done
+23:26:09.227   #21 DONE 0.3s
+23:26:09.227   #22 [api] exporting to image
+23:26:09.227   #22 exporting layers done
+23:26:09.237   #22 exporting manifest sha256:968d91ddba5bddce6290fd0494e7e2aa135e69bc9b583143007e0bee4268abe1 done
+23:26:09.239   #22 exporting config sha256:fc174919d730728ec5d5b3396d5d3b5c346a2f863222170851ad2a5ccd77be5d done
+23:26:09.239   #22 exporting attestation manifest sha256:afa1a06dd859f2962eb9a8b3334db28a5c43be8a19ca2726a0b9ea046421ca04 0.1s done
+23:26:09.239   #22 exporting manifest list sha256:e308b89422b624b82f73837104e4af33af2c17736025a708a445233a9f1c4fc0 0.1s done
+23:26:09.239   #22 naming to docker.io/library/realcheck-api:d1bbc57 0.0s done
+23:26:09.239   #22 unpacking to docker.io/library/realcheck-api:d1bbc57 0.0s done
+23:26:09.239   #22 DONE 0.3s
+23:26:09.251   #23 [ui] resolving provenance for metadata file
+23:26:09.251   #23 DONE 0.0s
+23:26:09.257   #24 [api] resolving provenance for metadata file
+23:26:09.257   #24 DONE 0.0s
+23:26:09.257    Image realcheck-api:d1bbc57 Built 
+23:26:09.257    Image realcheck-ui:d1bbc57 Built 
+23:26:09.257 > docker compose up -d
+23:26:12.520    Container realcheck-nginx-1 Running 
+23:26:12.523    Container realcheck-api-1 Recreate 
+23:26:12.526    Container realcheck-ui-1 Recreate 
+23:26:12.526    Container realcheck-ui-1 Recreated 
+23:26:12.529    Container realcheck-api-1 Recreated 
+23:26:12.532    Container realcheck-ui-1 Starting 
+23:26:12.534    Container realcheck-api-1 Starting 
+23:26:12.538    Container realcheck-ui-1 Started 
+23:26:12.539    Container realcheck-api-1 Started 
+23:26:12.545   health: 502
+23:26:23.895   health: 200 {"status":"ok","model_ready":true}
+23:26:23.900 [cập nhật] health 200 sau 11.4s; không trả 200 trong 11.3s
+23:26:24.222   api chạy image realcheck-api:d1bbc57 sha256:e308b89422b624b82f73837104e4af33af2c17736025a708a445233a9f1c4fc0
+23:26:24.551   ui chạy image realcheck-ui:d1bbc57 sha256:4363ce6594c06026c7690dafa3579344ddcf264c2938562158186b2990b5b09a
+23:26:24.627   thư mục deploy ở commit d1bbc57
+23:26:26.077 [cập nhật] POST /v1/analyze ok_valid.png -> 200 {"verdict":"likely_ai","score":0.9994385838508606,"exif":"Không có thông tin máy chụp","reason":"Điểm mô hình 
+23:26:26.077 == Bước 3: rollback mã và image về ed51cee (mục 9, không build lại)
+23:26:26.077 > git checkout --detach ed51cee
+23:26:26.201   Previous HEAD position was d1bbc57 feat: tag Compose images per deploy and document lab rollout
+23:26:26.201   HEAD is now at ed51cee Merge pull request #78 from AIVIETNAM-AIO-luciusHo/luc/qa-evidence-docs
+23:26:26.201 > docker compose up -d --no-build
+23:26:29.335    Container realcheck-nginx-1 Running 
+23:26:29.337    Container realcheck-api-1 Recreate 
+23:26:29.339    Container realcheck-ui-1 Recreate 
+23:26:29.340    Container realcheck-ui-1 Recreated 
+23:26:29.342    Container realcheck-api-1 Recreated 
+23:26:29.345    Container realcheck-api-1 Starting 
+23:26:29.345    Container realcheck-ui-1 Starting 
+23:26:29.347    Container realcheck-api-1 Started 
+23:26:29.349    Container realcheck-ui-1 Started 
+23:26:29.359   health: 502
+23:26:40.719   health: 200 {"status":"ok","model_ready":true}
+23:26:40.719 [rollback] health 200 sau 11.4s; không trả 200 trong 11.4s
+23:26:41.068   api chạy image realcheck-api sha256:f4ac426b289fbcd791a180e411b462fa647ddd732914d52844ec1e21ebac1fb3
+23:26:41.398   ui chạy image realcheck-ui sha256:ef647a4406a2eb2662ed7c7f55df27afd455839eb36d9fe97767b6b21497e666
+23:26:41.472   thư mục deploy ở commit ed51cee
+23:26:42.851 [rollback] POST /v1/analyze ok_valid.png -> 200 {"verdict":"likely_ai","score":0.9994385838508606,"exif":"Không có thông tin máy chụp","reason":"Điểm mô hình 
+23:26:42.861 == Bước 4: phục hồi về d1bbc57 (mục 9, không build lại)
+23:26:42.861 > git checkout --detach d1bbc57
+23:26:42.963   Previous HEAD position was ed51cee Merge pull request #78 from AIVIETNAM-AIO-luciusHo/luc/qa-evidence-docs
+23:26:42.967   HEAD is now at d1bbc57 feat: tag Compose images per deploy and document lab rollout
+23:26:42.967 > docker compose up -d --no-build
+23:26:46.077    Container realcheck-nginx-1 Running 
+23:26:46.077    Container realcheck-api-1 Recreate 
+23:26:46.081    Container realcheck-ui-1 Recreate 
+23:26:46.085    Container realcheck-ui-1 Recreated 
+23:26:46.087    Container realcheck-api-1 Recreated 
+23:26:46.087    Container realcheck-api-1 Starting 
+23:26:46.090    Container realcheck-ui-1 Starting 
+23:26:46.092    Container realcheck-api-1 Started 
+23:26:46.092    Container realcheck-ui-1 Started 
+23:26:46.100   health: 502
+23:26:57.456   health: 200 {"status":"ok","model_ready":true}
+23:26:57.467 [phục hồi] health 200 sau 11.4s; không trả 200 trong 11.4s
+23:26:57.792   api chạy image realcheck-api:d1bbc57 sha256:e308b89422b624b82f73837104e4af33af2c17736025a708a445233a9f1c4fc0
+23:26:58.141   ui chạy image realcheck-ui:d1bbc57 sha256:4363ce6594c06026c7690dafa3579344ddcf264c2938562158186b2990b5b09a
+23:26:58.208   thư mục deploy ở commit d1bbc57
+23:26:59.567 [phục hồi] POST /v1/analyze ok_valid.png -> 200 {"verdict":"likely_ai","score":0.9994385838508606,"exif":"Không có thông tin máy chụp","reason":"Điểm mô hình 
+23:26:59.568 == Bước 5: cập nhật sang model hỏng rồi rollback model (mục 8, 9)
+23:26:59.586 > docker compose up -d api
+23:27:02.409    Container realcheck-api-1 Recreate 
+23:27:02.411    Container realcheck-api-1 Recreated 
+23:27:02.413    Container realcheck-api-1 Starting 
+23:27:02.415    Container realcheck-api-1 Started 
+23:27:02.423   health: 502
+23:27:02.425 [model hỏng] health 502 sau 0s; không trả 200 trong 0s
+23:27:27.438   health sau 25s: 503
+23:27:27.685   log: api-1  | {"event": "model_load_failed", "error": "ValueError", "detail": "Model checksum mismatch"}
+23:27:27.690 > docker compose up -d api
+23:27:29.104    Container realcheck-api-1 Recreate 
+23:27:29.106    Container realcheck-api-1 Recreated 
+23:27:29.106    Container realcheck-api-1 Starting 
+23:27:29.110    Container realcheck-api-1 Started 
+23:27:29.116   health: 502
+23:27:41.037   health: 200 {"status":"ok","model_ready":true}
+23:27:41.037 [rollback model] health 200 sau 11.9s; không trả 200 trong 11.9s
+23:27:42.407 [rollback model] POST /v1/analyze ok_valid.png -> 200 {"verdict":"likely_ai","score":0.9994385838508606,"exif":"Không có thông tin máy chụp","reason":"Điểm mô hình 
+23:27:42.626   log: api-1  | {"event": "model_loaded", "duration_ms": 10315.5}
+23:27:42.626 == Thông tin biên bản (deploy.md mục 10)
+23:27:42.788   commit: d1bbc57ecfdf5d7fa56d11ebb3e6c261c742169e; git status: ''
+23:27:42.791   .env: REALCHECK_TAG=d1bbc57 | REALCHECK_MODEL_FILE=clip_probe_e571.joblib | REALCHECK_HTTP_PORT=80
+23:27:42.900   realcheck-api:d1bbc57 -> sha256:e308b89422b624b82f73837104e4af33af2c17736025a708a445233a9f1c4fc0
+23:27:43.008   realcheck-ui:d1bbc57 -> sha256:4363ce6594c06026c7690dafa3579344ddcf264c2938562158186b2990b5b09a
+23:27:43.112   realcheck-api:latest -> sha256:f4ac426b289fbcd791a180e411b462fa647ddd732914d52844ec1e21ebac1fb3
+23:27:43.218   realcheck-ui:latest -> sha256:ef647a4406a2eb2662ed7c7f55df27afd455839eb36d9fe97767b6b21497e666
+23:27:43.342   nginx:1.28.0-alpine -> sha256:30f1c0d78e0ad60901648be663a710bdadf19e4c10ac6782c235200619158284
+23:27:43.351   sha256 docker-compose.yml = ca159531154052e82c8c91a1327fae6a235029db1f48c9ffe9d2e171cd554e18
+23:27:43.360   sha256 nginx\nginx.conf = 5e11a2b865fde6c9b088438f3057b2bc39ad91d28b50766e5c4a711449fb3e2c
+23:27:43.360   sha256 .env = 6efd1085db8cdef59a285b4ed988846aef9d4cc1fda8dd4be25141c1183dcd93
+23:27:43.368   sha256 models\clip_probe_e571.joblib = e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494
+23:27:43.587   sha256 docker compose config = 221e014ae2027fde1bee8f282baf1dff8f39e992bdbf9503d097aa8569fca1e5
+23:27:44.021   docker: server 29.8.2, Docker Desktop, 8 CPU, 8163885056 byte RAM
+23:27:45.308   host: Intel(R) Xeon(R) W-2123 CPU @ 3.60GHz; Microsoft Windows 11 Pro
+23:27:45.308 == Dọn dẹp
+23:27:45.308 > docker compose down
+23:27:48.088    Container realcheck-nginx-1 Stopping 
+23:27:48.088    Container realcheck-nginx-1 Stopped 
+23:27:48.088    Container realcheck-nginx-1 Removing 
+23:27:48.088    Container realcheck-nginx-1 Removed 
+23:27:48.088    Container realcheck-ui-1 Stopping 
+23:27:48.101    Container realcheck-api-1 Stopping 
+23:27:48.101    Container realcheck-ui-1 Stopped 
+23:27:48.106    Container realcheck-ui-1 Removing 
+23:27:48.106    Container realcheck-ui-1 Removed 
+23:27:48.108    Container realcheck-api-1 Stopped 
+23:27:48.108    Container realcheck-api-1 Removing 
+23:27:48.108    Container realcheck-api-1 Removed 
+23:27:48.108    Network realcheck_default Removing 
+23:27:48.108    Network realcheck_default Removed 
+23:27:48.117 > git -c core.longpaths=true worktree remove --force <deploy-dir>
+23:27:48.368 == Xong. Log: <scratch>\rehearsal.log
