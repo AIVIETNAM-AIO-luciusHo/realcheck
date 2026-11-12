@@ -1,0 +1,1574 @@
+{
+  "schema_version": 1,
+  "task": "ADV-08 / GitHub #52",
+  "status": "incomplete",
+  "run": {
+    "id": "3cad8198-ee13-44d3-aeed-ad88ce733c87",
+    "started_at": "2026-11-12T14:41:13.806183+00:00",
+    "git_commit": "1e77b60e9931650c5932a70e013494e94daa107d",
+    "git_dirty": false,
+    "python": "3.11.16",
+    "platform": "macOS-26.3.1-arm64-arm-64bit"
+  },
+  "created_at": "2026-11-12T14:41:15.789098+00:00",
+  "model_sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+  "manifest_sha256": "665219d8eca1d5fac963e6af7f91d66623f9026dafade277ad259049ce643828",
+  "protocol_sha256": "684d5783f525e0dc6b64d1f40a169f6e2757ca333dccdace4acd2c6550d86550",
+  "predictions_sha256": "4058ec61f9bcc53e5ce6eaafafe6b413a1b84fc0813bfd7c42a73480f9276796",
+  "thresholds": {
+    "binary": 0.5,
+    "low": 0.3,
+    "high": 0.7
+  },
+  "profile": {
+    "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+    "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+    "normalization_version": "1"
+  },
+  "bootstrap": {
+    "replicates": 2000,
+    "seed": 42,
+    "confidence": 0.95
+  },
+  "runner": {
+    "commit": "1e77b60e9931650c5932a70e013494e94daa107d",
+    "handoff_ref": "Lực agreed 12/11: images stay on Loan's machine, run locally, share predictions and logs",
+    "tests_ref": "tests/test_robustness.py on main"
+  },
+  "parent_exposure": "No GenImage test parents; only owner-collected phone, AI and Zalo images, never used for training or threshold selection",
+  "observed_transforms": {
+    "zalo": {
+      "n_pairs_observed": 1,
+      "n_same_size": 1,
+      "n_identical_oriented_rgb": 0,
+      "n_clamped_geometry": 0,
+      "geometry_examples": []
+    }
+  },
+  "transition_order": [
+    "likely_real",
+    "uncertain",
+    "likely_ai"
+  ],
+  "cohorts": [
+    {
+      "name": "parents",
+      "status": "missing",
+      "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha.",
+      "n_total": 0,
+      "n_scored": 0,
+      "n_failed": 0,
+      "n_groups": 0,
+      "n_real": 0,
+      "n_ai": 0,
+      "metrics": null,
+      "ci95": null,
+      "pairing": null,
+      "by_source": []
+    },
+    {
+      "name": "jpeg90",
+      "status": "missing",
+      "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha.",
+      "n_total": 0,
+      "n_scored": 0,
+      "n_failed": 0,
+      "n_groups": 0,
+      "n_real": 0,
+      "n_ai": 0,
+      "metrics": null,
+      "ci95": null,
+      "pairing": null,
+      "by_source": []
+    },
+    {
+      "name": "jpeg70",
+      "status": "missing",
+      "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha.",
+      "n_total": 0,
+      "n_scored": 0,
+      "n_failed": 0,
+      "n_groups": 0,
+      "n_real": 0,
+      "n_ai": 0,
+      "metrics": null,
+      "ci95": null,
+      "pairing": null,
+      "by_source": []
+    },
+    {
+      "name": "jpeg50",
+      "status": "missing",
+      "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha.",
+      "n_total": 0,
+      "n_scored": 0,
+      "n_failed": 0,
+      "n_groups": 0,
+      "n_real": 0,
+      "n_ai": 0,
+      "metrics": null,
+      "ci95": null,
+      "pairing": null,
+      "by_source": []
+    },
+    {
+      "name": "rotate",
+      "status": "missing",
+      "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha.",
+      "n_total": 0,
+      "n_scored": 0,
+      "n_failed": 0,
+      "n_groups": 0,
+      "n_real": 0,
+      "n_ai": 0,
+      "metrics": null,
+      "ci95": null,
+      "pairing": null,
+      "by_source": []
+    },
+    {
+      "name": "crop",
+      "status": "missing",
+      "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha.",
+      "n_total": 0,
+      "n_scored": 0,
+      "n_failed": 0,
+      "n_groups": 0,
+      "n_real": 0,
+      "n_ai": 0,
+      "metrics": null,
+      "ci95": null,
+      "pairing": null,
+      "by_source": []
+    },
+    {
+      "name": "downscale",
+      "status": "missing",
+      "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha.",
+      "n_total": 0,
+      "n_scored": 0,
+      "n_failed": 0,
+      "n_groups": 0,
+      "n_real": 0,
+      "n_ai": 0,
+      "metrics": null,
+      "ci95": null,
+      "pairing": null,
+      "by_source": []
+    },
+    {
+      "name": "brightness",
+      "status": "missing",
+      "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha.",
+      "n_total": 0,
+      "n_scored": 0,
+      "n_failed": 0,
+      "n_groups": 0,
+      "n_real": 0,
+      "n_ai": 0,
+      "metrics": null,
+      "ci95": null,
+      "pairing": null,
+      "by_source": []
+    },
+    {
+      "name": "phone",
+      "transform": {
+        "kind": "original",
+        "params": {}
+      },
+      "status": "partial",
+      "n_total": 56,
+      "n_scored": 55,
+      "n_failed": 1,
+      "n_groups": 56,
+      "n_scored_groups": 55,
+      "n_real": 56,
+      "n_ai": 0,
+      "metrics": {
+        "n": 55,
+        "accuracy": 0.03636363636363636,
+        "precision": 0.0,
+        "recall": 0.0,
+        "auroc": null,
+        "confusion_matrix": [
+          [
+            2,
+            53
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "uncertain_n": 6,
+        "uncertain_rate": 0.10909090909090909,
+        "decided_accuracy": 0.04081632653061224,
+        "decided_n": 49,
+        "decided_coverage": 0.8909090909090909,
+        "false_positive_rate": 0.9636363636363636,
+        "false_negative_rate": null,
+        "likely_real_false_negative_rate": null,
+        "likely_ai_false_positive_rate": 0.8545454545454545,
+        "defined": {
+          "accuracy": true,
+          "precision": true,
+          "recall": false,
+          "uncertain_rate": true,
+          "false_positive_rate": true,
+          "false_negative_rate": false
+        },
+        "denominators": {
+          "precision": 53,
+          "recall": 0,
+          "false_positive_rate": 55
+        }
+      },
+      "ci95": {
+        "accuracy": {
+          "interval": [
+            0.0,
+            0.09090909090909091
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "precision": {
+          "interval": [
+            0.0,
+            0.0
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "recall": {
+          "interval": null,
+          "n_boot_valid": 0,
+          "reason": "undefined_metric_or_bootstrap_replicate"
+        },
+        "uncertain_rate": {
+          "interval": [
+            0.03636363636363636,
+            0.2
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "false_positive_rate": {
+          "interval": [
+            0.9090909090909091,
+            1.0
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "false_negative_rate": {
+          "interval": null,
+          "n_boot_valid": 0,
+          "reason": "undefined_metric_or_bootstrap_replicate"
+        }
+      },
+      "pairing": {
+        "n_pairs": 0,
+        "n_unpaired_or_failed_parent": 56,
+        "metrics": null,
+        "parent_matched": null,
+        "child_matched": null,
+        "ci95": null,
+        "transition_counts": null,
+        "reason": "no_valid_parent_child_pairs"
+      },
+      "failures": [
+        {
+          "sample_id": "phone-68625d2f012512d4",
+          "error_code": "UNSUPPORTED_FORMAT"
+        }
+      ],
+      "by_source": [
+        {
+          "source": "Apple iPhone 11",
+          "n_total": 45,
+          "n_scored": 45,
+          "n_failed": 0,
+          "n_groups": 45,
+          "n_scored_groups": 45,
+          "n_real": 45,
+          "n_ai": 0,
+          "metrics": {
+            "n": 45,
+            "accuracy": 0.044444444444444446,
+            "precision": 0.0,
+            "recall": 0.0,
+            "auroc": null,
+            "confusion_matrix": [
+              [
+                2,
+                43
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            "uncertain_n": 6,
+            "uncertain_rate": 0.13333333333333333,
+            "decided_accuracy": 0.05128205128205128,
+            "decided_n": 39,
+            "decided_coverage": 0.8666666666666667,
+            "false_positive_rate": 0.9555555555555556,
+            "false_negative_rate": null,
+            "likely_real_false_negative_rate": null,
+            "likely_ai_false_positive_rate": 0.8222222222222222,
+            "defined": {
+              "accuracy": true,
+              "precision": true,
+              "recall": false,
+              "uncertain_rate": true,
+              "false_positive_rate": true,
+              "false_negative_rate": false
+            },
+            "denominators": {
+              "precision": 43,
+              "recall": 0,
+              "false_positive_rate": 45
+            }
+          },
+          "ci95": {
+            "accuracy": {
+              "interval": [
+                0.0,
+                0.1111111111111111
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "precision": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "recall": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "undefined_metric_or_bootstrap_replicate"
+            },
+            "uncertain_rate": {
+              "interval": [
+                0.044444444444444446,
+                0.24444444444444444
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_positive_rate": {
+              "interval": [
+                0.8888888888888888,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_negative_rate": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "undefined_metric_or_bootstrap_replicate"
+            }
+          },
+          "pairing": {
+            "n_pairs": 0,
+            "n_unpaired_or_failed_parent": 45,
+            "metrics": null,
+            "parent_matched": null,
+            "child_matched": null,
+            "ci95": null,
+            "transition_counts": null,
+            "reason": "no_valid_parent_child_pairs"
+          },
+          "failures": []
+        },
+        {
+          "source": "Apple iPhone 13",
+          "n_total": 1,
+          "n_scored": 0,
+          "n_failed": 1,
+          "n_groups": 1,
+          "n_scored_groups": 0,
+          "n_real": 1,
+          "n_ai": 0,
+          "metrics": null,
+          "ci95": null,
+          "pairing": {
+            "n_pairs": 0,
+            "n_unpaired_or_failed_parent": 1,
+            "metrics": null,
+            "parent_matched": null,
+            "child_matched": null,
+            "ci95": null,
+            "transition_counts": null,
+            "reason": "no_valid_parent_child_pairs"
+          },
+          "failures": [
+            {
+              "sample_id": "phone-68625d2f012512d4",
+              "error_code": "UNSUPPORTED_FORMAT"
+            }
+          ]
+        },
+        {
+          "source": "unknown device (no EXIF)",
+          "n_total": 10,
+          "n_scored": 10,
+          "n_failed": 0,
+          "n_groups": 10,
+          "n_scored_groups": 10,
+          "n_real": 10,
+          "n_ai": 0,
+          "metrics": {
+            "n": 10,
+            "accuracy": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "auroc": null,
+            "confusion_matrix": [
+              [
+                0,
+                10
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            "uncertain_n": 0,
+            "uncertain_rate": 0.0,
+            "decided_accuracy": 0.0,
+            "decided_n": 10,
+            "decided_coverage": 1.0,
+            "false_positive_rate": 1.0,
+            "false_negative_rate": null,
+            "likely_real_false_negative_rate": null,
+            "likely_ai_false_positive_rate": 1.0,
+            "defined": {
+              "accuracy": true,
+              "precision": true,
+              "recall": false,
+              "uncertain_rate": true,
+              "false_positive_rate": true,
+              "false_negative_rate": false
+            },
+            "denominators": {
+              "precision": 10,
+              "recall": 0,
+              "false_positive_rate": 10
+            }
+          },
+          "ci95": {
+            "accuracy": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "precision": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "recall": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "undefined_metric_or_bootstrap_replicate"
+            },
+            "uncertain_rate": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_positive_rate": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_negative_rate": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "undefined_metric_or_bootstrap_replicate"
+            }
+          },
+          "pairing": {
+            "n_pairs": 0,
+            "n_unpaired_or_failed_parent": 10,
+            "metrics": null,
+            "parent_matched": null,
+            "child_matched": null,
+            "ci95": null,
+            "transition_counts": null,
+            "reason": "no_valid_parent_child_pairs"
+          },
+          "failures": []
+        }
+      ]
+    },
+    {
+      "name": "ai_new",
+      "transform": {
+        "kind": "original",
+        "params": {}
+      },
+      "status": "complete",
+      "n_total": 32,
+      "n_scored": 32,
+      "n_failed": 0,
+      "n_groups": 32,
+      "n_scored_groups": 32,
+      "n_real": 0,
+      "n_ai": 32,
+      "metrics": {
+        "n": 32,
+        "accuracy": 0.875,
+        "precision": 1.0,
+        "recall": 0.875,
+        "auroc": null,
+        "confusion_matrix": [
+          [
+            0,
+            0
+          ],
+          [
+            4,
+            28
+          ]
+        ],
+        "uncertain_n": 2,
+        "uncertain_rate": 0.0625,
+        "decided_accuracy": 0.8666666666666667,
+        "decided_n": 30,
+        "decided_coverage": 0.9375,
+        "false_positive_rate": null,
+        "false_negative_rate": 0.125,
+        "likely_real_false_negative_rate": 0.125,
+        "likely_ai_false_positive_rate": null,
+        "defined": {
+          "accuracy": true,
+          "precision": true,
+          "recall": true,
+          "uncertain_rate": true,
+          "false_positive_rate": false,
+          "false_negative_rate": true
+        },
+        "denominators": {
+          "precision": 28,
+          "recall": 32,
+          "false_positive_rate": 0
+        }
+      },
+      "ci95": {
+        "accuracy": {
+          "interval": [
+            0.75,
+            0.96875
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "precision": {
+          "interval": [
+            1.0,
+            1.0
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "recall": {
+          "interval": [
+            0.75,
+            0.96875
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "uncertain_rate": {
+          "interval": [
+            0.0,
+            0.15625
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "false_positive_rate": {
+          "interval": null,
+          "n_boot_valid": 0,
+          "reason": "undefined_metric_or_bootstrap_replicate"
+        },
+        "false_negative_rate": {
+          "interval": [
+            0.03125,
+            0.25
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        }
+      },
+      "pairing": {
+        "n_pairs": 0,
+        "n_unpaired_or_failed_parent": 32,
+        "metrics": null,
+        "parent_matched": null,
+        "child_matched": null,
+        "ci95": null,
+        "transition_counts": null,
+        "reason": "no_valid_parent_child_pairs"
+      },
+      "failures": [],
+      "by_source": [
+        {
+          "source": "ChatGPT (GPT-image)",
+          "n_total": 4,
+          "n_scored": 4,
+          "n_failed": 0,
+          "n_groups": 4,
+          "n_scored_groups": 4,
+          "n_real": 0,
+          "n_ai": 4,
+          "metrics": {
+            "n": 4,
+            "accuracy": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "auroc": null,
+            "confusion_matrix": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                4
+              ]
+            ],
+            "uncertain_n": 1,
+            "uncertain_rate": 0.25,
+            "decided_accuracy": 1.0,
+            "decided_n": 3,
+            "decided_coverage": 0.75,
+            "false_positive_rate": null,
+            "false_negative_rate": 0.0,
+            "likely_real_false_negative_rate": 0.0,
+            "likely_ai_false_positive_rate": null,
+            "defined": {
+              "accuracy": true,
+              "precision": true,
+              "recall": true,
+              "uncertain_rate": true,
+              "false_positive_rate": false,
+              "false_negative_rate": true
+            },
+            "denominators": {
+              "precision": 4,
+              "recall": 4,
+              "false_positive_rate": 0
+            }
+          },
+          "ci95": {
+            "accuracy": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "precision": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "recall": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "uncertain_rate": {
+              "interval": [
+                0.0,
+                0.75
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_positive_rate": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "undefined_metric_or_bootstrap_replicate"
+            },
+            "false_negative_rate": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            }
+          },
+          "pairing": {
+            "n_pairs": 0,
+            "n_unpaired_or_failed_parent": 4,
+            "metrics": null,
+            "parent_matched": null,
+            "child_matched": null,
+            "ci95": null,
+            "transition_counts": null,
+            "reason": "no_valid_parent_child_pairs"
+          },
+          "failures": []
+        },
+        {
+          "source": "Gemini",
+          "n_total": 16,
+          "n_scored": 16,
+          "n_failed": 0,
+          "n_groups": 16,
+          "n_scored_groups": 16,
+          "n_real": 0,
+          "n_ai": 16,
+          "metrics": {
+            "n": 16,
+            "accuracy": 0.75,
+            "precision": 1.0,
+            "recall": 0.75,
+            "auroc": null,
+            "confusion_matrix": [
+              [
+                0,
+                0
+              ],
+              [
+                4,
+                12
+              ]
+            ],
+            "uncertain_n": 1,
+            "uncertain_rate": 0.0625,
+            "decided_accuracy": 0.7333333333333333,
+            "decided_n": 15,
+            "decided_coverage": 0.9375,
+            "false_positive_rate": null,
+            "false_negative_rate": 0.25,
+            "likely_real_false_negative_rate": 0.25,
+            "likely_ai_false_positive_rate": null,
+            "defined": {
+              "accuracy": true,
+              "precision": true,
+              "recall": true,
+              "uncertain_rate": true,
+              "false_positive_rate": false,
+              "false_negative_rate": true
+            },
+            "denominators": {
+              "precision": 12,
+              "recall": 16,
+              "false_positive_rate": 0
+            }
+          },
+          "ci95": {
+            "accuracy": {
+              "interval": [
+                0.5,
+                0.9375
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "precision": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "recall": {
+              "interval": [
+                0.5,
+                0.9375
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "uncertain_rate": {
+              "interval": [
+                0.0,
+                0.1875
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_positive_rate": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "undefined_metric_or_bootstrap_replicate"
+            },
+            "false_negative_rate": {
+              "interval": [
+                0.0625,
+                0.5
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            }
+          },
+          "pairing": {
+            "n_pairs": 0,
+            "n_unpaired_or_failed_parent": 16,
+            "metrics": null,
+            "parent_matched": null,
+            "child_matched": null,
+            "ci95": null,
+            "transition_counts": null,
+            "reason": "no_valid_parent_child_pairs"
+          },
+          "failures": []
+        },
+        {
+          "source": "Google Images (unknown AI tool)",
+          "n_total": 12,
+          "n_scored": 12,
+          "n_failed": 0,
+          "n_groups": 12,
+          "n_scored_groups": 12,
+          "n_real": 0,
+          "n_ai": 12,
+          "metrics": {
+            "n": 12,
+            "accuracy": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "auroc": null,
+            "confusion_matrix": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                12
+              ]
+            ],
+            "uncertain_n": 0,
+            "uncertain_rate": 0.0,
+            "decided_accuracy": 1.0,
+            "decided_n": 12,
+            "decided_coverage": 1.0,
+            "false_positive_rate": null,
+            "false_negative_rate": 0.0,
+            "likely_real_false_negative_rate": 0.0,
+            "likely_ai_false_positive_rate": null,
+            "defined": {
+              "accuracy": true,
+              "precision": true,
+              "recall": true,
+              "uncertain_rate": true,
+              "false_positive_rate": false,
+              "false_negative_rate": true
+            },
+            "denominators": {
+              "precision": 12,
+              "recall": 12,
+              "false_positive_rate": 0
+            }
+          },
+          "ci95": {
+            "accuracy": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "precision": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "recall": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "uncertain_rate": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_positive_rate": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "undefined_metric_or_bootstrap_replicate"
+            },
+            "false_negative_rate": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            }
+          },
+          "pairing": {
+            "n_pairs": 0,
+            "n_unpaired_or_failed_parent": 12,
+            "metrics": null,
+            "parent_matched": null,
+            "child_matched": null,
+            "ci95": null,
+            "transition_counts": null,
+            "reason": "no_valid_parent_child_pairs"
+          },
+          "failures": []
+        }
+      ]
+    },
+    {
+      "name": "zalo",
+      "transform": {
+        "kind": "zalo",
+        "params": {}
+      },
+      "status": "partial",
+      "n_total": 36,
+      "n_scored": 35,
+      "n_failed": 1,
+      "n_groups": 36,
+      "n_scored_groups": 35,
+      "n_real": 22,
+      "n_ai": 14,
+      "metrics": {
+        "n": 35,
+        "accuracy": 0.5142857142857142,
+        "precision": 0.45161290322580644,
+        "recall": 1.0,
+        "auroc": 0.8163265306122449,
+        "confusion_matrix": [
+          [
+            4,
+            17
+          ],
+          [
+            0,
+            14
+          ]
+        ],
+        "uncertain_n": 0,
+        "uncertain_rate": 0.0,
+        "decided_accuracy": 0.5142857142857142,
+        "decided_n": 35,
+        "decided_coverage": 1.0,
+        "false_positive_rate": 0.8095238095238095,
+        "false_negative_rate": 0.0,
+        "likely_real_false_negative_rate": 0.0,
+        "likely_ai_false_positive_rate": 0.8095238095238095,
+        "defined": {
+          "accuracy": true,
+          "precision": true,
+          "recall": true,
+          "uncertain_rate": true,
+          "false_positive_rate": true,
+          "false_negative_rate": true
+        },
+        "denominators": {
+          "precision": 31,
+          "recall": 14,
+          "false_positive_rate": 21
+        }
+      },
+      "ci95": {
+        "accuracy": {
+          "interval": [
+            0.42857142857142855,
+            0.6285714285714286
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "precision": {
+          "interval": [
+            0.4117647058823529,
+            0.5185185185185185
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "recall": {
+          "interval": [
+            1.0,
+            1.0
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "uncertain_rate": {
+          "interval": [
+            0.0,
+            0.0
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "false_positive_rate": {
+          "interval": [
+            0.6190476190476191,
+            0.9523809523809523
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        },
+        "false_negative_rate": {
+          "interval": [
+            0.0,
+            0.0
+          ],
+          "n_boot_valid": 2000,
+          "reason": null
+        }
+      },
+      "pairing": {
+        "n_pairs": 1,
+        "n_unpaired_or_failed_parent": 35,
+        "metrics": {
+          "flip_rate": 0.0,
+          "accuracy_degradation": 0.0,
+          "delta_precision": 0.0,
+          "delta_recall": null,
+          "delta_uncertain_rate": 0.0,
+          "delta_false_positive_rate": 0.0,
+          "delta_false_negative_rate": null
+        },
+        "parent_matched": {
+          "n": 1,
+          "accuracy": 0.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "auroc": null,
+          "confusion_matrix": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "uncertain_n": 0,
+          "uncertain_rate": 0.0,
+          "decided_accuracy": 0.0,
+          "decided_n": 1,
+          "decided_coverage": 1.0,
+          "false_positive_rate": 1.0,
+          "false_negative_rate": null,
+          "likely_real_false_negative_rate": null,
+          "likely_ai_false_positive_rate": 1.0,
+          "defined": {
+            "accuracy": true,
+            "precision": true,
+            "recall": false,
+            "uncertain_rate": true,
+            "false_positive_rate": true,
+            "false_negative_rate": false
+          },
+          "denominators": {
+            "precision": 1,
+            "recall": 0,
+            "false_positive_rate": 1
+          }
+        },
+        "child_matched": {
+          "n": 1,
+          "accuracy": 0.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "auroc": null,
+          "confusion_matrix": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "uncertain_n": 0,
+          "uncertain_rate": 0.0,
+          "decided_accuracy": 0.0,
+          "decided_n": 1,
+          "decided_coverage": 1.0,
+          "false_positive_rate": 1.0,
+          "false_negative_rate": null,
+          "likely_real_false_negative_rate": null,
+          "likely_ai_false_positive_rate": 1.0,
+          "defined": {
+            "accuracy": true,
+            "precision": true,
+            "recall": false,
+            "uncertain_rate": true,
+            "false_positive_rate": true,
+            "false_negative_rate": false
+          },
+          "denominators": {
+            "precision": 1,
+            "recall": 0,
+            "false_positive_rate": 1
+          }
+        },
+        "ci95": {
+          "flip_rate": {
+            "interval": null,
+            "n_boot_valid": 0,
+            "reason": "fewer_than_two_groups"
+          },
+          "accuracy_degradation": {
+            "interval": null,
+            "n_boot_valid": 0,
+            "reason": "fewer_than_two_groups"
+          },
+          "delta_precision": {
+            "interval": null,
+            "n_boot_valid": 0,
+            "reason": "fewer_than_two_groups"
+          },
+          "delta_recall": {
+            "interval": null,
+            "n_boot_valid": 0,
+            "reason": "fewer_than_two_groups"
+          },
+          "delta_uncertain_rate": {
+            "interval": null,
+            "n_boot_valid": 0,
+            "reason": "fewer_than_two_groups"
+          },
+          "delta_false_positive_rate": {
+            "interval": null,
+            "n_boot_valid": 0,
+            "reason": "fewer_than_two_groups"
+          },
+          "delta_false_negative_rate": {
+            "interval": null,
+            "n_boot_valid": 0,
+            "reason": "fewer_than_two_groups"
+          }
+        },
+        "transition_counts": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "reason": null
+      },
+      "failures": [
+        {
+          "sample_id": "zalo-39d99e3656580671",
+          "error_code": "UNSUPPORTED_FORMAT"
+        }
+      ],
+      "by_source": [
+        {
+          "source": "Apple iPhone 11",
+          "n_total": 1,
+          "n_scored": 1,
+          "n_failed": 0,
+          "n_groups": 1,
+          "n_scored_groups": 1,
+          "n_real": 1,
+          "n_ai": 0,
+          "metrics": {
+            "n": 1,
+            "accuracy": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "auroc": null,
+            "confusion_matrix": [
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            "uncertain_n": 0,
+            "uncertain_rate": 0.0,
+            "decided_accuracy": 0.0,
+            "decided_n": 1,
+            "decided_coverage": 1.0,
+            "false_positive_rate": 1.0,
+            "false_negative_rate": null,
+            "likely_real_false_negative_rate": null,
+            "likely_ai_false_positive_rate": 1.0,
+            "defined": {
+              "accuracy": true,
+              "precision": true,
+              "recall": false,
+              "uncertain_rate": true,
+              "false_positive_rate": true,
+              "false_negative_rate": false
+            },
+            "denominators": {
+              "precision": 1,
+              "recall": 0,
+              "false_positive_rate": 1
+            }
+          },
+          "ci95": {
+            "accuracy": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "fewer_than_two_groups"
+            },
+            "precision": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "fewer_than_two_groups"
+            },
+            "recall": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "fewer_than_two_groups"
+            },
+            "uncertain_rate": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "fewer_than_two_groups"
+            },
+            "false_positive_rate": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "fewer_than_two_groups"
+            },
+            "false_negative_rate": {
+              "interval": null,
+              "n_boot_valid": 0,
+              "reason": "fewer_than_two_groups"
+            }
+          },
+          "pairing": {
+            "n_pairs": 1,
+            "n_unpaired_or_failed_parent": 0,
+            "metrics": {
+              "flip_rate": 0.0,
+              "accuracy_degradation": 0.0,
+              "delta_precision": 0.0,
+              "delta_recall": null,
+              "delta_uncertain_rate": 0.0,
+              "delta_false_positive_rate": 0.0,
+              "delta_false_negative_rate": null
+            },
+            "parent_matched": {
+              "n": 1,
+              "accuracy": 0.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "auroc": null,
+              "confusion_matrix": [
+                [
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0
+                ]
+              ],
+              "uncertain_n": 0,
+              "uncertain_rate": 0.0,
+              "decided_accuracy": 0.0,
+              "decided_n": 1,
+              "decided_coverage": 1.0,
+              "false_positive_rate": 1.0,
+              "false_negative_rate": null,
+              "likely_real_false_negative_rate": null,
+              "likely_ai_false_positive_rate": 1.0,
+              "defined": {
+                "accuracy": true,
+                "precision": true,
+                "recall": false,
+                "uncertain_rate": true,
+                "false_positive_rate": true,
+                "false_negative_rate": false
+              },
+              "denominators": {
+                "precision": 1,
+                "recall": 0,
+                "false_positive_rate": 1
+              }
+            },
+            "child_matched": {
+              "n": 1,
+              "accuracy": 0.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "auroc": null,
+              "confusion_matrix": [
+                [
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0
+                ]
+              ],
+              "uncertain_n": 0,
+              "uncertain_rate": 0.0,
+              "decided_accuracy": 0.0,
+              "decided_n": 1,
+              "decided_coverage": 1.0,
+              "false_positive_rate": 1.0,
+              "false_negative_rate": null,
+              "likely_real_false_negative_rate": null,
+              "likely_ai_false_positive_rate": 1.0,
+              "defined": {
+                "accuracy": true,
+                "precision": true,
+                "recall": false,
+                "uncertain_rate": true,
+                "false_positive_rate": true,
+                "false_negative_rate": false
+              },
+              "denominators": {
+                "precision": 1,
+                "recall": 0,
+                "false_positive_rate": 1
+              }
+            },
+            "ci95": {
+              "flip_rate": {
+                "interval": null,
+                "n_boot_valid": 0,
+                "reason": "fewer_than_two_groups"
+              },
+              "accuracy_degradation": {
+                "interval": null,
+                "n_boot_valid": 0,
+                "reason": "fewer_than_two_groups"
+              },
+              "delta_precision": {
+                "interval": null,
+                "n_boot_valid": 0,
+                "reason": "fewer_than_two_groups"
+              },
+              "delta_recall": {
+                "interval": null,
+                "n_boot_valid": 0,
+                "reason": "fewer_than_two_groups"
+              },
+              "delta_uncertain_rate": {
+                "interval": null,
+                "n_boot_valid": 0,
+                "reason": "fewer_than_two_groups"
+              },
+              "delta_false_positive_rate": {
+                "interval": null,
+                "n_boot_valid": 0,
+                "reason": "fewer_than_two_groups"
+              },
+              "delta_false_negative_rate": {
+                "interval": null,
+                "n_boot_valid": 0,
+                "reason": "fewer_than_two_groups"
+              }
+            },
+            "transition_counts": [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            "reason": null
+          },
+          "failures": []
+        },
+        {
+          "source": "Zalo",
+          "n_total": 35,
+          "n_scored": 34,
+          "n_failed": 1,
+          "n_groups": 35,
+          "n_scored_groups": 34,
+          "n_real": 21,
+          "n_ai": 14,
+          "metrics": {
+            "n": 34,
+            "accuracy": 0.5294117647058824,
+            "precision": 0.4666666666666667,
+            "recall": 1.0,
+            "auroc": 0.8107142857142857,
+            "confusion_matrix": [
+              [
+                4,
+                16
+              ],
+              [
+                0,
+                14
+              ]
+            ],
+            "uncertain_n": 0,
+            "uncertain_rate": 0.0,
+            "decided_accuracy": 0.5294117647058824,
+            "decided_n": 34,
+            "decided_coverage": 1.0,
+            "false_positive_rate": 0.8,
+            "false_negative_rate": 0.0,
+            "likely_real_false_negative_rate": 0.0,
+            "likely_ai_false_positive_rate": 0.8,
+            "defined": {
+              "accuracy": true,
+              "precision": true,
+              "recall": true,
+              "uncertain_rate": true,
+              "false_positive_rate": true,
+              "false_negative_rate": true
+            },
+            "denominators": {
+              "precision": 30,
+              "recall": 14,
+              "false_positive_rate": 20
+            }
+          },
+          "ci95": {
+            "accuracy": {
+              "interval": [
+                0.4411764705882353,
+                0.6470588235294118
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "precision": {
+              "interval": [
+                0.42424242424242425,
+                0.5384615384615384
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "recall": {
+              "interval": [
+                1.0,
+                1.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "uncertain_rate": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_positive_rate": {
+              "interval": [
+                0.6,
+                0.95
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            },
+            "false_negative_rate": {
+              "interval": [
+                0.0,
+                0.0
+              ],
+              "n_boot_valid": 2000,
+              "reason": null
+            }
+          },
+          "pairing": {
+            "n_pairs": 0,
+            "n_unpaired_or_failed_parent": 35,
+            "metrics": null,
+            "parent_matched": null,
+            "child_matched": null,
+            "ci95": null,
+            "transition_counts": null,
+            "reason": "no_valid_parent_child_pairs"
+          },
+          "failures": [
+            {
+              "sample_id": "zalo-39d99e3656580671",
+              "error_code": "UNSUPPORTED_FORMAT"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "independent_qa_approved": false,
+  "release_approved": false,
+  "limitations": [
+    "No global accuracy across original images, variants or datasets",
+    "Intervals describe stratified group resampling, not new independent images",
+    "Missing cohorts and failed predictions prevent complete evaluation",
+    "Accuracy degradation is parent minus child; other deltas are child minus parent",
+    "Robustness changes are observations, not proof of JPEG or metadata shortcut causality",
+    "No 90% OOD quality threshold, model selection or threshold tuning",
+    "Clamped crop/downscale can leave parent pixels unchanged; inspect observed_transforms before interpreting zero flips"
+  ]
+}

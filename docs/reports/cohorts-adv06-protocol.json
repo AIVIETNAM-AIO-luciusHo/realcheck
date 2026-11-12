@@ -1,0 +1,117 @@
+{
+ "schema_version": 1,
+ "status": "locked",
+ "manifest_lock_ref": "ADV-06 #50: docs/cohorts-adv06.md; phone/ai_new/zalo manifests built by scripts.robustness_manifest cohort, SHA256 in this protocol",
+ "split_review_ref": "Cohorts are independent external roots (group_id = sample_id; Zalo copy keeps its phone parent group); 0 exact and 0 near (dHash<=4) duplicates with dataset A; 1 near duplicate with OpenFake core test, not in e571 training",
+ "parent_exposure": "No GenImage test parents; only owner-collected phone, AI and Zalo images, never used for training or threshold selection",
+ "runner": {
+  "commit": "1e77b60e9931650c5932a70e013494e94daa107d",
+  "handoff_ref": "Lực agreed 12/11: images stay on Loan's machine, run locally, share predictions and logs",
+  "tests_ref": "tests/test_robustness.py on main"
+ },
+ "analysis_commit": "1e77b60e9931650c5932a70e013494e94daa107d",
+ "profile": {
+  "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+  "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+  "normalization_version": "1"
+ },
+ "thresholds": {
+  "binary": 0.5,
+  "low": 0.3,
+  "high": 0.7
+ },
+ "bootstrap": {
+  "replicates": 2000,
+  "seed": 42,
+  "confidence": 0.95
+ },
+ "artifacts": {
+  "model": {
+   "path": "../../e571/pkg/model/clip_probe.joblib",
+   "sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494"
+  },
+  "model_manifest": {
+   "path": "../../e571/pkg/manifest.json",
+   "sha256": "bd8fcb17fcae90c87b177b233ea4c35ed7460266b43d4086e7a603f8849377d3"
+  },
+  "manifest": {
+   "path": "../manifest.jsonl",
+   "sha256": "665219d8eca1d5fac963e6af7f91d66623f9026dafade277ad259049ce643828"
+  }
+ },
+ "history": [
+  {
+   "path": "history.csv",
+   "sha256": "f7b40f825eb48a096638ad6895729de11d23651253541779834370c84c621959"
+  }
+ ],
+ "cohorts": [
+  {
+   "name": "parents",
+   "status": "missing",
+   "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha."
+  },
+  {
+   "name": "jpeg90",
+   "status": "missing",
+   "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha."
+  },
+  {
+   "name": "jpeg70",
+   "status": "missing",
+   "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha."
+  },
+  {
+   "name": "jpeg50",
+   "status": "missing",
+   "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha."
+  },
+  {
+   "name": "rotate",
+   "status": "missing",
+   "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha."
+  },
+  {
+   "name": "crop",
+   "status": "missing",
+   "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha."
+  },
+  {
+   "name": "downscale",
+   "status": "missing",
+   "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha."
+  },
+  {
+   "name": "brightness",
+   "status": "missing",
+   "reason": "Biến thể ADV-07 chưa chạy: chờ group_id (lineage) của bộ A cho ảnh cha."
+  },
+  {
+   "name": "phone",
+   "status": "present",
+   "n_expected": 56,
+   "transform": {
+    "kind": "original",
+    "params": {}
+   }
+  },
+  {
+   "name": "ai_new",
+   "status": "present",
+   "n_expected": 32,
+   "transform": {
+    "kind": "original",
+    "params": {}
+   }
+  },
+  {
+   "name": "zalo",
+   "status": "present",
+   "n_expected": 36,
+   "transform": {
+    "kind": "zalo",
+    "params": {}
+   }
+  }
+ ]
+}
