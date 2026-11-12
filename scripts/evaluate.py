@@ -273,6 +273,21 @@ def check_protocol(
         raise RobustnessInputError("Protocol refused: " + "; ".join(problems))
 
 
+def check_image_bytes(manifest: Path, rows: list[dict]) -> None:
+    """Every listed image must still match its hash before CLIP loads or the protocol is spent."""
+    for row in rows:
+        try:
+            data = (manifest.parent / row["path"]).read_bytes()
+        except OSError as exc:
+            raise RobustnessInputError(
+                f"Image not readable: {row['sample_id']}"
+            ) from exc
+        if hashlib.sha256(data).hexdigest() != row["sha256"]:
+            raise RobustnessInputError(
+                f"Image bytes changed since listing: {row['sample_id']}"
+            )
+
+
 def score_like_api(data: bytes, settings: Settings, scorer: ImageScorer) -> float:
     """Same checks and error codes as POST /v1/analyze; raises ApiError on failure."""
     if len(data) > settings.max_file_bytes:
@@ -335,6 +350,7 @@ def run_robustness(
     check_model_manifest(model_info, hashes["model"], thresholds)
     rows = read_robustness_manifest(manifest)
     check_protocol(_read_json_object(protocol, "Protocol"), hashes, thresholds, rows)
+    check_image_bytes(manifest, rows)
     settings = Settings(
         threshold_low=thresholds["low"], threshold_high=thresholds["high"]
     )
