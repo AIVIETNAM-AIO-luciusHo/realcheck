@@ -27,8 +27,8 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D14 Profile tải | Hoãn (Lực, 2026-11-12) | Lực | — | — | Chốt cùng D09, D10 sau khi đo trên lab; `locust/baseline.conf` (5 người dùng) chỉ là đề xuất |
 | Hợp đồng `score` | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | [Xác nhận ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), [kiểm trên máy API](#kiểm-trên-máy-api-issue-39); đã duyệt chung ngày 12/11 |
 | Model phục vụ API (local/lab) | Kiệt chọn reference e571; Quang đã nhận và kiểm trên máy API | Kiệt | Quang (nhận), chờ Lực | 2026-11-11 | Không phải phê duyệt QA hay release; **bắt buộc đặt `REALCHECK_MODEL_PATH`** (mặc định trong mã vẫn là model cũ `69810fd6`, không đổi); xem [mục Kiểm trên máy API](#kiểm-trên-máy-api-issue-39) |
-| Manifest phục vụ model | Chưa chốt | Loan | Kiệt, Lực | — | Xem [mục Manifest](#manifest) |
-| Chính sách audit | Chưa chốt | Loan, Lực | Quang tổng hợp | — | Xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
+| Manifest phục vụ model | approved (Lực, 2026-11-12): bộ 9.708 ảnh giữ split, `data/labels.csv` (PR #83) | Loan | Kiệt, Lực | 2026-11-12 | Loan xác nhận; SHA256 sau khi đổi tiền tố đường dẫn và kiểu xuống dòng khớp manifest e571 (`4bf8e490…`), QA đã kiểm; xem [mục Manifest](#manifest) |
+| Chính sách audit | approved (Lực, 2026-11-12): `metadata_audit.py` cảnh báo, release checker riêng chặn post `A_eff > 0.55` | Loan, Lực | Quang tổng hợp | 2026-11-12 | Loan xác nhận; mã `metadata_audit.py` chưa đổi (vẫn cổng cứng); xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
 | Phạm vi M1/M2 | approved (Lực, 2026-11-12); Loan, Kiệt chưa xác nhận | Quang | Lực | 2026-11-12 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
 
 ## D05. Enum `verdict` và lỗi
@@ -227,7 +227,8 @@ Có ba manifest khác nhau. **Kiệt chọn manifest giữ split cho reference e
 
 | Manifest | Đường dẫn | Ảnh | SHA256 `labels.csv` | `norm_version` | Dùng cho |
 |---|---|---|---|---|---|
-| Main | `data/labels.csv` (trong Git) | 10.000 | `dac186082dd3506bc91acda7cdd6ed5bb68b083e2ed7f445d7e89edc16d67931` | Không có cột | Tham chiếu cũ; checker hiện tại FAIL vì thiếu cột |
+| Main (từ PR #83, 2026-11-12) | `data/labels.csv` (trong Git) | 9.708 | `112aa115d233857378dd4be26711850241af15d44c4e0070a7bab9ba69ac4bdf` (nội dung trong Git, LF) | 1 | **Manifest phục vụ model đã chốt**; cùng ảnh và split với bộ giữ split của e571 (đổi tiền tố `data/processed/` thành `../outputs/realcheck-preserved-split/processed/` và CRLF thì SHA256 ra `4bf8e490…`) |
+| Main cũ | `data/labels.csv` ở commit `58a21b5` | 10.000 | `dac186082dd3506bc91acda7cdd6ed5bb68b083e2ed7f445d7e89edc16d67931` | Không có cột | Tham chiếu cũ; baseline T012 và `check_raw_baseline` đo trên bộ này |
 | Lần chạy ML đầu | `.cache/ml-run/labels.csv` (máy Kiệt) | 9.708 | `72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5` | 1 | Train `clip_probe.joblib` cũ, SHA256 `69810fd6…` |
 | Giữ split | `../outputs/realcheck-preserved-split/labels.csv` (máy Kiệt) | 9.708 | `4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad` | 1 | Kiệt chọn; train model mới, SHA256 `e5718345…`, `release_approved=false` |
 
@@ -236,7 +237,7 @@ Có ba manifest khác nhau. **Kiệt chọn manifest giữ split cho reference e
 - Pillow 13.0.0 (ghim trong `requirements.txt`, nằm trong metadata của model).
 - **Hash phụ thuộc kiểu xuống dòng.** SHA256 của manifest main ở trên tính trên nội dung trong Git (LF). Trên Windows với `core.autocrlf=true`, file checkout ra là CRLF và có SHA256 `7a83b1c7…`. Khi chốt manifest cần ghi hash tính theo cách nào, hoặc thêm `.gitattributes` giữ LF cho file CSV.
 
-**Loan cần chốt:** đường dẫn, SHA256, `norm_version`, commit tạo ra, chính sách split và các file rejected của manifest được dùng; xác nhận model phục vụ API được train từ manifest đó.
+**Quyết định 2026-11-12 (Lực):** manifest phục vụ model là bộ 9.708 ảnh giữ split đã đưa lên `data/labels.csv` (PR #83); SHA256 khớp manifest e571 theo kiểm của QA. **Loan còn cần xác nhận** đường dẫn, commit tạo ra, chính sách split và các file rejected; `metadata_audit.json` và `baseline_filesize.json` vẫn đo trên bộ 10.000 ảnh cũ (chưa đo lại, T026).
 
 ## Xung đột audit (spec 000 và spec 001)
 
@@ -244,7 +245,7 @@ Có ba manifest khác nhau. **Kiệt chọn manifest giữ split cho reference e
 - Spec 001 FR-009 và T026: đề xuất `metadata_audit.py` chỉ cảnh báo, chờ Loan và Lực xác nhận.
 - Mã hiện tại: `metadata_audit.py` là cổng cứng, thoát mã 1 khi không đạt.
 
-**Phương án do MVP-01 nêu (proposed):** `metadata_audit.py` có thể chỉ cảnh báo theo T026, nhưng một release checker riêng vẫn chặn post `A_eff > 0.55`.
+**Quyết định 2026-11-12 (Lực): chọn phương án do MVP-01 nêu.** `metadata_audit.py` chỉ cảnh báo theo T026, và một release checker riêng vẫn chặn post `A_eff > 0.55`. **Chưa hiện thực:** mã `metadata_audit.py` hiện vẫn là cổng cứng và chưa có release checker riêng; cần PR theo quyết định này. Lưu ý: post-A_eff hiện bằng 0,5 vì 13 đặc trưng đều là hằng số, nên cổng này đạt "rỗng" và không chứng minh dữ liệu sạch. Loan xác nhận.
 
 Dù chọn phương án nào, các ca sau phải fail: `A_eff = max(AUROC, 1 − AUROC)` vượt 0.55; thiếu slice hoặc slice thiếu một lớp; dự đoán NaN; control dương hoặc control âm không hợp lệ.
 
@@ -285,7 +286,7 @@ Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và K
 | `inference_slots` | Giữ 1 cho MVP; `slots = 2` chỉ sau khi Kiệt xác nhận `Scorer` an toàn đa luồng |
 | Phạm vi M1/M2 | Duyệt (M1 localhost đã diễn tập; M2 Compose và đo tải trên lab) |
 | D09, D10, D14 | Hoãn tới khi đo trên máy lab |
-| Chính sách audit, manifest phục vụ model | Chưa chốt; Loan và Lực chốt riêng |
+| Chính sách audit, manifest phục vụ model | Đã chọn ngày 12/11 (cập nhật sau): audit cảnh báo + release checker riêng chặn `A_eff > 0.55`; manifest là bộ 9.708 ảnh giữ split (PR #83). Loan xác nhận; mã audit chưa đổi |
 | Giới hạn exif 64 ký tự mỗi giá trị (tối đa 129) | Không thuộc đợt này; giữ như đã ghi ở D05 làm rõ |
 
 Nguồn bằng chứng: `docs/qa/local-real-model-verification-20261111.md`, `docs/qa/kan-25-model-loading-review.md`, issue #44.
