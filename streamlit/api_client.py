@@ -18,6 +18,7 @@ ERROR_MESSAGES = {
     415: "Định dạng không được hỗ trợ. Vui lòng dùng ảnh JPEG hoặc PNG.",
     422: "Ảnh không hợp lệ. Vui lòng thử ảnh khác.",
     429: "Đang có quá nhiều yêu cầu. Vui lòng đợi một lát rồi bấm kiểm tra lại.",
+    502: "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau.",
     503: "Hệ thống chưa sẵn sàng hoặc đang bận. Vui lòng thử lại sau.",
     504: "Hệ thống xử lý quá lâu. Vui lòng thử lại sau.",
 }
