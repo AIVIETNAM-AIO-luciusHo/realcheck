@@ -72,3 +72,5 @@ Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan
 ## ADV-10 (#59)
 
 `test_shortcut_controls.py`: isolation train/val, hash, EXIF/JPEG/resample, probe fixed/refit, scorer parity/cache, group bootstrap và báo cáo. Fixture không cần mạng/GPU/model thật.
+
+`test_d05_exif_unicode_and_load.py` (D05 câu 3 và 4, issue #43): `read_exif` với EXIF Unicode gắn trực tiếp vào ảnh trong bộ nhớ (qua API Pillow ghi thẻ thành ASCII nên không dựng được), cắt 64 ký tự theo ký tự chứ không theo byte, bỏ lặp hãng không phân biệt hoa thường; và `InferenceService.load()` không có timeout lúc khởi động (D11) dù `model_timeout_s` rất nhỏ, lỗi nạp trả `None`.
