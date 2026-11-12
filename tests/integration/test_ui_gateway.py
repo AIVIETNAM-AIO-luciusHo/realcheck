@@ -105,6 +105,16 @@ def test_two_sessions_do_not_share_results():
     )
 
 
+def test_a_second_session_that_only_uploads_never_sees_the_first_sessions_result():
+    """Phiên B tải ảnh nhưng chưa bấm gửi: không được thấy kết quả đã có của phiên A."""
+    first = submit(upload(open_app(), "a.jpg", noise_jpeg(6)))
+    assert title(first) is not None
+    second = upload(open_app(), "b.jpg", noise_jpeg(7))
+    assert title(second) is None and not second.error
+    assert any("Bấm nút để gửi ảnh" in c.value for c in second.caption)
+    assert second.button[0].disabled is False
+
+
 def test_an_error_in_one_session_never_shows_the_other_sessions_result():
     first = submit(upload(open_app(), "a.jpg", noise_jpeg(3)))
     kept = title(first)
