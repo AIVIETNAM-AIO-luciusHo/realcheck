@@ -13,23 +13,23 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D03 Probe metadata | Chưa ghi quyết định | Loan | Kiệt, Lực | — | Loan chốt probe |
 | D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
-| D05 Lỗi gateway | proposed | Quang | Chờ Lực, Loan | 2026-11-09 | Duyệt mã mới trước khi sửa code |
+| D05 Lỗi gateway | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | Loan xác nhận UI đọc `error.code`; `app/schemas.py` và `streamlit/` chưa sửa |
 | D05 Làm rõ 5 câu (issue #43) | proposed; Quang đã chọn | Quang | Chờ Lực | 2026-11-11 | Lực review và khóa bằng test; xem [mục Làm rõ](#làm-rõ-issue-43) |
 | D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 | — |
-| D06 Body dư multipart | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt 64 KiB |
+| D06 Body dư multipart | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | 64 KiB (`client_max_body_size 5184k`) |
 | D07 Số pixel | approved | Quang | Lực | 2026-11-04 | — |
-| D08 Ngưỡng | proposed; Kiệt chọn 0.3/0.5/0.7 để triển khai, chờ review release | Kiệt | Lực/Loan | 2026-11-05 | Review release |
-| D09 p95 | Chưa chốt | Lực | — | — | Sau benchmark MVP-09 |
-| D10 RPS, error budget, RSS | Chưa chốt | Lực | — | — | Sau benchmark MVP-09 |
+| D08 Ngưỡng | approved cho MVP (Lực, 2026-11-12): 0.3/0.5/0.7 | Kiệt | Lực/Loan | 2026-11-12 | Không phải duyệt release: 94,53% chỉ trên 384 ảnh test đã lọc, chưa duyệt độc lập, chưa loại trừ shortcut |
+| D09 p95 | Hoãn (Lực, 2026-11-12) | Lực | — | — | Chốt sau khi đo trên máy lab; baseline sơ bộ trên máy cá nhân không đủ |
+| D10 RPS, error budget, RSS | Hoãn (Lực, 2026-11-12) | Lực | — | — | Chốt sau khi đo trên máy lab |
 | D11 Timeout | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
 | D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
-| D13 Truy cập, rate limit | proposed | Quang | Chờ Lực | 2026-11-09 | Duyệt trước khi viết cấu hình Nginx (T024) |
-| D14 Profile tải | Chưa chốt | Lực | — | — | Lực chốt; `locust/baseline.conf` chỉ là đề xuất |
-| Hợp đồng `score` | proposed; ML đã ghi xác nhận kỹ thuật; Quang đã kiểm trên máy API | Quang | Chờ Lực review | 2026-11-11 | [Xác nhận ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), [kiểm trên máy API](#kiểm-trên-máy-api-issue-39); chưa duyệt chung |
-| Model phục vụ API (local/lab) | Kiệt chọn reference e571; Quang đã nhận và kiểm trên máy API | Kiệt | Quang (nhận), chờ Lực | 2026-11-11 | Không phải phê duyệt QA hay release; xem [mục Kiểm trên máy API](#kiểm-trên-máy-api-issue-39) |
+| D13 Truy cập, rate limit | approved (Lực, 2026-11-12), sửa quyết định 10/11 | Quang | Lực | 2026-11-12 | Mạng lab nội bộ dùng HTTP; truy cập từ ngoài bắt buộc SSH tunnel; ngoài Internet cần TLS và quyết định mới |
+| D14 Profile tải | Hoãn (Lực, 2026-11-12) | Lực | — | — | Chốt cùng D09, D10 sau khi đo trên lab; `locust/baseline.conf` (5 người dùng) chỉ là đề xuất |
+| Hợp đồng `score` | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | [Xác nhận ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), [kiểm trên máy API](#kiểm-trên-máy-api-issue-39); đã duyệt chung ngày 12/11 |
+| Model phục vụ API (local/lab) | Kiệt chọn reference e571; Quang đã nhận và kiểm trên máy API | Kiệt | Quang (nhận), chờ Lực | 2026-11-11 | Không phải phê duyệt QA hay release; **bắt buộc đặt `REALCHECK_MODEL_PATH`** (mặc định trong mã vẫn là model cũ `69810fd6`, không đổi); xem [mục Kiểm trên máy API](#kiểm-trên-máy-api-issue-39) |
 | Manifest phục vụ model | Chưa chốt | Loan | Kiệt, Lực | — | Xem [mục Manifest](#manifest) |
 | Chính sách audit | Chưa chốt | Loan, Lực | Quang tổng hợp | — | Xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
-| Phạm vi M1/M2 | proposed | Quang | Chờ cả nhóm | 2026-11-09 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
+| Phạm vi M1/M2 | approved (Lực, 2026-11-12); Loan, Kiệt chưa xác nhận | Quang | Lực | 2026-11-12 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
 
 ## D05. Enum `verdict` và lỗi
 
@@ -104,7 +104,7 @@ Sửa ngày 2026-11-11 theo review của Lực: bỏ lặp tên hãng chuyển t
 
 **5. Kiểu của điểm:** `score()` phải trả float, của Python hoặc numpy (`float32`, `float64`). `str`, `int`, `bool`, `None` hay mảng nhiều phần tử là 500 `MODEL_ERROR`, không ép kiểu: số nguyên 0/1 thường là nhãn lớp từ `predict()` chứ không phải xác suất.
 
-### Lỗi do gateway trả (proposed, 2026-11-09)
+### Lỗi do gateway trả (đề xuất 2026-11-09; Lực duyệt 2026-11-12)
 
 Đề xuất của Quang cho MVP-01. **Chưa sửa code:** chỉ thêm vào enum `ErrorCode` và `streamlit/` sau khi Lực, Loan duyệt, vì UI của Loan đọc `error.code`.
 
@@ -120,7 +120,7 @@ Sửa ngày 2026-11-11 theo review của Lực: bỏ lặp tên hãng chuyển t
 - 429 kèm `Retry-After: 1` (D13). Các lỗi khác không gửi `Retry-After`.
 - `GATEWAY_TIMEOUT` khác `MODEL_TIMEOUT`: `MODEL_TIMEOUT` do API trả khi model quá D11; `GATEWAY_TIMEOUT` nghĩa là cả API không trả lời kịp. `proxy_read_timeout` phải dài hơn tổng thời gian API (D11), và timeout của UI dài hơn proxy.
 - Đổi tên `UPSTREAM_UNAVAILABLE` (đề xuất 2026-11-09) thành `API_UNAVAILABLE` (2026-11-11): `scripts/check_gateway.py` coi chữ "upstream" trong body lỗi là lộ chi tiết nội bộ (FR-N03).
-- Đã cấu hình trong `nginx/nginx.conf` (MVP-05); vẫn `proposed` tới khi Lực, Loan duyệt.
+- Đã cấu hình trong `nginx/nginx.conf` (MVP-05) và QA kiểm 8/8 qua Nginx thật (`check_gateway`). Lực duyệt 2026-11-12; còn chờ Loan xác nhận UI đọc `error.code` (không chặn).
 
 ## D06. Dung lượng file
 
@@ -158,13 +158,15 @@ Sửa ngày 2026-11-11 theo review của Lực: bỏ lặp tên hãng chuyển t
 
 **Mốc xem lại:** sau benchmark CPU/RAM MVP-09. Kiệt chưa chứng nhận shared `Scorer` an toàn đa luồng; giữ một slot. [Trả lời và timing offline](ml-api-handoff-39.md#d12-và-fr-a06-trả-lời-câu-hỏi-pr-36); FR-A06 logging API còn chờ.
 
-## D13. Truy cập và rate limit (proposed, 2026-11-09)
+## D13. Truy cập và rate limit (đề xuất 2026-11-09; Lực duyệt 2026-11-12)
 
 **Lựa chọn đề xuất:**
 - Demo chạy HTTP cổng 80 trong mạng lab hoặc qua SSH tunnel; **không TLS**, không public.
 - Rate limit 10 request/giây theo IP kết nối thật (`$binary_remote_addr`). **Không tin `X-Forwarded-For`** do client tự gửi.
 - `burst=10 nodelay`: cho dồn tối đa 10 request rồi trả 429 ngay, không xếp hàng nên không làm tăng latency.
 - 429 kèm `Retry-After: 1`.
+
+**Quyết định ngày 12/11 (Lực):** duyệt, và sửa quyết định 10/11 ("không phục vụ HTTP thường trên mạng lab"): **mạng lab nội bộ được dùng HTTP thường; truy cập từ ngoài mạng lab bắt buộc SSH tunnel; ra Internet phải có TLS và quyết định mới.** Rủi ro chấp nhận: ai trong mạng lab nghe được lưu lượng thấy được ảnh gửi lên. Tường lửa máy lab chỉ cho mạng lab vào cổng 80 (`docs/deploy.md`).
 
 **Hệ quả đã biết:** Streamlit gọi API qua Nginx từ server, nên mọi phiên UI dùng chung IP của container Streamlit và chung giới hạn 10 request/giây. Không tuyên bố giới hạn theo từng trình duyệt (spec 000 mục 10).
 
@@ -175,7 +177,7 @@ Sửa ngày 2026-11-11 theo review của Lực: bỏ lặp tên hãng chuyển t
 
 **Còn mở:** URL lab cụ thể và máy chạy demo; danh sách IP proxy tin cậy để trống vì không có proxy nào đứng trước Nginx.
 
-**Đã cấu hình (MVP-05, 2026-11-11):** `nginx/nginx.conf` áp rate limit cho `/v1/`; `/health`, `/docs`, `/openapi.json` và UI không bị giới hạn. Vẫn `proposed` tới khi Lực duyệt.
+**Đã cấu hình (MVP-05, 2026-11-11):** `nginx/nginx.conf` áp rate limit cho `/v1/`; `/health`, `/docs`, `/openapi.json` và UI không bị giới hạn. Lực duyệt 2026-11-12.
 
 ## Hợp đồng `score`
 
@@ -185,7 +187,9 @@ Ngưỡng D08 và lựa chọn manifest/holdout mới được ghi tại [ml-sel
 
 **Lý do:** spec 000 ghi `models/scoring.py` và nhận bytes, nhưng spec 001 mới hơn và có Clarification riêng cho điểm này. Nhận PIL Image cho phép API giải mã đúng một lần.
 
-**Hiện trạng:** Kiệt đã ghi [xác nhận kỹ thuật phía ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), kèm smoke model thật trên main. Chờ Quang/Lực review nên vẫn `proposed`, không tự ghi QA/release approved.
+**Quyết định 2026-11-12 (Lực): approved.** Đã kiểm: Quang chạy thật trên Windows, QA trên Linux (điểm CLI và API lệch tối đa 5e-9, container khớp từng chữ số). Không duyệt release model.
+
+**Hiện trạng trước đó:** Kiệt đã ghi [xác nhận kỹ thuật phía ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), kèm smoke model thật trên main. Chờ Quang/Lực review nên vẫn `proposed`, không tự ghi QA/release approved.
 
 **Trả lời phía ML:** chọn reference e571 cho local/lab; giữ một slot vì chưa chứng nhận đa luồng; gói có profiler offline, FR-A06 telemetry API chưa làm. Xem [bàn giao #39](../ml-api-model-handoff.md). Đã kiểm trên máy Quang (mục dưới); còn chờ review chung.
 
@@ -248,7 +252,7 @@ Nếu nhóm chọn khác, phải sửa spec và phạm vi nghiệm thu trước 
 
 ## Phạm vi nghiệm thu M1 và M2
 
-Trạng thái: proposed, 2026-11-09.
+Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và Kiệt chưa xác nhận.
 
 | Mốc | Phạm vi | Acceptance |
 |---|---|---|
@@ -263,8 +267,25 @@ Trạng thái: proposed, 2026-11-09.
 
 | Người | Việc |
 |---|---|
-| Lực | Duyệt mã lỗi gateway, body dư 64 KiB, D13; xác nhận hợp đồng `score`; cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau MVP-09 |
+| Lực | Đã duyệt 12/11: mã lỗi gateway, body dư 64 KiB, D13, hợp đồng `score`, D08 (MVP), M1/M2. Còn: cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau khi đo trên lab; duyệt mục D05 làm rõ (issue #43) |
 | Loan | Xác nhận D05 và mã gateway cho UI; chốt D01, D03, D04 và manifest; cùng Lực chốt chính sách audit |
 | Kiệt | Đã ghi [lựa chọn model, contract, thread/timing và D02](../ml-api-model-handoff.md); Quang đã xác nhận checksum/CLI (#39), còn review chung |
 | Quang | Đăng kết quả kiểm vào issue #39; tổng hợp các mục còn chờ |
 | Cả nhóm | Duyệt phạm vi M1/M2 và AC-26 |
+
+## Quyết định của Lực ngày 12/11/2026
+
+| Quyết định | Kết quả |
+|---|---|
+| Mã lỗi gateway, body dư 64 KiB, timeout `/v1/` 15 giây, rate limit 10 r/s burst 10 | Duyệt tất cả; Loan còn xác nhận UI đọc `error.code` |
+| D13 truy cập | Mạng lab nội bộ dùng HTTP; truy cập ngoài bắt buộc SSH tunnel; Internet cần TLS và quyết định mới |
+| Hợp đồng `score(PIL.Image) -> float` | Duyệt |
+| D08 ngưỡng 0.3/0.5/0.7 | Duyệt cho MVP, không phải duyệt release (xem giới hạn ở bảng trạng thái) |
+| Model mặc định | Không đổi mã; bắt buộc đặt `REALCHECK_MODEL_PATH`; hỏi Kiệt nếu muốn đổi mặc định sau |
+| `inference_slots` | Giữ 1 cho MVP; `slots = 2` chỉ sau khi Kiệt xác nhận `Scorer` an toàn đa luồng |
+| Phạm vi M1/M2 | Duyệt (M1 localhost đã diễn tập; M2 Compose và đo tải trên lab) |
+| D09, D10, D14 | Hoãn tới khi đo trên máy lab |
+| Chính sách audit, manifest phục vụ model | Chưa chốt; Loan và Lực chốt riêng |
+| Giới hạn exif 64 ký tự mỗi giá trị (tối đa 129) | Không thuộc đợt này; giữ như đã ghi ở D05 làm rõ |
+
+Nguồn bằng chứng: `docs/qa/local-real-model-verification-20261111.md`, `docs/qa/kan-25-model-loading-review.md`, issue #44.
