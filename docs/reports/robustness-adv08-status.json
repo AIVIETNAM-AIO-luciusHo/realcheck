@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "task": "ADV-08 / GitHub #52",
+  "status": "blocked_pending_locked_manifest",
+  "checked_on": "2026-11-11",
+  "checked_main_commit": "7cb0f2bec37b941592d5470993918a1514a0171b",
+  "runner_issue": "https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/51",
+  "runner_issue_state_at_check": "OPEN",
+  "runner_handoff_comments_at_check": 1,
+  "runner_cli_available_on_checked_main": true,
+  "runner_cli_observed_options": [
+    "--split",
+    "--robustness",
+    "--output",
+    "--labels",
+    "--features",
+    "--model",
+    "--manifest",
+    "--model-manifest",
+    "--protocol"
+  ],
+  "locked_manifest_received": false,
+  "predictions_received": false,
+  "reference_model_sha256_verified_locally": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+  "real_inference_performed": false,
+  "metrics": null,
+  "independent_qa_approved": false,
+  "release_approved": false,
+  "blockers": [
+    "No locked real parent/cohort manifest with checksum, actual transform coverage and shared group lineage/split-history handoff; main labels lack group_id.",
+    "ADV06 phone/ai_new/zalo input handoff not supplied; register unavailable cohorts as missing before any permitted partial evaluation.",
+    "No real robustness predictions; ADV10 validation controls cannot substitute for ADV08 cohorts."
+  ],
+  "expected_cohorts_without_measurements": [
+    "ai_new",
+    "brightness",
+    "crop",
+    "downscale",
+    "jpeg50",
+    "jpeg70",
+    "jpeg90",
+    "parents",
+    "phone",
+    "rotate",
+    "zalo"
+  ],
+  "prepared_components": [
+    "handoff preflight without inference",
+    "saved-prediction metrics, paired changes and group bootstrap",
+    "draft protocol and producer contract",
+    "synthetic offline tests"
+  ],
+  "adv07_integration_schema_confirmed": true,
+  "validation": {
+    "scope": "Synthetic tests on feature working tree, not real robustness or independent QA",
+    "full_suite_before_final_model_manifest_shape_guard": {
+      "passed": 684,
+      "failed": 0,
+      "skipped": 2,
+      "xfailed": 1,
+      "seconds": 154.88,
+      "app_coverage_percent": 98.52
+    },
+    "final_helper_and_existing_evaluator_tests": {
+      "passed": 71,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.09
+    },
+    "ruff_check": "passed after latest integration changes",
+    "ruff_format_check": "129 files already formatted",
+    "full_suite_repeated_after_final_shape_guard": false,
+    "latest_main_targeted_helper_evaluator": {
+      "passed": 76,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 19.68
+    },
+    "latest_main_full_suite": {
+      "passed": 805,
+      "failed": 0,
+      "skipped": 2,
+      "xfailed": 1,
+      "app_coverage_percent": 99.42,
+      "seconds": 182.96
+    },
+    "last_full_suite_main_commit": "db6cfbfcc0a8d345fe8fde31fa44e81d9c82d215",
+    "latest_main_merge_targeted": {
+      "passed": 122,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 35.72,
+      "scope": "test_analyze_robustness + test_evaluate + test_robustness"
+    }
+  },
+  "runner_pull_request": "https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/74",
+  "runner_pull_request_commit": "624912361b026e0f24cd326cd8b0e708ad78add6",
+  "runner_pull_request_merged": true,
+  "runner_cli_available_in_pull_request": true,
+  "runner_gate_review": "https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/pull/74#issuecomment-6792962129",
+  "adv07_integration_scope": "Latest PR74: 46 upstream synthetic tests plus 3 local producer/runner/consumer fixture tests, mocked model SHA/provenance/bundle/scorer; not real inference or independent QA.",
+  "synthetic_integration_tests": {
+    "passed": 49,
+    "failed": 0,
+    "seconds": 17.31,
+    "upstream_tests": 46,
+    "local_compatibility_tests": 3,
+    "invalid_protocol_reaches_fake_scorer": false,
+    "invalid_protocol_loader_calls": 0
+  },
+  "helper_improvements": [
+    "Preflight receipt binds model/model-manifest/manifest/protocol SHA, runner identity and fixed profile; receipt is not run authorization",
+    "Observed oriented dimensions and pixel equality expose clamped/no-op crop/downscale without removing samples",
+    "Reject successful predictions for images that fail decode/minimum size preflight"
+  ],
+  "runner_gate_status": "PR74 merged into checked main with protocol validation and used marker. Real cohort/lineage handoff still missing; no robustness inference or independent data QA.",
+  "prior_gate_reproduction": {
+    "runner_commit": "8db5573501cb3f8a50f632fc8bfeef26fc023f1e",
+    "fake_scorer_calls_with_non_json_protocol": 16,
+    "resolved_in_checked_revision": true
+  }
+}

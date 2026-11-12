@@ -28,6 +28,7 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 | `evaluate.py` | Loan | `python -m scripts.evaluate --split val --output <file>`: báo cáo validation theo source, ngưỡng lấy từ model, không ghi đè output. GenImage test dùng `models.evaluate` với protocol đã duyệt và lịch sử holdout; `--split test` ở script này chỉ dùng cho CIFAKE smoke test. `--robustness`: chấm manifest robustness, xem mục Robustness bên dưới |
 | `robustness_manifest.py` | Loan | ADV-07/ADV-06: tạo biến thể từ ảnh test cha và liệt kê cohort điện thoại, AI mới, Zalo thành manifest JSONL; xem mục Robustness |
 | `verify_ml.py` | Kiệt | Model thật: parity tensor train/serve, score từ raw so feature cache, ảnh lớn/mode ảnh/ảnh nhỏ; chỉ lấy mẫu validation |
+| `analyze_robustness.py` | Kiệt | ADV-08/#52: `--preflight` kiểm protocol/hash/lineage/history/ảnh, hoặc đọc predictions CSV để tính metrics, flip/degradation matched và CI bootstrap theo group. Không inference, không tạo biến thể; chờ runner #51. Exit0 hợp lệ/đủ cohort chờ QA, 1 partial, 2 input invalid; không ghi đè. [Contract và lệnh](../docs/robustness-adv08.md) |
 
 Thư viện cho các script dữ liệu: `pip install -r scripts/requirements-data.txt`. Thứ tự chạy xem [`data/README.md`](../data/README.md).
 
@@ -89,3 +90,5 @@ Chỉ để đánh giá model đã khóa (#39); không chọn model hay ngưỡn
 ## Mở rộng dữ liệu và train mixed
 
 `download_expansion.py` tải mẫu có revision cố định, tái sử dụng pool/catalogue local và giữ provenance/resume journal. `train_expansion.py` screen ảnh, chống trùng lịch sử, chia validation theo nguồn/thiết bị, fit mixed probe rồi khóa model trước đánh giá OpenFake. Dùng `--prepare-only` để kiểm manifest trước fit. Artifact, lệnh thực tế và giới hạn lấy mẫu nằm trong [biên bản 10/11/2026](../docs/ml-data-expansion-20261110.md); cần giữ used marker và dữ liệu cũ để truy vết.
+
+ADV-08 kiểm tương thích #74: preflight xuất receipt gắn hash protocol/manifest/model, chỉ xác nhận kỹ thuật của cohort hiện có; không thay cổng protocol/used-marker của runner. Report có `observed_transforms` để chỉ rõ crop/downscale bị clamp/no-op ở cha256px. Xem [runbook và điểm chờ](../docs/robustness-adv08.md).

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "status": "draft",
+  "manifest_lock_ref": null,
+  "split_review_ref": null,
+  "parent_exposure": null,
+  "runner": {
+    "commit": null,
+    "handoff_ref": null,
+    "tests_ref": null
+  },
+  "analysis_commit": null,
+  "profile": {
+    "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+    "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+    "normalization_version": "1"
+  },
+  "thresholds": {
+    "binary": 0.5,
+    "low": 0.3,
+    "high": 0.7
+  },
+  "bootstrap": {
+    "replicates": 2000,
+    "seed": 42,
+    "confidence": 0.95
+  },
+  "artifacts": {
+    "model": {
+      "path": "api-reference/model/clip_probe.joblib",
+      "sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494"
+    },
+    "model_manifest": {
+      "path": "api-reference/manifest.json",
+      "sha256": null
+    },
+    "manifest": {
+      "path": "manifest.jsonl",
+      "sha256": null
+    }
+  },
+  "history": [
+    {
+      "path": "history.csv",
+      "sha256": null
+    }
+  ],
+  "cohorts": [
+    {
+      "name": "ai_new",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "brightness",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "crop",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "downscale",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "jpeg50",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "jpeg70",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "jpeg90",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "parents",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "phone",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "rotate",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    },
+    {
+      "name": "zalo",
+      "status": "missing",
+      "reason": "Not received from ADV-07 (#51); register actual counts and transform parameters before locking."
+    }
+  ]
+}
