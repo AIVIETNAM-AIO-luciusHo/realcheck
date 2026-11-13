@@ -29,7 +29,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | Model phục vụ API (local/lab) | Kiệt chọn reference e571; Quang đã nhận và kiểm trên máy API | Kiệt | Quang (nhận), chờ Lực | 2026-11-11 | Không phải phê duyệt QA hay release; **bắt buộc đặt `REALCHECK_MODEL_PATH`** (mặc định trong mã vẫn là model cũ `69810fd6`, không đổi); xem [mục Kiểm trên máy API](#kiểm-trên-máy-api-issue-39) |
 | Manifest phục vụ model | approved (Lực, 2026-11-12): bộ 9.708 ảnh giữ split, `data/labels.csv` (PR #83) | Loan | Kiệt, Lực | 2026-11-12 | Loan xác nhận; SHA256 sau khi đổi tiền tố đường dẫn và kiểu xuống dòng khớp manifest e571 (`4bf8e490…`), QA đã kiểm; xem [mục Manifest](#manifest) |
 | Chính sách audit | approved (Lực, 2026-11-12): `metadata_audit.py` cảnh báo, release checker riêng chặn post `A_eff > 0.55` | Loan, Lực | Quang tổng hợp | 2026-11-12 | Loan xác nhận; mã `metadata_audit.py` chưa đổi (vẫn cổng cứng); xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
-| Phạm vi M1/M2 | approved (Lực, 2026-11-12); Loan, Kiệt chưa xác nhận | Quang | Lực | 2026-11-12 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
+| Phạm vi M1/M2 | approved (Lực, 2026-11-12); Loan, Kiệt đồng ý (phiếu ý kiến 2026-11-13, #103) | Quang | Lực | 2026-11-12 | M2 chỉ ghi đạt khi đủ bằng chứng; xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
 
 ## D05. Enum `verdict` và lỗi
 
@@ -259,7 +259,7 @@ Nếu nhóm chọn khác, phải sửa spec và phạm vi nghiệm thu trước 
 
 ## Phạm vi nghiệm thu M1 và M2
 
-Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và Kiệt chưa xác nhận.
+Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và Kiệt đồng ý trong phiếu ý kiến 2026-11-13 (#103).
 
 | Mốc | Phạm vi | Acceptance |
 |---|---|---|
