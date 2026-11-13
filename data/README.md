@@ -13,20 +13,21 @@ Tạo lại từ repo sạch (manifest 10.000 ảnh cũ nằm ở commit `58a21b
 python -m scripts.download_data cifake
 python -m scripts.download_data genimage
 git show 58a21b5:data/labels.csv > .cache/labels-10000.csv
-python -m scripts.prepare_data --split-from .cache/labels-10000.csv --output-dir <thư mục mới> --labels <labels mới> --workers 2
+python -m scripts.prepare_data --split-from .cache/labels-10000.csv --output-dir <thư mục mới> --labels <labels chưa có group> --workers 2
+python -m scripts.add_group_ids --labels <labels chưa có group> --output <labels mới>
 python -m scripts.check_data --labels <labels mới>
 ```
 
 `prepare_data` từ chối ghi vào thư mục đã tồn tại (kể cả `data/processed/` vì có `.gitkeep`), nên luôn dùng đường dẫn mới; `--split-from` khớp theo raw identity, không chia lại. Xem [bản ứng viên giữ split](../docs/ml-preserved-split.md) về cảnh báo lịch sử holdout. `metadata_audit.json` và `baseline_filesize.json` bên dưới vẫn đo trên bộ 10.000 ảnh cũ, chưa đo lại cho bộ này.
 
-Checker hiện yêu cầu manifest có sáu cột với `norm_version` ở cuối và đúng version hiện hành; manifest cũ thiếu version sẽ FAIL, không tự nâng version. `prepare_data` ghi riêng ảnh quá nhỏ vào `rejected_small.csv`, ảnh hỏng/decompression bomb vào `rejected_invalid.csv` và ảnh trùng vào `rejected_duplicate.csv`, trong thư mục output. Cả ba danh sách giữ đường dẫn, source, kích thước, lý do và version để QA đối chiếu.
+Checker hiện yêu cầu manifest có bảy cột: sáu cột của `prepare_data` (`norm_version` đúng version hiện hành) rồi `group_id` do `add_group_ids` gắn; manifest cũ thiếu version sẽ FAIL, không tự nâng version. `prepare_data` ghi riêng ảnh quá nhỏ vào `rejected_small.csv`, ảnh hỏng/decompression bomb vào `rejected_invalid.csv` và ảnh trùng vào `rejected_duplicate.csv`, trong thư mục output. Cả ba danh sách giữ đường dẫn, source, kích thước, lý do và version để QA đối chiếu.
 
 | Đường dẫn | Nội dung |
 |---|---|
 | `raw/` | Ảnh gốc tải về, không sửa |
 | `processed/` | Ảnh đã làm sạch, cùng JPEG, cùng chất lượng và kích thước |
 | `features/` | Kết quả CLIP (`.npy`) |
-| `labels.csv` | `filepath, label, source, split, raw_path, norm_version` |
+| `labels.csv` | `filepath, label, source, split, raw_path, norm_version, group_id` |
 | `metadata_audit.json` | Kết quả kiểm tra rò rỉ metadata (gate) |
 | `processed_baseline.sha256` | Metadata mã băm của dữ liệu chuẩn hóa trước khi đổi pipeline (T012), chỉ gồm sha256, **không chứa ảnh** |
 | `baseline_filesize.json` | Dung lượng file theo nguồn (chỉ tham khảo độ chi tiết ảnh) |
@@ -61,6 +62,9 @@ Chạy lại cho cùng kết quả (seed 42). `download_data.py genimage` chạy
 | `split` | `train`, `val`, `test` |
 | `raw_path` | Ảnh gốc tương ứng trong `raw/` |
 | `norm_version` | Phiên bản chuẩn hóa (`models.normalize.NORMALIZATION_VERSION`), hiện là `1` |
+| `group_id` | Nhóm ảnh trùng hoặc gần trùng (`scripts.add_group_ids`, #99, D01): ảnh gốc trùng byte (SHA256) hoặc ảnh chuẩn hóa lệch dHash ≤ 4 bit cùng group; `g-` + 16 ký tự hex đầu SHA256 ảnh gốc nhỏ nhất trong group. Mỗi group một split, một nhãn. Bộ chính: 9.708 group (không có ảnh trùng hay gần trùng). Dùng làm `history` cho protocol ADV-08 |
+
+SHA256 bộ chính: `78b8f36b…1148` (có `group_id`); bỏ cột `group_id` thì khớp từng byte bản trước `112aa115…4bdf` ([sổ quyết định](../docs/decisions/realcheck-baseline.md#manifest)). Thêm cột không đổi ảnh, nhãn, split hay `norm_version`, nhưng feature manifest trích từ bản cũ sẽ bị `load_features` từ chối vì khác hash.
 
 Số ảnh theo split (bộ chính, sau `check_data`: 0 lỗi, 0 cảnh báo, 0 ảnh trùng hoặc gần trùng giữa train và val/test):
 

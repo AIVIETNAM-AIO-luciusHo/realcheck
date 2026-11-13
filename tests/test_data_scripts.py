@@ -95,7 +95,13 @@ def test_prepare_and_check_data_cli_rejections_splits_and_overwrite(tmp_path):
     rejected = set(rejected_small.raw_path) | set(rejected_invalid.raw_path)
     assert accepted.isdisjoint(rejected)
     assert accepted | rejected == {p.as_posix() for p in raw.rglob("*.png")}
-    checked = cli("scripts.check_data", "--labels", labels)
+    # prepare_data chưa gắn group_id: check_data phải từ chối cho tới khi chạy add_group_ids
+    ungrouped = cli("scripts.check_data", "--labels", labels)
+    assert ungrouped.returncode == 1 and "group_id" in ungrouped.stdout
+    grouped = tmp_path / "grouped.csv"
+    added = cli("scripts.add_group_ids", "--labels", labels, "--output", grouped)
+    assert added.returncode == 0, added.stdout + added.stderr
+    checked = cli("scripts.check_data", "--labels", grouped)
     assert checked.returncode == 0, checked.stdout + checked.stderr
     before = labels.read_bytes()
     refused = cli("scripts.prepare_data", *args)
@@ -103,7 +109,7 @@ def test_prepare_and_check_data_cli_rejections_splits_and_overwrite(tmp_path):
     assert labels.read_bytes() == before
     # A corrupt processed file must be a reported failure, not an uncaught traceback.
     Path(df.iloc[0].filepath).write_bytes(b"corrupt processed jpeg")
-    checked = cli("scripts.check_data", "--labels", labels)
+    checked = cli("scripts.check_data", "--labels", grouped)
     assert checked.returncode == 1 and "FAIL" in checked.stdout
     assert "Traceback" not in checked.stderr
 
@@ -215,11 +221,33 @@ def test_check_data_cli_requires_current_norm_version(tmp_path, norm_version):
     }
     if norm_version is not None:
         row["norm_version"] = norm_version
+    row["group_id"] = "g-1"
     labels = tmp_path / "labels.csv"
     pd.DataFrame([row]).to_csv(labels, index=False)
     result = cli("scripts.check_data", "--labels", labels)
     assert result.returncode == 1
     assert "norm_version" in result.stdout
+    assert "Traceback" not in result.stderr
+
+
+def test_check_data_cli_refuses_a_group_across_splits(tmp_path):
+    rows = [
+        {
+            "filepath": f"missing{n}.jpg",
+            "label": 0,
+            "source": "genimage_real",
+            "split": split,
+            "raw_path": f"missing{n}.png",
+            "norm_version": NORMALIZATION_VERSION,
+            "group_id": "g-1",
+        }
+        for n, split in enumerate(("train", "test"))
+    ]
+    labels = tmp_path / "labels.csv"
+    pd.DataFrame(rows).to_csv(labels, index=False)
+    result = cli("scripts.check_data", "--labels", labels)
+    assert result.returncode == 1
+    assert "mỗi group_id chỉ có một split (1 group vi phạm)" in result.stdout
     assert "Traceback" not in result.stderr
 
 

@@ -17,7 +17,10 @@ from PIL import Image
 from models.normalize import NORMALIZATION_VERSION
 
 LABELS_CSV = Path("data/labels.csv")
-COLUMNS = ["filepath", "label", "source", "split", "raw_path", "norm_version"]
+COLUMNS = [
+    "filepath", "label", "source", "split", "raw_path", "norm_version", "group_id",
+]  # fmt: skip
+# group_id do scripts.add_group_ids gắn (#99): ảnh trùng byte hoặc gần trùng cùng group
 SPLITS = {"train", "val", "test"}
 EXPECTED_SIZE = {"genimage": (256, 256), "cifake": (32, 32)}
 # Hai ảnh có dHash lệch <= ngưỡng này coi là gần trùng
@@ -55,6 +58,12 @@ def check_schema(df: pd.DataFrame) -> None:
     check(not df.isna().any().any(), "không có ô trống")
     check(set(df["label"]) <= {0, 1}, "label chỉ là 0/1")
     check(set(df["split"]) <= SPLITS, "split chỉ là train/val/test")
+    groups = df.groupby("group_id")
+    for key in ("split", "label"):
+        crossing = int((groups[key].nunique() > 1).sum())
+        check(
+            crossing == 0, f"mỗi group_id chỉ có một {key} ({crossing} group vi phạm)"
+        )
 
 
 def check_labels(df: pd.DataFrame) -> None:

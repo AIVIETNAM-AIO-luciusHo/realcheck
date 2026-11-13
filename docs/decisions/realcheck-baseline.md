@@ -8,10 +8,10 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 
 | Mục | Trạng thái | Người quyết định | Reviewer | Ngày | Còn chờ |
 |---|---|---|---|---|---|
-| D01 Split, seed | Chưa ghi quyết định | Loan | — | — | Loan chốt; hiện trạng ở [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
+| D01 Split, seed, group | proposed (Loan, 2026-11-13) | Loan | Lực | 2026-11-13 | Seed 42, split hiện có; `group_id` theo SHA256 ảnh gốc và dHash ≤ 4 (#99); xem [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
 | D02 Chuẩn hóa | Một phần đã chốt trong spec 001 | Kiệt | — | — | [Đã ghi hiện trạng alpha/ICC/subsampling](ml-api-handoff-39.md#d02-hành-vi-version-1-hiện-có); chờ review |
-| D03 Probe metadata | Chưa ghi quyết định | Loan | Kiệt, Lực | — | Loan chốt probe |
-| D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
+| D03 Probe metadata | proposed (Loan, 2026-11-13), ghi sau khi đã xem kết quả audit | Loan | Kiệt, Lực | 2026-11-13 | Probe post rỗng do thiết kế chuẩn hóa; hướng probe tầng pixel làm sau 15/11 |
+| D04 Protocol audit | Chưa làm (Loan, 2026-11-13) | Loan | Lực | — | Giá trị tạm trong mã: 100 ảnh mỗi lớp, 1.000 bootstrap; làm sau 15/11 |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
 | D05 Lỗi gateway | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | Loan đã xác nhận UI (2026-11-13): UI chọn thông báo theo mã HTTP, thêm 502; `app/schemas.py` đã thêm `RATE_LIMITED`, `API_UNAVAILABLE`, `GATEWAY_TIMEOUT` (2026-11-13), `tests/test_gateway_error_codes.py` khóa câu chữ khớp `nginx.conf` |
 | D05 Làm rõ 5 câu (issue #43) | approved (Lực, 2026-11-13) | Quang | Lực | 2026-11-13 | Quang chọn 2026-11-11; hợp đồng đã khóa bằng test; xem [mục Làm rõ](#làm-rõ-issue-43) |
@@ -29,7 +29,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | Model phục vụ API (local/lab) | Kiệt chọn reference e571; Quang đã nhận và kiểm trên máy API | Kiệt | Quang (nhận), chờ Lực | 2026-11-11 | Không phải phê duyệt QA hay release; **bắt buộc đặt `REALCHECK_MODEL_PATH`** (mặc định trong mã vẫn là model cũ `69810fd6`, không đổi); xem [mục Kiểm trên máy API](#kiểm-trên-máy-api-issue-39) |
 | Manifest phục vụ model | approved (Lực, 2026-11-12): bộ 9.708 ảnh giữ split, `data/labels.csv` (PR #83) | Loan | Kiệt, Lực | 2026-11-12 | Loan xác nhận; SHA256 sau khi đổi tiền tố đường dẫn và kiểu xuống dòng khớp manifest e571 (`4bf8e490…`), QA đã kiểm; xem [mục Manifest](#manifest) |
 | Chính sách audit | approved (Lực, 2026-11-12): `metadata_audit.py` cảnh báo, release checker riêng chặn post `A_eff > 0.55` | Loan, Lực | Quang tổng hợp | 2026-11-12 | Loan xác nhận; mã `metadata_audit.py` chưa đổi (vẫn cổng cứng); xem [mục Xung đột audit](#xung-đột-audit-spec-000-và-spec-001) |
-| Phạm vi M1/M2 | approved (Lực, 2026-11-12); Loan, Kiệt chưa xác nhận | Quang | Lực | 2026-11-12 | Xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
+| Phạm vi M1/M2 | approved (Lực, 2026-11-12); Loan, Kiệt đồng ý (phiếu ý kiến 2026-11-13, #103) | Quang | Lực | 2026-11-12 | M2 chỉ ghi đạt khi đủ bằng chứng; xem [mục Phạm vi nghiệm thu](#phạm-vi-nghiệm-thu-m1-và-m2) |
 
 ## D05. Enum `verdict` và lỗi
 
@@ -217,14 +217,14 @@ Quang kiểm ngày 2026-11-11 trên Windows 11, Python 3.11.9, torch 2.15.0+cpu,
 
 ## D01–D04. Dữ liệu và audit
 
-Hiện trạng trong mã, **không phải quyết định đã duyệt**:
+D01 và D03 là đề xuất của Loan (2026-11-13), **chưa duyệt**; D02 là hiện trạng trong mã; D04 chưa làm.
 
-| Mục | Mã hiện tại | Còn thiếu |
+| Mục | Nội dung | Còn thiếu |
 |---|---|---|
-| D01 | `scripts/prepare_data.py`: seed 42; GenImage 70/15/15; CIFAKE tách 15% train làm val, test giữ split gốc; `--split-from` giữ split cũ | Cách nhóm ảnh cha/near-duplicate; ghi lý do chọn |
+| D01 | **Split:** `scripts/prepare_data.py`, seed 42; GenImage 70/15/15; CIFAKE tách 15% train làm val, test giữ split gốc; `--split-from` giữ split cũ. **Group (#99):** `scripts/add_group_ids.py` gộp ảnh cùng group nếu ảnh gốc trùng byte (SHA256) hoặc ảnh chuẩn hóa gần trùng (dHash ≤ 4 bit, cùng hàm và ngưỡng của `check_data`, chỉ so trong cùng bộ dữ liệu), lấy bắc cầu; `group_id` = `g-` + 16 ký tự hex đầu SHA256 ảnh gốc nhỏ nhất trong group. Group vắt qua split hoặc lẫn nhãn thì dừng, không tự đổi split. **Lý do:** dùng lại đúng định nghĩa trùng/gần trùng mà `check_data` đã kiểm, để AC-18 và kiểm rò rỉ cùng một quy tắc; ID theo nội dung nên không phụ thuộc tên file hay thứ tự dòng. Trên bộ 9.708 ảnh: 0 trùng byte, 0 gần trùng (khoảng cách nhỏ nhất 5 bit), nên mỗi ảnh một group, không đổi ảnh, nhãn hay split | Lực kiểm độc lập; Kiệt xác nhận ngưỡng 4 bit (30 cặp CIFAKE, 19 cặp GenImage lệch ≤ 8 bit chưa xem bằng mắt). dHash không bắt được ảnh cùng nội dung nhưng khác bố cục (cùng cảnh, khác góc chụp) |
 | D02 | Spec 001 Clarifications: xoay EXIF → RGB → `ImageOps.fit` BICUBIC 256×256 → JPEG 95 một lần; ảnh cạnh ngắn < 256 bị loại; version `1` | [Đã ghi quan sát v1](ml-api-handoff-39.md#d02-hành-vi-version-1-hiện-có): bỏ alpha, không chuyển/nhúng ICC, default Pillow quan sát 4:2:0; chờ duyệt chung |
-| D03 | `scripts/metadata_audit.py` (bản nháp T007): `HistGradientBoostingClassifier` | Đăng ký probe trước khi xem audit-test |
-| D04 | Audit dùng cột `split` của manifest; control dương và control âm | Protocol riêng khỏi model-test, cỡ mẫu tối thiểu mỗi slice, số lần bootstrap |
+| D03 | **Hiện có:** `scripts/metadata_audit.py` (T007), `HistGradientBoostingClassifier` trên 13 đặc trưng metadata (format, mode, kích thước, EXIF, ICC, progressive, subsampling, bảng lượng tử). **Ghi sau khi đã xem kết quả audit**, nên không phải đăng ký trước. Trên ảnh đã chuẩn hóa, 13/13 đặc trưng là hằng số do thiết kế (`normalize_image`: RGB, 256×256 hoặc 32×32 với CIFAKE, JPEG 95, không EXIF/ICC), nên A_eff post = 0,5 theo cấu tạo, không chứng minh dữ liệu sạch. Ảnh gốc GenImage có A_eff = 1,0 ở mọi slice: shortcut metadata có ở dữ liệu gốc. **Đề xuất (sau 15/11):** probe post đo trên ảnh đã chuẩn hóa ở tầng pixel (dung lượng JPEG sau chuẩn hóa, blockiness/nén kép, năng lượng tần số cao), giữ ngưỡng A_eff ≤ 0,55 | Kiệt, Lực thống nhất hướng probe (hiện probe cố ý không dùng dung lượng file); đăng ký trước khi chạy |
+| D04 | **Chưa làm.** Audit dùng cột `split` của manifest; control dương và control âm; giá trị tạm trong mã: `MIN_PER_CLASS = 100`, `N_BOOT = 1000` | Protocol riêng khỏi model-test, cỡ mẫu tối thiểu mỗi slice, số lần bootstrap |
 
 ## Manifest
 
@@ -232,7 +232,8 @@ Có ba manifest khác nhau. **Kiệt chọn manifest giữ split cho reference e
 
 | Manifest | Đường dẫn | Ảnh | SHA256 `labels.csv` | `norm_version` | Dùng cho |
 |---|---|---|---|---|---|
-| Main (từ PR #83, 2026-11-12) | `data/labels.csv` (trong Git) | 9.708 | `112aa115d233857378dd4be26711850241af15d44c4e0070a7bab9ba69ac4bdf` (nội dung trong Git, LF) | 1 | **Manifest phục vụ model đã chốt**; cùng ảnh và split với bộ giữ split của e571 (đổi tiền tố `data/processed/` thành `../outputs/realcheck-preserved-split/processed/` và CRLF thì SHA256 ra `4bf8e490…`) |
+| Main (từ #99, 2026-11-13) | `data/labels.csv` (trong Git) | 9.708 | `78b8f36bfbc9020edc53615eb5ff8cb717b5620c93b01dd888ebdb37dea91148` (LF) | 1 | Như dòng dưới, thêm cột `group_id` ở cuối; bỏ cột này thì SHA256 khớp từng byte `112aa115…` (script tự kiểm). Dùng thẳng làm `history` cho protocol ADV-08. Feature manifest trích từ bản `112aa115…` bị `load_features` từ chối vì khác hash: dùng file bản cũ (`git show <commit trước #99>:data/labels.csv`) hoặc trích đặc trưng lại |
+| Main (PR #83, 2026-11-12) | `data/labels.csv` trước #99 | 9.708 | `112aa115d233857378dd4be26711850241af15d44c4e0070a7bab9ba69ac4bdf` (nội dung trong Git, LF) | 1 | **Manifest phục vụ model đã chốt**; cùng ảnh và split với bộ giữ split của e571 (đổi tiền tố `data/processed/` thành `../outputs/realcheck-preserved-split/processed/` và CRLF thì SHA256 ra `4bf8e490…`) |
 | Main cũ | `data/labels.csv` ở commit `58a21b5` | 10.000 | `dac186082dd3506bc91acda7cdd6ed5bb68b083e2ed7f445d7e89edc16d67931` | Không có cột | Tham chiếu cũ; baseline T012 và `check_raw_baseline` đo trên bộ này |
 | Lần chạy ML đầu | `.cache/ml-run/labels.csv` (máy Kiệt) | 9.708 | `72313cf272f101c84c757d25c29869af8d290743e2be3151b5c9aa6debeae8c5` | 1 | Train `clip_probe.joblib` cũ, SHA256 `69810fd6…` |
 | Giữ split | `../outputs/realcheck-preserved-split/labels.csv` (máy Kiệt) | 9.708 | `4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad` | 1 | Kiệt chọn; train model mới, SHA256 `e5718345…`, `release_approved=false` |
@@ -258,7 +259,7 @@ Nếu nhóm chọn khác, phải sửa spec và phạm vi nghiệm thu trước 
 
 ## Phạm vi nghiệm thu M1 và M2
 
-Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và Kiệt chưa xác nhận.
+Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và Kiệt đồng ý trong phiếu ý kiến 2026-11-13 (#103).
 
 | Mốc | Phạm vi | Acceptance |
 |---|---|---|

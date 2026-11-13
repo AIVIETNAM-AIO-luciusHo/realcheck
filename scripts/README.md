@@ -12,6 +12,7 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 |---|---|---|
 | `download_data.py` | Loan | Tải CIFAKE, GenImage về `data/raw/` |
 | `prepare_data.py` | Loan | Chuẩn hóa ảnh, chia tập, xuất `data/labels.csv` |
+| `add_group_ids.py` | Loan | Thêm cột `group_id` vào `labels.csv` (#99, D01): ảnh gốc trùng byte hoặc ảnh chuẩn hóa gần trùng (dHash ≤ 4) cùng group; group vắt split hoặc lẫn nhãn thì dừng, không ghi file. Chỉ nối cột, bỏ cột thì khớp từng byte bản cũ |
 | `check_data.py` | Loan | Kiểm tra `labels.csv` và ảnh đã chuẩn hóa; lỗi thì thoát mã 1 |
 | `check_normalization.py` | Lực | `python -m scripts.check_normalization --raw-dir <dữ liệu thô>`: so sha256 của `jpeg` chuẩn hóa lại với `data/processed_baseline.sha256`, kiểm kê ảnh thô (labels hoặc `rejected_small/invalid/duplicate.csv`, tham số `--rejected-dir`, `--rejected-small/-invalid/-duplicate`). Thoát 0 đạt, 1 lỗi kiểm tra, 2 thiếu đầu vào, 3 ảnh thô hỏng. `rejected_duplicate.csv` tùy chọn để đọc được output cũ chưa có file này; `prepare_data` hiện luôn ghi file này |
 | `check_raw_baseline.py` | Lực | T013: `python -m scripts.check_raw_baseline --raw-dir <data/raw của bản sao T013> [--rejected-small f.csv]`. Độc lập với `models.normalize`: dùng lại công thức `prepare_data` cũ (exif, RGB, fit 256 chỉ genimage, JPEG q95) cho MỌI dòng baseline, so sha256, in số OK/FAILED/thiếu; kiểm header baseline (commit, Pillow, sha `labels.csv`), `norm_version`, và (có `--rejected-small`) ảnh genimage <256px phải bị loại; thiếu `--rejected-small` thì in WARNING rõ ràng rằng kiểm ảnh nhỏ bị bỏ qua (OK không gồm kiểm này); khi sha lệch và Pillow khác header, WARNING Pillow được in lại cạnh dòng FAILED. Thoát 0 đạt, 1 lệch/thiếu/sai phiên bản, 2 thiếu đầu vào (kèm hướng dẫn dựng dữ liệu), 3 ảnh thô hỏng. Chưa chạy trên raw thật |
@@ -37,7 +38,8 @@ Thư viện cho các script dữ liệu: `pip install -r scripts/requirements-da
 Chuẩn hóa mới dùng chung `models.normalize` với ML, không cần torch. Để giữ nguyên dữ liệu/manifest cũ:
 
 ```bash
-python -m scripts.prepare_data --output-dir .cache/ml-run/processed-v1 --labels .cache/ml-run/labels.csv --workers 2
+python -m scripts.prepare_data --output-dir .cache/ml-run/processed-v1 --labels .cache/ml-run/labels-ungrouped.csv --workers 2
+python -m scripts.add_group_ids --labels .cache/ml-run/labels-ungrouped.csv --output .cache/ml-run/labels.csv
 python -m scripts.check_data --labels .cache/ml-run/labels.csv
 ```
 
@@ -46,13 +48,14 @@ python -m scripts.check_data --labels .cache/ml-run/labels.csv
 Để giữ split cũ cho các ảnh còn hợp lệ, dùng manifest tham chiếu thay vì chia lại:
 
 ```bash
-python -m scripts.prepare_data --split-from data/labels.csv --output-dir .cache/ml-preserve/processed --labels .cache/ml-preserve/labels.csv --workers 2
+python -m scripts.prepare_data --split-from data/labels.csv --output-dir .cache/ml-preserve/processed --labels .cache/ml-preserve/labels-ungrouped.csv --workers 2
+python -m scripts.add_group_ids --labels .cache/ml-preserve/labels-ungrouped.csv --output .cache/ml-preserve/labels.csv
 python -m scripts.check_data --labels .cache/ml-preserve/labels.csv
 ```
 
 `--split-from` ghép theo `raw_path` tương đối với `data/raw` hoặc `--raw-dir`, không theo thứ tự dòng. Manifest phải có `raw_path,label,source,split` cho đúng toàn bộ raw đang quét, kể cả ảnh sau đó bị loại; thiếu/trùng/khác cohort, sai nhãn/source/split hoặc chuyển ảnh CIFAKE qua test gốc đều bị từ chối trước khi ghi output. Hỗ trợ đường dẫn Windows, UTF-8 BOM và manifest cũ chưa có norm_version. Hash file tham chiếu được in vào log; nếu file đổi trong lúc xử lý thì không xuất labels mới. Không truyền cờ này thì vẫn chia theo seed 42 như trước. Script không sửa ảnh raw hoặc manifest tham chiếu; ảnh không dùng nằm trong các rejection CSV của output mới. Xem [bản ứng viên giữ split cũ](../docs/ml-preserved-split.md).
 
-`check_data` yêu cầu đủ sáu cột, bao gồm `norm_version` ở cuối và đúng version hiện hành. Manifest cũ thiếu version là lỗi (exit 1), không còn chỉ cảnh báo; không tự thêm version vào dữ liệu cũ. Ảnh processed hỏng hoặc decompression bomb được ghi FAIL, lần kiểm tra thoát mã 1. Lệnh train xem [`models/README.md`](../models/README.md).
+`check_data` yêu cầu đủ bảy cột: sáu cột của `prepare_data` (`norm_version` đúng version hiện hành) rồi `group_id` ở cuối do `add_group_ids` gắn; mỗi `group_id` chỉ có một split và một nhãn. Output trực tiếp của `prepare_data` chưa có `group_id` nên bị `check_data` từ chối cho tới khi chạy `add_group_ids`. Manifest cũ thiếu version là lỗi (exit 1), không còn chỉ cảnh báo; không tự thêm version vào dữ liệu cũ. Ảnh processed hỏng hoặc decompression bomb được ghi FAIL, lần kiểm tra thoát mã 1. Lệnh train xem [`models/README.md`](../models/README.md).
 
 `verify_ml` chỉ lấy mẫu validation, từ chối nếu thiếu nguồn GenImage/ảnh validation, tensor lệch, score lệch, encoder chưa frozen hoặc ảnh nhỏ vẫn được chấp nhận. Báo cáo có UUID, lệnh gọi, commit, trạng thái dirty, Python và OS; test mock không thay thế lần chạy model thật. Xem [truy vết và tái lập](../docs/ml-reproducibility.md).
 
