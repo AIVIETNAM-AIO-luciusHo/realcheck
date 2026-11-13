@@ -75,7 +75,7 @@ docker compose up -d
 
 Nếu đã đổi `REALCHECK_HTTP_PORT` trong `.env` thì mọi URL bên dưới phải kèm cổng (`http://localhost:8080/health`, `http://<lab>:8080/...`, `--base-url http://<lab>:8080`). `scripts.*` chạy từ gốc repo trên máy kiểm tra có Python với `httpx`, `Pillow`, `numpy`, ví dụ `python3 -m venv .venv && . .venv/bin/activate && pip install httpx pillow numpy` (hoặc `pip install -r requirements.txt`, kéo thêm pytest, ruff, pandas, scikit-learn).
 
-API nạp model mất khoảng 10–20 giây (đo local: 11–15 giây; diễn tập Linux 2026-11-12: 7–16 giây khi máy rảnh, tới khoảng 28–40 giây khi máy bận); trong lúc đó gateway trả 502 `API_UNAVAILABLE`, khoảng 1,6 giây mỗi request khi container API đã dừng (`resolver_timeout 1s`; trước đó 4 giây).
+API nạp model mất khoảng 10–20 giây (đo local: 11–15 giây; diễn tập Linux 2026-11-12: 7–16 giây khi máy rảnh, tới khoảng 28–40 giây khi máy bận); trong lúc đó gateway trả 502 `API_UNAVAILABLE`, khoảng 1,6 giây mỗi request khi container API đã dừng (`resolver_timeout 1s`; trước đó 4 giây). Khi vừa dừng API, request đầu tiên có thể trả 504 `GATEWAY_TIMEOUT` sau khoảng 5 giây (Nginx còn giữ địa chỉ cũ trong cache DNS 10 giây, nên chờ hết `proxy_connect_timeout`; xem mục D05 về 504 trong [sổ quyết định](decisions/realcheck-baseline.md)); các request sau là 502 `API_UNAVAILABLE` khoảng 1 giây (đo Linux 2026-11-13: 504 sau 5,34 giây, rồi 502 sau 1,08 giây). Thấy 504 ngay sau khi dừng API không phải lỗi khác.
 
 ```bash
 docker compose ps                            # api (healthy), ui (healthy), nginx (Up)
@@ -109,7 +109,7 @@ Mở `http://<lab>/` bằng trình duyệt, tải một ảnh JPEG điện tho�
   ```bash
   docker inspect --format '{{.State.Health.Status}}' $(docker compose ps -q api)
   ```
-  Docker chỉ đổi sang `unhealthy` sau khoảng 3–4 phút kể từ khi API khởi động (`HEALTHCHECK` có `--start-period=120s`, `--interval=30s`, `--retries=3`; suy ra từ Dockerfile, chưa chờ đủ để quan sát). Trong thời gian đó `docker compose ps` vẫn hiện `health: starting` dù `/health` đã trả 503, nên không chờ `docker compose ps` mà kiểm ngay `curl -s http://localhost/health` (503 `not_ready`) và `docker compose logs api | grep model_`.
+  Docker chỉ đổi sang `unhealthy` sau khoảng 3–4 phút kể từ khi API khởi động (`HEALTHCHECK` có `--start-period=120s`, `--interval=30s`, `--retries=3`; khi thiếu model đã đo 187,6 giây, tức 3 phút 8 giây, kể từ lúc chạy container; diễn tập Linux 2026-11-13, cổng 8083, model e571, một lần đo. Trong lúc đó trạng thái là `starting`, `/health` trong container trả 503 `not_ready` và log có `model_load_failed` kèm `FileNotFoundError`). Trong thời gian đó `docker compose ps` vẫn hiện `health: starting` dù `/health` đã trả 503, nên không chờ `docker compose ps` mà kiểm ngay `curl -s http://localhost/health` (503 `not_ready`) và `docker compose logs api | grep model_`.
   Gặp `unhealthy`: xem `docker compose logs api | grep model_`, sửa model hoặc `.env` theo mục 8, rồi `docker compose up -d api`.
 - Mọi `POST /v1/analyze` trả 503 `SERVICE_BUSY` kéo dài, còn `/health` vẫn 200: thread suy luận bị treo (D12). Xử lý: `docker compose restart api`.
 - Xem log: `docker compose logs -f api nginx`. Log Nginx và log API cùng `request_id`.
@@ -157,7 +157,7 @@ cat .env
 docker image inspect --format '{{.RepoTags}} {{.Id}}' realcheck-api:$(git rev-parse --short HEAD) realcheck-ui:$(git rev-parse --short HEAD) nginx:1.28.0-alpine
 F=$(grep '^REALCHECK_MODEL_FILE=' .env | cut -d= -f2); M=models/${F:-clip_probe_e571.joblib}   # model đang dùng (mặc định của docker-compose.yml nếu .env không có dòng này)
 sha256sum "$M" && cat "$M.sha256"
-sha256sum docker-compose.yml nginx/nginx.conf .env           # .env khác nhau giữa các máy (cổng, tag): không dùng để so sánh
-docker compose config | sed "s#$PWD#.#g" | sha256sum        # cấu hình Compose đã nội suy; bỏ đường dẫn tuyệt đối để so sánh được giữa các máy
+sha256sum docker-compose.yml nginx/nginx.conf .env           # băm .env chỉ so sánh được khi hai máy dùng cùng .env
+docker compose config | sed "s#$PWD#.#g" | sha256sum        # cấu hình Compose đã nội suy từ .env; bỏ đường dẫn tuyệt đối. Hai máy chỉ ra cùng hash khi cùng REALCHECK_TAG, REALCHECK_HTTP_PORT và REALCHECK_MODEL_FILE (đổi cổng thì hash đổi)
 nproc; free -h; uname -a; docker version --format '{{.Server.Version}}'
 ```
