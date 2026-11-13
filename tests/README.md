@@ -50,6 +50,7 @@ Công cụ kiểm thử tích hợp KAN-29: `test_smoke_api.py` chạy `scripts/
 - Test recipe JPEG chỉ tái viết các lệnh Pillow trên ảnh tổng hợp. Chưa chạy code `prepare_data` cũ với baseline thật của Loan; T013 và lần chạy `check_normalization.py` trên raw độc lập (T016/T022/T030) vẫn chưa hoàn thành.
 - `test_data_scripts.py`: chạy CLI chuẩn hóa với worker thật trên ảnh tổng hợp; kiểm chia tập, giữ test CIFAKE, loại trùng, tách CSV ảnh nhỏ/hỏng, chống ghi đè, lỗi ghi file, decompression bomb và checker bắt buộc `norm_version`.
 - `test_verify_ml.py`: kiểm chính script audit bằng mock; chỉ chọn validation, ghi môi trường, fail khi byte JPEG/tensor/score sai hoặc encoder không frozen. Không tải torch hay weights trên CI.
+- `test_check_release_audit.py`, `test_metadata_audit.py`: chính sách audit 2026-11-12. Release checker chặn từng ca (A_eff vượt ngưỡng, slice thiếu hoặc thiếu lớp, NaN, control sai) và có mã thoát 0/1/2; đặc trưng post toàn hằng số chỉ cảnh báo mạnh (`vacuous`), `--fail-on-vacuous` mới chặn; `metadata_audit.py` trên ảnh tổng hợp chỉ cảnh báo (thoát 0) khi format lộ nhãn, và thoát 1 khi slice thiếu mẫu. Không cần torch.
 - `test_run_info.py`: UUID phân biệt hai run dù đồng hồ trùng; không bịa commit nếu Git không có sẵn. CLI train cũng có test đối chiếu lệnh và hash artifact trong báo cáo.
 
 Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan vẫn phụ trách review và kiểm chứng độc lập theo spec 001. Các test này không tự nghiệm thu phần việc QA.
