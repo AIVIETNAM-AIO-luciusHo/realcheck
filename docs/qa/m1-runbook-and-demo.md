@@ -49,7 +49,7 @@ Nếu chưa có cache CLIP, chạy một lần khi có mạng (không đặt `HF
 export REALCHECK_MODEL_PATH="$PWD/models/clip_probe_e571.joblib"   # BẮT BUỘC: mặc định models/clip_probe.joblib là model cũ 69810fd6
 uvicorn app.main:app --port 8000
 ```
-- Server chỉ nhận request sau khi nạp xong: 8,6 giây khi cache đĩa nóng, **72,7 giây lần đầu khi cache lạnh** (diễn tập 11/11). Bật API trước giờ demo ít nhất 2 phút và gọi một request để làm nóng (request đầu mất khoảng 1,4 giây).
+- Server chỉ nhận request sau khi nạp xong. Chạy `uvicorn` trực tiếp, không Docker (diễn tập 11/11): 8,6 giây khi cache đĩa nóng, **72,7 giây lần đầu khi cache lạnh**. Qua Docker Compose thời gian khác, xem [`docs/deploy.md`](../deploy.md). Bật API trước giờ demo ít nhất 2 phút và gọi một request để làm nóng (request đầu mất khoảng 1,4 giây).
 - **Dấu hiệu thành công trong log:** dòng JSON `model_loaded` kèm `duration_ms`.
 - Kiểm: `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000/health` → **200**. `http://localhost:8000/docs` mở được.
 
@@ -105,7 +105,7 @@ Số đo trên ảnh ngoài GenImage nằm ở [báo cáo cohort ADV-06](../coho
 
 | Nhóm ảnh | Số ảnh chấm | Kết quả của model e571 |
 |---|---:|---|
-| Ảnh **thật** (chụp bằng điện thoại, và ảnh thật gửi qua Zalo) | 76 | **64 bị gọi là "Ảnh AI" (84%)**, 6 "Chưa chắc", 6 đúng là thật |
+| Ảnh **thật** (chụp bằng điện thoại, và ảnh thật gửi qua Zalo) | 76 (trong đó 1 ảnh Zalo là bản gửi qua Zalo của một ảnh gốc đã nằm trong nhóm điện thoại) | **64 bị gọi là "Ảnh AI" (84%)**, 6 "Chưa chắc", 6 đúng là thật |
 | Riêng ảnh thật chụp bằng điện thoại | 55 | 47 "Ảnh AI", 6 "Chưa chắc", 2 thật (accuracy 3,6%) |
 | Riêng ảnh thật qua Zalo | 21 | 17 "Ảnh AI", 4 thật |
 | Ảnh **AI** (đời mới và qua Zalo) | 46 | 40 đúng là AI, 2 "Chưa chắc", 4 bị gọi là thật |
@@ -116,7 +116,7 @@ Hệ quả cho demo:
 - Số 94,53% là trên **384 ảnh test đã lọc** (65 ảnh thật), chưa được duyệt độc lập; validation GenImage 97,24% (N = 871) đã được dùng khi chọn tham số nên không phải kết quả độc lập. **Không nói "đạt 90%".**
 - Cohort rất nhỏ (56 / 32 / 36 ảnh), ảnh điện thoại gần như chỉ từ iPhone 11, khoảng tin cậy rộng; xem phần "Hạn chế" trong báo cáo cohort.
 - Lần diễn tập 11/11 cũng cho thấy: cả 11 ảnh hợp lệ thử (tổng hợp và ảnh hoa mẫu) đều ra "Ảnh AI" (điểm 0,708 đến 0,999), ảnh chụp màn hình giả lập bị kết luận AI 93%, không ảnh nào rơi vào vùng "Chưa chắc".
-- Ảnh MPO (ảnh chân dung iPhone): hiện API từ chối với `UNSUPPORTED_FORMAT` (2 ảnh MPO của cohort không có điểm). PR nháp #106 đề xuất nhận MPO nhưng **chưa quyết định**; **nếu #106 được merge** thì ảnh MPO được chấm theo khung đầu, còn không thì khi demo đừng dùng ảnh chân dung iPhone (hoặc dùng để minh họa lỗi định dạng).
+- Ảnh MPO (ảnh chân dung iPhone): hiện API từ chối với `UNSUPPORTED_FORMAT` (2 ảnh MPO của cohort không có điểm). Đã quyết định chấp nhận MPO và PR #106 đã sẵn sàng review; **chỉ có hiệu lực khi #106 được merge**, khi đó ảnh MPO được chấm theo khung đầu. Cho tới lúc đó khi demo đừng dùng ảnh chân dung iPhone (hoặc dùng để minh họa lỗi định dạng).
 
 ### Chuẩn bị trước 1 giờ
 - [ ] Chạy đủ mục 2 đến 6; `/health` 200 trước khi lên sân khấu.
@@ -127,7 +127,7 @@ Hệ quả cho demo:
 | # | Ảnh | Mục đích | Điều đã quan sát (nguồn) | Kết quả khi thử (điền) |
 |---|---|---|---|---|
 | 1 | Ảnh điện thoại thật có EXIF (JPEG) | Ca bình thường, hiện EXIF | Cohort điện thoại: 47/55 ra "Ảnh AI", 2/55 ra thật. **Nhiều khả năng ra "Ảnh AI"**; dùng để nói về giới hạn, không phải để khoe | |
-| 2 | Ảnh AI từ công cụ có trong tập train | Ca bắt đúng | Ảnh AI đời mới: 26/32 đúng; mọi ca nhận nhầm là thật đều là ảnh Gemini (4/4) | |
+| 2 | Ảnh AI từ công cụ có trong tập train | Ca thường bắt đúng (26/32, vẫn có 4 nhầm) | Ảnh AI đời mới: 26/32 đúng; mọi ca nhận nhầm là thật đều là ảnh Gemini (4/4) | |
 | 3 | Ảnh khó, điểm gần 0,3 đến 0,7 | Minh họa "Chưa chắc" | Vùng này hiếm: 6/55 ảnh điện thoại, 2/32 ảnh AI đời mới; lần diễn tập 11/11 không có ảnh nào. **Có thể không tìm được**, khi đó bỏ ca này và nói rõ | |
 | 4 | Ảnh chụp màn hình (không EXIF) | EXIF chỉ là bằng chứng phụ, không đổi kết luận | Diễn tập 11/11: ảnh chụp màn hình giả lập bị kết luận AI 93%. API chỉ dùng EXIF để hiển thị, không đưa vào điểm | |
 | 5 | File text đổi đuôi `.jpg` | Lỗi `INVALID_IMAGE` (400) | Đã diễn tập đúng mã | |
@@ -165,7 +165,7 @@ Hệ quả cho demo:
 | Có học đường tắt (dung lượng file, định dạng) không? | Đã đo: baseline chỉ dùng dung lượng file đạt 84,54% ở cặp thật với GLIDE, nên nguy cơ còn, chưa loại trừ |
 | Chịu tải được bao nhiêu? | **Chưa có số đã duyệt.** Công cụ Locust đã có; baseline sơ bộ trên máy phát triển ở [biên bản 11/11](local-real-model-verification-20261111.md), không phải năng lực của máy lab |
 | Có chạy trên server chưa? | Chưa; M1 chạy localhost. Compose và Nginx có hướng dẫn trong `docs/deploy.md`, chưa có bằng chứng trên máy lab |
-| Sao không nhận ảnh chân dung iPhone? | Ảnh MPO hiện bị từ chối `UNSUPPORTED_FORMAT`; đề xuất nhận MPO đang chờ quyết định (PR nháp #106) |
+| Sao không nhận ảnh chân dung iPhone? | Ảnh MPO hiện bị từ chối `UNSUPPORTED_FORMAT`; đã quyết định nhận MPO, chỉ có hiệu lực khi PR #106 được merge |
 
 ## 9. Rủi ro đã biết khi demo
 - Lần khởi động đầu chậm (30 đến 75 giây tùy cache đĩa) và cần cache CLIP; bật API sớm.
