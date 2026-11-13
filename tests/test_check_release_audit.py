@@ -2,6 +2,7 @@
 
 import copy
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -85,6 +86,8 @@ def run(*args):
         cwd=ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",  # Windows mặc định cp1252, không giải mã được tiếng Việt
+        env={**os.environ, "PYTHONUTF8": "1"},
     )
 
 

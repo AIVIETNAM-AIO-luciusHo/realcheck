@@ -1,6 +1,7 @@
 """metadata_audit.py chỉ cảnh báo A_eff cao (thoát 0); lỗi dữ liệu thoát 1. Ảnh tổng hợp."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -50,6 +51,8 @@ def run(tmp_path):
         cwd=tmp_path,
         capture_output=True,
         text=True,
+        encoding="utf-8",  # Windows mặc định cp1252, không giải mã được tiếng Việt
+        env={**os.environ, "PYTHONUTF8": "1"},
     )
 
 
