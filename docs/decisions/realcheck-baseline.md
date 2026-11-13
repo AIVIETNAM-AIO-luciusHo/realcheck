@@ -57,7 +57,7 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 | 405 | `METHOD_NOT_ALLOWED` | Sai phương thức |
 | 413 | `FILE_TOO_LARGE` | Vượt dung lượng |
 | 413 | `TOO_MANY_PIXELS` | Vượt số pixel hoặc cạnh tối đa |
-| 415 | `UNSUPPORTED_FORMAT` | Đọc được nhưng không phải JPEG/PNG, hoặc nhiều khung hình |
+| 415 | `UNSUPPORTED_FORMAT` | Đọc được nhưng không phải JPEG/PNG, hoặc nhiều khung hình (GIF, WebP động, APNG). *Bản nháp #95, chờ quyết định: MPO cũng được nhận, chỉ chấm khung đầu* |
 | 422 | `MISSING_FILE` | Thiếu trường `file` |
 | 422 | `MULTIPLE_FILES` | Nhiều hơn một file |
 | 422 | `IMAGE_TOO_SMALL` | Cạnh ngắn < 256 px |
@@ -73,6 +73,8 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 **Ghi chú đã duyệt:** ranh giới 400 và 415 (file không phải ảnh là 400, ảnh sai định dạng là 415); ba mã `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INVALID_REQUEST` được thêm ngoài gợi ý của D05 để lỗi framework cùng định dạng.
 
 **Hạn chế đã biết:** JPEG nhúng nhiều ảnh (MPO, ví dụ gain map HDR từ một số điện thoại) bị Pillow nhận là `MPO` nhiều khung hình nên trả 415 theo đúng bảng trên. Chưa đo tỷ lệ ảnh điện thoại thật bị ảnh hưởng.
+
+**Đề xuất #95 (bản nháp, chờ quyết định, chưa đổi trạng thái approved):** nhận ảnh `MPO` và chỉ chấm khung đầu; khung phụ không được giải mã, giới hạn dung lượng, pixel và cạnh vẫn tính trên khung đầu; GIF, WebP động và APNG vẫn 415. Mã trong nhánh `luc/mpo-support`; chưa thử với file MPO thật của iPhone.
 
 ### Làm rõ (issue #43)
 

@@ -13,7 +13,8 @@ from app.settings import Settings
 from app.verdict import MISSING_EXIF
 from models.normalize import ImageTooSmall
 
-ALLOWED_FORMATS = {"JPEG", "PNG"}
+# MPO (ảnh iPhone chân dung) chỉ dùng khung đầu, khung phụ không bao giờ được giải mã.
+ALLOWED_FORMATS = {"JPEG", "PNG", "MPO"}
 EXIF_MAKE = 0x010F
 EXIF_MODEL = 0x0110
 MAX_EXIF_TEXT = 64
@@ -46,7 +47,7 @@ def decode_image(data: bytes, settings: Settings) -> Image.Image:
         raise ApiError(ErrorCode.UNSUPPORTED_FORMAT)
     if width * height > settings.max_pixels or max(width, height) > settings.max_side:
         raise ApiError(ErrorCode.TOO_MANY_PIXELS)
-    if getattr(image, "n_frames", 1) > 1:
+    if image.format != "MPO" and getattr(image, "n_frames", 1) > 1:
         raise ApiError(ErrorCode.UNSUPPORTED_FORMAT)
 
     try:
