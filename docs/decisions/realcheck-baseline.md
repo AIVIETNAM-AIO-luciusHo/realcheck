@@ -14,7 +14,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
 | D05 Lỗi gateway | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | Loan đã xác nhận UI (2026-11-13): UI chọn thông báo theo mã HTTP, thêm 502; `app/schemas.py` đã thêm `RATE_LIMITED`, `API_UNAVAILABLE`, `GATEWAY_TIMEOUT` (2026-11-13), `tests/test_gateway_error_codes.py` khóa câu chữ khớp `nginx.conf` |
-| D05 Làm rõ 5 câu (issue #43) | proposed; Quang đã chọn | Quang | Chờ Lực | 2026-11-11 | Lực review và khóa bằng test; xem [mục Làm rõ](#làm-rõ-issue-43) |
+| D05 Làm rõ 5 câu (issue #43) | approved (Lực, 2026-11-13) | Quang | Lực | 2026-11-13 | Quang chọn 2026-11-11; hợp đồng đã khóa bằng test; xem [mục Làm rõ](#làm-rõ-issue-43) |
 | D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 | — |
 | D06 Body dư multipart | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | 64 KiB (`client_max_body_size 5184k`) |
 | D07 Số pixel | approved | Quang | Lực | 2026-11-04 | — |
@@ -57,7 +57,7 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 | 405 | `METHOD_NOT_ALLOWED` | Sai phương thức |
 | 413 | `FILE_TOO_LARGE` | Vượt dung lượng |
 | 413 | `TOO_MANY_PIXELS` | Vượt số pixel hoặc cạnh tối đa |
-| 415 | `UNSUPPORTED_FORMAT` | Đọc được nhưng không phải JPEG/PNG, hoặc nhiều khung hình (GIF, WebP động, APNG). *Bản nháp #95, chờ quyết định: MPO cũng được nhận, chỉ chấm khung đầu* |
+| 415 | `UNSUPPORTED_FORMAT` | Đọc được nhưng không phải JPEG/PNG, hoặc nhiều khung hình (GIF, WebP động, APNG). Ảnh MPO (ảnh iPhone) được nhận và chỉ chấm khung đầu (#95, PR #106, Lực quyết định chấp nhận) |
 | 422 | `MISSING_FILE` | Thiếu trường `file` |
 | 422 | `MULTIPLE_FILES` | Nhiều hơn một file |
 | 422 | `IMAGE_TOO_SMALL` | Cạnh ngắn < 256 px |
@@ -72,13 +72,13 @@ Lỗi trả envelope riêng, kể cả lỗi validation của framework:
 
 **Ghi chú đã duyệt:** ranh giới 400 và 415 (file không phải ảnh là 400, ảnh sai định dạng là 415); ba mã `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INVALID_REQUEST` được thêm ngoài gợi ý của D05 để lỗi framework cùng định dạng.
 
-**Hạn chế đã biết:** JPEG nhúng nhiều ảnh (MPO, ví dụ gain map HDR từ một số điện thoại) bị Pillow nhận là `MPO` nhiều khung hình nên trả 415 theo đúng bảng trên. Chưa đo tỷ lệ ảnh điện thoại thật bị ảnh hưởng.
+**Hạn chế đã biết:** JPEG nhúng nhiều ảnh (MPO, ví dụ gain map HDR từ một số điện thoại) trước đây bị Pillow nhận là `MPO` nhiều khung hình nên trả 415; từ PR #106 ảnh MPO được nhận (xem bên dưới). Chưa đo tỷ lệ ảnh điện thoại thật bị ảnh hưởng, và chưa thử với file MPO thật của iPhone.
 
-**Đề xuất #95 (bản nháp, chờ quyết định, chưa đổi trạng thái approved):** nhận ảnh `MPO` và chỉ chấm khung đầu; khung phụ không được giải mã, giới hạn dung lượng, pixel và cạnh vẫn tính trên khung đầu; GIF, WebP động và APNG vẫn 415. Mã trong nhánh `luc/mpo-support`; chưa thử với file MPO thật của iPhone.
+**Quyết định #95 (Lực chấp nhận; mã ở PR #106 đã merge):** nhận ảnh `MPO` và chỉ chấm khung đầu; khung phụ không được giải mã, giới hạn dung lượng, pixel và cạnh vẫn tính trên khung đầu; GIF, WebP động và APNG vẫn 415. Thông báo lỗi 415 và gợi ý trên UI vẫn nói "JPEG hoặc PNG" vì với người dùng ảnh MPO là file `.jpg`. Chưa thử với file MPO thật của iPhone.
 
 ### Làm rõ (issue #43)
 
-Quang chọn ngày 2026-11-11, trả lời 5 câu Lực hỏi khi viết test hợp đồng; chờ Lực review.
+Quang chọn ngày 2026-11-11, trả lời 5 câu Lực hỏi khi viết test hợp đồng; Lực duyệt 2026-11-13.
 
 **1. `INVALID_REQUEST`:** request không có phần file ảnh (body JSON, trường `file` là chuỗi chữ, sai tên trường, content-type không phải multipart) là 422 `MISSING_FILE`. `INVALID_REQUEST` dành cho body không đọc được (multipart hỏng) và lỗi validation khác, **luôn 422**; trước đây multipart hỏng trả 400, đã sửa cho khớp bảng trên.
 
@@ -273,7 +273,7 @@ Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và K
 
 | Người | Việc |
 |---|---|
-| Lực | Đã duyệt 12/11: mã lỗi gateway, body dư 64 KiB, D13, hợp đồng `score`, D08 (MVP), M1/M2. Còn: cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau khi đo trên lab; duyệt mục D05 làm rõ (issue #43) |
+| Lực | Đã duyệt 12/11: mã lỗi gateway, body dư 64 KiB, D13, hợp đồng `score`, D08 (MVP), M1/M2. Còn: cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau khi đo trên lab. Đã duyệt 13/11: mục D05 làm rõ (issue #43) |
 | Loan | Xác nhận D05 và mã gateway cho UI; chốt D01, D03, D04 và manifest; cùng Lực chốt chính sách audit |
 | Kiệt | Đã ghi [lựa chọn model, contract, thread/timing và D02](../ml-api-model-handoff.md); Quang đã xác nhận checksum/CLI (#39), còn review chung |
 | Quang | Đăng kết quả kiểm vào issue #39; tổng hợp các mục còn chờ |
