@@ -2,8 +2,11 @@
 
 Probe chỉ đọc metadata hình ảnh (định dạng, kích thước, mode, EXIF, ICC, bảng
 lượng tử và subsampling JPEG); không dùng pixel, dung lượng file, đường dẫn hay
-nguồn. Chạy trên ảnh gốc (chẩn đoán) và ảnh đã chuẩn hóa (gate cứng):
+nguồn. Chạy trên ảnh gốc (chẩn đoán) và ảnh đã chuẩn hóa:
     A_eff = max(AUROC, 1 - AUROC) <= 0.55 với mọi slice hợp lệ.
+Chính sách 2026-11-12: script này CHỈ CẢNH BÁO khi A_eff vượt ngưỡng (thoát 0); lỗi
+dữ liệu (slice không hợp lệ, A_eff NaN, control sai) thoát 1. Việc chặn release là của
+scripts/check_release_audit.py đọc báo cáo JSON này.
 
 Probe, protocol và cỡ mẫu tối thiểu (D03/D04) chưa chốt; giá trị dưới đây là tạm.
 
@@ -12,6 +15,7 @@ Cách chạy (từ thư mục gốc repo, sau prepare_data.py):
 """
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -29,6 +33,12 @@ N_BOOT = 1000
 SEED = 42
 CATEGORICAL = ["format", "mode"]
 EXIF_MAKE, EXIF_MODEL = 271, 272
+# Khóa do extract() trả về (test_metadata_audit khóa hai bên khớp nhau); release checker dùng
+# để suy ra số đặc trưng khi báo cáo cũ thiếu "n_features".
+FEATURES = (
+    "format", "mode", "width", "height", "aspect", "has_exif", "has_make", "has_model",
+    "has_icc", "progressive", "subsampling", "q_luma_mean", "q_chroma_mean",
+)  # fmt: skip
 
 
 def extract(path: str) -> dict:
@@ -122,9 +132,13 @@ def main() -> None:
         x = pd.DataFrame([extract(p) for p in df[col]], index=df.index)
         views[view] = x.astype({c: "category" for c in CATEGORICAL})
 
-    report, passed = {}, True
+    report, passed, errors, warnings = {}, True, [], []
     for dataset, g in df.groupby(df["source"].str.split("_").str[0]):
-        r = {"constant_features": {}, "slices": {}}
+        r = {
+            "n_features": views["post"].shape[1],
+            "constant_features": {},
+            "slices": {},
+        }
         for view, x in views.items():
             xg = x.loc[g.index]
             r["constant_features"][view] = [
@@ -135,6 +149,12 @@ def main() -> None:
                 r["slices"].setdefault(name, {})[view] = res
                 if view == "post" and not (res["valid"] and res["a_eff"] <= MAX_A_EFF):
                     passed = False
+                    if not res["valid"] or math.isnan(res["a_eff"]):
+                        errors.append(
+                            f"{dataset}/{name}: slice post không hợp lệ hoặc NaN"
+                        )
+                    else:
+                        warnings.append(f"{dataset}/{name}: A_eff {res['a_eff']}")
         r["controls"] = controls(
             views["post"].loc[g.index],
             views["raw"].loc[g.index],
@@ -142,6 +162,8 @@ def main() -> None:
             g["split"],
         )
         passed &= r["controls"]["ok"]
+        if not r["controls"]["ok"]:
+            errors.append(f"{dataset}: control dương/âm không hợp lệ")
         report[dataset] = r
     report["gate"] = {"max_a_eff": MAX_A_EFF, "passed": passed}
     OUT_JSON.write_text(json.dumps(report, indent=2, ensure_ascii=False))
@@ -166,8 +188,12 @@ def main() -> None:
         print(
             f"\n{dataset} – feature hằng số sau chuẩn hóa: {r['constant_features']['post']}\n"
         )
-    print(f"Gate post A_eff <= {MAX_A_EFF}: {'ĐẠT' if passed else 'KHÔNG ĐẠT'}")
-    sys.exit(0 if passed else 1)
+    print(f"Post A_eff <= {MAX_A_EFF}: {'ĐẠT' if passed else 'KHÔNG ĐẠT'}")
+    for w in warnings:
+        print(f"CẢNH BÁO (release checker sẽ chặn): {w} > {MAX_A_EFF}")
+    for e in errors:
+        print(f"LỖI: {e}")
+    sys.exit(1 if errors else 0)
 
 
 if __name__ == "__main__":
