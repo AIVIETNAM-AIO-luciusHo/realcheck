@@ -13,7 +13,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D03 Probe metadata | Chưa ghi quyết định | Loan | Kiệt, Lực | — | Loan chốt probe |
 | D04 Protocol audit | Chưa ghi quyết định | Loan | Lực | — | Loan chốt protocol, tách khỏi model-test |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
-| D05 Lỗi gateway | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | Loan xác nhận UI đọc `error.code`; `app/schemas.py` và `streamlit/` chưa sửa |
+| D05 Lỗi gateway | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | Loan đã xác nhận UI (2026-11-13): UI chọn thông báo theo mã HTTP, thêm 502; `app/schemas.py` chưa sửa |
 | D05 Làm rõ 5 câu (issue #43) | proposed; Quang đã chọn | Quang | Chờ Lực | 2026-11-11 | Lực review và khóa bằng test; xem [mục Làm rõ](#làm-rõ-issue-43) |
 | D06 Dung lượng file | approved | Quang | Lực | 2026-11-04 | — |
 | D06 Body dư multipart | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | 64 KiB (`client_max_body_size 5184k`) |
@@ -106,7 +106,9 @@ Sửa ngày 2026-11-11 theo review của Lực: bỏ lặp tên hãng chuyển t
 
 ### Lỗi do gateway trả (đề xuất 2026-11-09; Lực duyệt 2026-11-12)
 
-Đề xuất của Quang cho MVP-01. **Chưa sửa code:** chỉ thêm vào enum `ErrorCode` và `streamlit/` sau khi Lực, Loan duyệt, vì UI của Loan đọc `error.code`.
+Đề xuất của Quang cho MVP-01. Enum `ErrorCode` trong `app/schemas.py` chưa thêm các mã này.
+
+**UI (Loan xác nhận 2026-11-13):** `streamlit/api_client.py` không đọc `error.code`; UI chọn thông báo tiếng Việt theo mã HTTP, riêng 413 hiện `error.message` của gateway. Mỗi lần bấm gửi đúng một POST, kể cả khi có `Retry-After`. Đã thêm thông báo cho 502; `tests/test_ui.py` kiểm 413, 429, 502, 504 với body lấy từ `nginx/nginx.conf`. Chưa thử bằng trình duyệt thật.
 
 | HTTP | `code` | Ai trả | Khi nào | `message` |
 |---|---|---|---|---|

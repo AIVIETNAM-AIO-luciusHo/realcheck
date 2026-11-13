@@ -216,6 +216,7 @@ def test_result_text_from_api_is_escaped(api):
         (422, {"error": {"message": "Ảnh quá nhỏ."}}, "Ảnh quá nhỏ."),
         (429, {}, "đợi"),
         (500, {"error": {"message": "/duong/dan/bi-mat"}}, "mã 500"),
+        (502, {}, "chưa sẵn sàng"),
         (503, {}, "chưa sẵn sàng"),
         (504, {}, "quá lâu"),
     ],
@@ -228,6 +229,42 @@ def test_error_status_shows_message_without_result_or_retry(api, status, body, m
     assert title(at) is None and score_text(at) is None
     assert "rid-1" in captions(at)
     assert len(api.posts) == 1
+
+
+def gateway_errors():
+    """Body lỗi đúng như nginx/nginx.conf trả (D05 lỗi gateway), để test không lệch cấu hình."""
+    conf = (ROOT / "nginx" / "nginx.conf").read_text(encoding="utf-8")
+    found = re.findall(r"return (\d{3}) '(\{.*\})';", conf)
+    return {
+        int(status): json.loads(body.replace("$realcheck_request_id", "rid-1"))
+        for status, body in found
+    }
+
+
+@pytest.mark.parametrize(
+    "status,code,message",
+    [
+        (413, "FILE_TOO_LARGE", "File ảnh vượt quá dung lượng cho phép."),
+        (429, "RATE_LIMITED", "đợi một lát"),
+        (502, "API_UNAVAILABLE", "chưa sẵn sàng"),
+        (504, "GATEWAY_TIMEOUT", "quá lâu"),
+    ],
+)
+def test_gateway_error_shows_vietnamese_message_without_retry(
+    api, status, code, message
+):
+    body = gateway_errors()[status]
+    assert body["error"]["code"] == code
+    reply = response(status, body)
+    if status == 429:
+        reply.headers["Retry-After"] = "1"
+    api.replies = [reply]
+    at = submit(upload(open_app()))
+    assert len(at.error) == 1 and message in at.error[0].value
+    assert code not in at.error[0].value and "mã" not in at.error[0].value
+    assert title(at) is None and score_text(at) is None
+    assert "rid-1" in captions(at)
+    assert len(api.posts) == 1, "không tự gửi lại, kể cả khi có Retry-After"
 
 
 @pytest.mark.parametrize(
