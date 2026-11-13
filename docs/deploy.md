@@ -12,7 +12,7 @@ Phụ trách: Quang. Áp dụng cho Compose core (API, UI Streamlit, gateway Ngi
 | Ổ đĩa | Khoảng 5 GB: image API 2,3 GB, image UI, cache CLIP 0,6 GB, các image cũ giữ để rollback |
 | RAM | Ít nhất 3 GiB cho container (tổng giới hạn bên dưới); API dùng khoảng 400 MiB sau khi nạp model, đỉnh 609 MiB với ảnh 23,5 MP (đo local) |
 | CPU | Ít nhất 4 nhân: CLIP dùng 4 thread (`torch.set_num_threads(4)`); 1 worker, 1 slot suy luận (D12) |
-| Mạng | Chỉ mở cổng gateway (mặc định 80) cho mạng lab hoặc qua SSH tunnel (D13) |
+| Mạng | Chỉ mở cổng gateway (mặc định 80), và chỉ cho mạng lab nội bộ (D13, xem mục 5) |
 
 Giới hạn tài nguyên trong `docker-compose.yml` (proposed, chỉnh lại sau benchmark MVP-09):
 
@@ -91,7 +91,15 @@ Mở `http://<lab>/` bằng trình duyệt, tải một ảnh JPEG điện tho�
 ## 5. Mạng và bảo mật
 
 - Chỉ cổng gateway mở ra ngoài; API `8000` và UI `8501` chỉ có trong mạng Compose. Tường lửa máy lab chỉ cho mạng lab vào cổng 80, ví dụ `ufw allow from <subnet-lab> to any port 80`.
-- Không TLS (D13: mạng lab hoặc SSH tunnel). Ngoài mạng lab thì dùng tunnel: `ssh -L 8080:localhost:80 <user>@<lab>` rồi mở `http://localhost:8080/`. Mở ra Internet thì phải có TLS, cần quyết định riêng.
+- Cách truy cập theo D13 (Lực duyệt 2026-11-12, sửa quyết định 10/11):
+
+  | Từ đâu | Cách truy cập |
+  |---|---|
+  | Máy trong mạng lab nội bộ | HTTP thường: `http://<lab>/` |
+  | Ngoài mạng lab | **Bắt buộc SSH tunnel**: `ssh -L 8080:localhost:80 <user>@<lab>`, rồi mở `http://localhost:8080/` |
+  | Internet | Không mở. Cần TLS và một quyết định mới trước khi làm |
+
+- Qua SSH tunnel, mọi client vào Nginx từ cùng một địa chỉ nên dùng chung giới hạn 10 request/giây. Locust đo tải phải chạy từ một máy trong mạng lab, không qua tunnel (xem D13 trong [sổ quyết định](decisions/realcheck-baseline.md)).
 - Không có secret trong repo hay `.env`; không commit `.env`.
 
 ## 6. Khởi động lại và sự cố

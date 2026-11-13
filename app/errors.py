@@ -36,6 +36,16 @@ ERROR_TABLE: dict[ErrorCode, tuple[int, str]] = {
         504,
         "Phân tích quá thời gian cho phép. Vui lòng thử lại sau.",
     ),
+    # Mã của gateway: câu chữ phải trùng nginx/nginx.conf (có test so khớp).
+    ErrorCode.RATE_LIMITED: (
+        429,
+        "Đang có quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại.",
+    ),
+    ErrorCode.API_UNAVAILABLE: (
+        502,
+        "Hệ thống phân tích chưa sẵn sàng. Vui lòng thử lại sau.",
+    ),
+    ErrorCode.GATEWAY_TIMEOUT: (504, "Hệ thống xử lý quá lâu. Vui lòng thử lại sau."),
 }
 
 _CODE_BY_HTTP_STATUS = {
