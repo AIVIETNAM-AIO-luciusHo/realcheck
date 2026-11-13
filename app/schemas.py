@@ -29,6 +29,10 @@ class ErrorCode(StrEnum):
     MODEL_NOT_READY = "MODEL_NOT_READY"
     SERVICE_BUSY = "SERVICE_BUSY"
     MODEL_TIMEOUT = "MODEL_TIMEOUT"
+    # Do gateway Nginx trả (D05, Lực duyệt 2026-11-12); API không tự trả các mã này.
+    RATE_LIMITED = "RATE_LIMITED"
+    API_UNAVAILABLE = "API_UNAVAILABLE"
+    GATEWAY_TIMEOUT = "GATEWAY_TIMEOUT"
 
 
 class AnalyzeResponse(BaseModel):
