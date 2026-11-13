@@ -37,6 +37,7 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 
 ## Biên bản QA
 
+- [Runbook M1 và kịch bản demo](qa/m1-runbook-and-demo.md): các bước chạy localhost với model e571, bằng chứng KAN-29, bảng 6 ảnh và giới hạn khi demo (ảnh thật chụp điện thoại có thể ra "Ảnh AI"); diễn tập 11/11.
 - [Kiểm với model thật trên Linux (11/11)](qa/local-real-model-verification-20261111.md): smoke, gateway, Docker, Compose, baseline Locust sơ bộ; ảnh tổng hợp, chưa phải nghiệm thu.
 - [Review KAN-25: nạp model](qa/kan-25-model-loading-review.md): đối chiếu tiêu chí, vấn đề cần sửa trước bàn giao.
 - [Chạy thử chuỗi robustness (12/11)](qa/robustness-chain-dry-run.md): biến thể, chấm, phân tích trên dữ liệu tổng hợp; điểm lệch và checklist trước khi chạy thật.
