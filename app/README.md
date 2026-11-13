@@ -112,7 +112,7 @@ Biến môi trường, giá trị mặc định xem `settings.py`. Lý do chọn
 | `REALCHECK_MODEL_PATH` | `models/clip_probe.joblib` (model cũ) | File model; cần file `.sha256` cùng tên bên cạnh. Model đang dùng: `models/clip_probe_e571.joblib` |
 
 ## Input / Output
-- Input: `multipart/form-data`, đúng một file ở trường `file`. Chỉ nhận JPEG hoặc PNG một khung hình, xác định theo nội dung file, không theo đuôi. Tối đa 5.242.880 byte, 24 MP, cạnh dài 10.000 px; cạnh ngắn tối thiểu 256 px.
+- Input: `multipart/form-data`, đúng một file ở trường `file`. Chỉ nhận JPEG, PNG hoặc MPO (ảnh iPhone, chỉ chấm khung đầu), xác định theo nội dung file, không theo đuôi; GIF, WebP động và APNG nhiều khung hình bị từ chối. Tối đa 5.242.880 byte, 24 MP, cạnh dài 10.000 px; cạnh ngắn tối thiểu 256 px.
 - Output: JSON `{verdict, score, exif, reason}`; `verdict` là `likely_real`, `uncertain` hoặc `likely_ai`, ngưỡng 0.3 / 0.7.
 - `exif` chỉ gồm hãng và model máy; thiếu thì trả `Không có thông tin máy chụp`.
 - Lỗi trả envelope `{"error": {code, message, request_id}}`, bảng mã xem D05 trong [`docs/decisions/realcheck-baseline.md`](../docs/decisions/realcheck-baseline.md).

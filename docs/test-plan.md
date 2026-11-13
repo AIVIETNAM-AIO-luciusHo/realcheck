@@ -31,7 +31,7 @@ Mọi lỗi trả envelope `{"error": {"code", "message", "request_id"}}` và he
 | 400 | `INVALID_IMAGE` | Không đọc được ảnh (text giả `.jpg`) hoặc ảnh bị cắt cụt |
 | 413 | `FILE_TOO_LARGE` | Vượt 5.242.880 byte (D06) |
 | 413 | `TOO_MANY_PIXELS` | Vượt 24 MP hoặc cạnh vượt 10.000 px (D07) |
-| 415 | `UNSUPPORTED_FORMAT` | Không phải JPEG/PNG, hoặc nhiều khung hình |
+| 415 | `UNSUPPORTED_FORMAT` | Không phải JPEG/PNG/MPO, hoặc ảnh động/nhiều khung hình (trừ MPO, chỉ chấm khung đầu) |
 | 422 | `MISSING_FILE` | Thiếu trường `file` |
 | 422 | `MULTIPLE_FILES` | Nhiều hơn một file |
 | 422 | `IMAGE_TOO_SMALL` | Cạnh ngắn < 256 px |
