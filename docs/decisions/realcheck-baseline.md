@@ -248,7 +248,7 @@ Có ba manifest khác nhau. **Kiệt chọn manifest giữ split cho reference e
 - Spec 001 FR-009 và T026: đề xuất `metadata_audit.py` chỉ cảnh báo, chờ Loan và Lực xác nhận.
 - Mã hiện tại: `metadata_audit.py` là cổng cứng, thoát mã 1 khi không đạt.
 
-**Quyết định 2026-11-12 (Lực): chọn phương án do MVP-01 nêu.** `metadata_audit.py` chỉ cảnh báo theo T026, và một release checker riêng vẫn chặn post `A_eff > 0.55`. **Chưa hiện thực:** mã `metadata_audit.py` hiện vẫn là cổng cứng và chưa có release checker riêng; cần PR theo quyết định này. Lưu ý: post-A_eff hiện bằng 0,5 vì 13 đặc trưng đều là hằng số, nên cổng này đạt "rỗng" và không chứng minh dữ liệu sạch. Loan xác nhận.
+**Quyết định 2026-11-12 (Lực): chọn phương án do MVP-01 nêu.** `metadata_audit.py` chỉ cảnh báo theo T026, và một release checker riêng vẫn chặn post `A_eff > 0.55`. **Hiện thực (bản nháp, chờ merge):** `metadata_audit.py` chỉ cảnh báo, `scripts/check_release_audit.py` chặn. Đặc trưng post toàn hằng số là cảnh báo mạnh, không chặn; cờ `--fail-on-vacuous` chuyển thành chặn. Lưu ý: post-A_eff hiện bằng 0,5 vì 13 đặc trưng đều là hằng số, nên cổng này đạt "rỗng" và không chứng minh dữ liệu sạch. Loan xác nhận.
 
 Dù chọn phương án nào, các ca sau phải fail: `A_eff = max(AUROC, 1 − AUROC)` vượt 0.55; thiếu slice hoặc slice thiếu một lớp; dự đoán NaN; control dương hoặc control âm không hợp lệ.
 
