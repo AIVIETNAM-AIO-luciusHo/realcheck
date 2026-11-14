@@ -42,7 +42,7 @@ Trường hợp toàn bộ mẫu là Chưa chắc, `decided_accuracy=null` (khô
 
 Giữ artifacts/protocol thực trong thư mục output không đưa vào commit tự động. Khi công bố báo cáo, kiểm đường dẫn cá nhân trong run_info, giữ nguyên bản provenance gốc ở gói QA và chỉ công bố bản đã ẩn đường dẫn có ghi chú. Joblib cần checksum và nguồn tin cậy; checksum không xác thực tác giả.
 
-95,68% vẫn là validation chọn C. Post metadata hằng/A_eff=0,50 chưa chứng minh không có shortcut; baseline real-GLIDE 84,54% là số của cohort cũ đã báo. Không tự đưa số này thành kết quả của manifest phát hành mới. JPEG ghost T027 vẫn chờ xác nhận/triển khai.
+95,68% (model cũ, manifest cũ; số của e571: 97,24%, N = 871, xem [ml-final-experiment.md](ml-final-experiment.md)) vẫn là validation chọn C. Post metadata hằng/A_eff=0,50 chưa chứng minh không có shortcut; baseline real-GLIDE 84,54% là số của cohort cũ đã báo. Không tự đưa số này thành kết quả của manifest phát hành mới. JPEG ghost T027 vẫn chờ xác nhận/triển khai.
 
 ## Kết quả kiểm chứng local
 

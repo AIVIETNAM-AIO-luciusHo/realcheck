@@ -9,7 +9,7 @@ Ngày chạy ban đầu: 04/11/2026; cập nhật sau review: 05/11/2026. Ngư�
 | KAN-16 – Chuẩn bị CLIP, thống nhất đầu vào | Nạp đúng `sentence-transformers/clip-ViT-B-32`, revision `327ab6726d33c0e22f920c83f2ff9e4bd38ca37f`, bằng `SentenceTransformer`; eval, tắt gradient, embedding 512 chiều L2. Chuẩn hóa chung theo spec 001, version `1` |
 | KAN-17 – CIFAKE + Logistic Regression | Chạy 4.000 ảnh CIFAKE, train/validation/test riêng, xuất model chạy thử và [số đo CIFAKE](reports/ml-cifake.json) |
 | KAN-18 – Đặc trưng GenImage | Trích đủ 5.708 ảnh GenImage cùng 4.000 CIFAKE; `features.npy` shape `(9708,512)`, float32; manifest kiểm row order, hash dữ liệu và model/version |
-| KAN-19 – Train và đánh giá ban đầu | Train LR GenImage trên 3.996 ảnh, chọn C trên 856 validation; accuracy 95,68% chưa loại trừ shortcut dung lượng file/độ mịn/dấu vết JPEG. [Báo cáo validation](reports/ml-genimage.json); 856 test GenImage chưa chấm điểm, T027 chưa có |
+| KAN-19 – Train và đánh giá ban đầu | Train LR GenImage trên 3.996 ảnh, chọn C trên 856 validation; accuracy 95,68% (model cũ, manifest cũ; số của e571: 97,24%, N = 871, xem [ml-final-experiment.md](ml-final-experiment.md)) chưa loại trừ shortcut dung lượng file/độ mịn/dấu vết JPEG. [Báo cáo validation](reports/ml-genimage.json); 856 test GenImage chưa chấm điểm, T027 chưa có |
 | KAN-20 – Bàn giao score | Có `models/clip_probe.joblib`, checksum, `load_model()` và `score(PIL.Image)->float`; kiểm thử model thật/parity trong [biên bản tích hợp](reports/ml-integration.json). Quang tiếp nhận tích hợp HTTP, Lực review độc lập |
 
 Đây là kết quả triển khai và chạy thí nghiệm cục bộ, chưa phải xác nhận QA/reviewer đã nghiệm thu các task Jira hoặc bản phát hành. Không cập nhật trạng thái Jira.
@@ -41,7 +41,7 @@ Binary threshold công khai của lần chạy: `0.5`; chưa coi là D08 đượ
 |---|---:|---:|---:|---:|---:|---:|
 | CIFAKE validation | 300 | 91,33% | 89,74% | 93,33% | 0,95836 | 9,00% |
 | CIFAKE test | 2.000 | 93,00% | 92,49% | 93,60% | 0,98244 | 8,90% |
-| GenImage validation | 856 | 95,68% | 96,40% | 95,33% | 0,99485 | 7,36% |
+| GenImage validation (model cũ, manifest cũ; e571: 97,24%, N = 871, xem [ml-final-experiment.md](ml-final-experiment.md)) | 856 | 95,68% | 96,40% | 95,33% | 0,99485 | 7,36% |
 | GenImage test | 856 | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo |
 
 Grid C cố định `[0.01, 0.1, 1, 10, 100]`, chọn bằng accuracy validation; hòa chọn C nhỏ hơn. CIFAKE chọn C=100; GenImage chọn C=10. Seed 42, `max_iter=2000`; không fit trên validation hoặc test. Confusion matrix GenImage validation, hàng thật/AI và cột thật/AI: `[[390,16],[21,429]]`. FPR tại binary threshold là 3,94%; tỷ lệ real bị gọi `likely_ai` (score >0.7) là 0,74%.
@@ -53,7 +53,7 @@ Grid C cố định `[0.01, 0.1, 1, 10, 100]`, chọn bằng accuracy validation
 | Midjourney | 150 | 93,33% | 12,00% |
 | SD1.4 | 150 | 96,67% | 5,33% |
 
-Các source riêng chỉ có một lớp nên AUROC là `null`. Validation đã dùng chọn C nên 95,68% **không phải** kết quả test độc lập và không chứng minh mục tiêu ≥90% GenImage test. Kết quả vẫn có nguy cơ học shortcut từ dung lượng file, độ mịn/chi tiết và dấu vết nén JPEG; `jpeg_trace_check.py` (T027) chưa được triển khai, phương pháp còn chờ nhóm xác nhận. CIFAKE chỉ chứng minh luồng thử.
+Các source riêng chỉ có một lớp nên AUROC là `null`. Validation đã dùng chọn C nên 95,68% (model cũ, manifest cũ; số của e571: 97,24%, N = 871, xem [ml-final-experiment.md](ml-final-experiment.md)) **không phải** kết quả test độc lập và không chứng minh mục tiêu ≥90% GenImage test. Kết quả vẫn có nguy cơ học shortcut từ dung lượng file, độ mịn/chi tiết và dấu vết nén JPEG; `jpeg_trace_check.py` (T027) chưa được triển khai, phương pháp còn chờ nhóm xác nhận. CIFAKE chỉ chứng minh luồng thử.
 
 ## Kiểm tra dữ liệu và tính nhất quán
 
