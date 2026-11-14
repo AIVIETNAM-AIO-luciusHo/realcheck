@@ -101,6 +101,7 @@ def handoff(tmp_path, monkeypatch):
             "tests_ref": "fixture tests",
         },
         "analysis_commit": "b" * 40,
+        "environment": {"python": "3.14.7", "packages_sha256": "c" * 64},
         "thresholds": deepcopy(ar.THRESHOLDS),
         "bootstrap": deepcopy(ar.BOOTSTRAP),
         "profile": profile,
@@ -296,6 +297,9 @@ def test_cross_split_history_rejected(handoff):
         ("analysis_commit", None),
         ("manifest_lock_ref", ""),
         ("history", []),
+        ("environment", None),
+        ("environment", {"python": "3.14.7"}),
+        ("environment", {"python": "", "packages_sha256": "c" * 64}),
     ],
 )
 def test_unlocked_or_missing_protocol_evidence_rejected(handoff, key, value):
@@ -615,6 +619,7 @@ def test_preflight_receipt_binds_exact_inputs_without_authorizing_inference(hand
         == h["protocol"]["artifacts"]["model_manifest"]["sha256"]
     )
     assert report["runner"] == h["protocol"]["runner"]
+    assert report["environment"] == h["protocol"]["environment"]
     assert report["ready_scope"] == "available_cohorts_only"
     assert report["missing_cohorts"] and report["preflight_is_not_run_authorization"]
     assert report["inference_performed"] is False

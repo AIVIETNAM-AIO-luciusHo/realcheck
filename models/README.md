@@ -13,7 +13,7 @@ Model nền đúng của nhóm là [`sentence-transformers/clip-ViT-B-32`](https
 | `extract_features.py` | Đọc ảnh processed, không nén lại; lưu `features.npy` và manifest chống cache cũ |
 | `train.py` | Fit trên train, chọn C trên validation, báo số đo và xuất bundle |
 | `score.py` | Nạp/warmup model lúc startup; `score(PIL.Image) -> float` |
-| `run_info.py` | Ghi UUID, lệnh CLI, commit, trạng thái dirty, Python và OS vào báo cáo train/verify |
+| `run_info.py` | Ghi UUID, lệnh CLI, commit, trạng thái dirty, Python và OS vào báo cáo train/verify; `environment()` liệt kê gói đã cài (`name==version`, như `pip freeze`) và SHA256 của danh sách. `python -m models.run_info` in Python và `packages_sha256` để điền protocol ADV-08 (#117) |
 | `evaluate.py` | Chuẩn bị protocol chờ duyệt, chấm GenImage test bằng probe đã khóa, lưu predictions/report; không train lại |
 | `holdout.py` | Chọn test không trùng raw/pixel với các lịch sử train/val được cung cấp; không dự đoán |
 | `clip_probe.joblib` + `.sha256` | Bundle GenImage và checksum, sinh cục bộ, không commit |
