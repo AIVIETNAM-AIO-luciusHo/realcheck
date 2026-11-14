@@ -309,5 +309,6 @@ Nguồn bằng chứng: `docs/qa/local-real-model-verification-20261111.md`, `do
 | (f) G03 | Dùng `docs/reports/ml-final-experiment.json` làm `evaluation.json`; ghi rõ chưa QA độc lập, kèm tái lập của Kiệt khi có (#124) |
 | (g) Nơi đo | VPS của Quang chỉ kiểm chức năng (file ghi đè, #122), không đo tải hay SLO trên VPS. Đo hiệu năng ở máy Lực (WSL2, client cùng phần cứng vật lý nên số hơi lạc quan, không gọi là lab) |
 | (h) Giám sát (#45–#48) | Cắt khỏi đợt này |
+| (i) Python và môi trường chạy | Python 3.12.14 cho lượt ADV-08 trên máy Mac (theo Kiệt) và cho lượt QA độc lập G03 (#131); Pillow 13.0.0 bắt buộc. Protocol phải có `environment` (Python và `packages_sha256`, PR #135) và lượt chạy thật lưu `pip freeze` |
 
 **Chưa duyệt:** D09, D10 và SLO vẫn chờ số đo và chữ ký; không ghi `approved`.
