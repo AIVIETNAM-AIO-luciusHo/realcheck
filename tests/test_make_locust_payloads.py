@@ -331,3 +331,171 @@ def test_limits_match_api_defaults():
         defaults.max_side,
         MIN_SIDE,
     )
+
+
+def test_crlf_lf_preserve_selection_but_hash_original_bytes(small, tmp_path):
+    labels, root, _ = small
+    lf = labels.read_bytes()
+    first = payload.build(labels, root, tmp_path / "lf")
+    chosen = payload.select(payload.candidates(lf, root)[0])
+    labels.write_bytes(lf.replace(b"\n", b"\r\n"))
+    second = payload.build(labels, root, tmp_path / "crlf")
+    assert payload.select(payload.candidates(labels.read_bytes(), root)[0]) == chosen
+    assert first["labels_sha256"] == payload.digest(lf)
+    assert second["labels_sha256"] == payload.digest(labels.read_bytes())
+    assert first["labels_sha256"] != second["labels_sha256"]
+    assert "CRLF/LF" in (tmp_path / "lf/README.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("other_repo", [False, True])
+def test_git_provenance_ignores_callers_cwd(small, tmp_path, monkeypatch, other_repo):
+    labels, root, _ = small
+    cwd = tmp_path / "caller"
+    cwd.mkdir()
+    if other_repo:
+        subprocess.run(["git", "init", str(cwd)], check=True, capture_output=True)
+    expected = subprocess.check_output(
+        [
+            "git",
+            "-c",
+            f"safe.directory={payload.REPO_ROOT.as_posix()}",
+            "-C",
+            str(payload.REPO_ROOT),
+            "rev-parse",
+            "HEAD",
+        ],
+        text=True,
+    ).strip()
+    monkeypatch.chdir(cwd)
+    report = payload.build(labels, root, tmp_path / "pack")
+    assert report["commit"] == expected
+
+
+def test_git_failure_precedes_any_image_scan(small, tmp_path, monkeypatch):
+    labels, root, _ = small
+    monkeypatch.setattr(payload, "REPO_ROOT", tmp_path)
+
+    def fail(*a):
+        pytest.fail("Images must not be scanned")
+
+    monkeypatch.setattr(payload, "candidates", fail)
+    with pytest.raises((subprocess.CalledProcessError, ValueError)):
+        payload.build(labels, root, tmp_path / "pack")
+    assert not (tmp_path / "pack").exists()
+
+
+def test_missing_raw_is_one_line_counted_before_decode(small, monkeypatch):
+    labels, root, rows = small
+    missing = [rows[0]["raw_path"], rows[-1]["raw_path"]]
+    for name in missing:
+        payload.raw_file(name, root).unlink()
+
+    def fail(*a, **kw):
+        pytest.fail("No image decode before missing preflight")
+
+    monkeypatch.setattr(payload.Image, "open", fail)
+    with pytest.raises(FileNotFoundError) as error:
+        payload.candidates(labels.read_bytes(), root)
+    assert str(error.value) == f"Missing raw files: 2; first: {min(missing)}"
+    assert "\n" not in str(error.value)
+
+
+def test_hard_link_alias_rejected(small):
+    labels, root, rows = small
+    first = payload.raw_file(rows[0]["raw_path"], root)
+    other = payload.raw_file(rows[1]["raw_path"], root)
+    other.unlink()
+    os.link(first, other)
+    with pytest.raises(ValueError, match="Hard-link raw alias"):
+        payload.candidates(labels.read_bytes(), root)
+
+
+@pytest.mark.parametrize("failure", ["move", "zip", "checksum"])
+def test_publication_failure_rolls_back_and_allows_retry(
+    small, tmp_path, monkeypatch, failure
+):
+    labels, root, _ = small
+    out = tmp_path / "pack"
+    move, link = payload.shutil.move, payload.os.link
+    calls = 0
+
+    def broken_move(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("synthetic move failure")
+        return move(*args, **kwargs)
+
+    def broken_link(source, target):
+        if (failure == "zip" and str(target).endswith(".zip")) or (
+            failure == "checksum" and str(target).endswith(".sha256")
+        ):
+            raise OSError("synthetic publication failure")
+        return link(source, target)
+
+    with monkeypatch.context() as m:
+        if failure == "move":
+            m.setattr(payload.shutil, "move", broken_move)
+        else:
+            m.setattr(payload.os, "link", broken_link)
+        with pytest.raises(OSError, match="synthetic"):
+            payload.build(labels, root, out)
+    assert (
+        not out.exists()
+        and not Path(str(out) + ".zip").exists()
+        and not Path(str(out) + ".zip.sha256").exists()
+    )
+    payload.build(labels, root, out)
+    assert out.exists()
+
+
+def test_concurrent_checksum_is_preserved(small, tmp_path, monkeypatch):
+    labels, root, _ = small
+    out = tmp_path / "pack"
+    link = payload.os.link
+    target = Path(str(out) + ".zip.sha256")
+
+    def claim(source, destination):
+        if destination == target:
+            target.write_bytes(b"another process")
+        return link(source, destination)
+
+    monkeypatch.setattr(payload.os, "link", claim)
+    with pytest.raises(FileExistsError):
+        payload.build(labels, root, out)
+    assert target.read_bytes() == b"another process"
+    assert not out.exists() and not Path(str(out) + ".zip").exists()
+
+
+def test_cleanup_failure_reports_retained_output_without_masking_error(
+    small, tmp_path, monkeypatch, capsys
+):
+    labels, root, _ = small
+    out = tmp_path / "pack"
+    rmtree = payload.shutil.rmtree
+
+    def fail_link(*a):
+        raise OSError("original publication error")
+
+    def fail_cleanup(path, *args, **kwargs):
+        if Path(path) == out:
+            raise PermissionError("synthetic cleanup error")
+        return rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(payload.os, "link", fail_link)
+    monkeypatch.setattr(payload.shutil, "rmtree", fail_cleanup)
+    with pytest.raises(OSError, match="original publication error"):
+        payload.build(labels, root, out)
+    assert out.exists() and "Cleanup incomplete" in capsys.readouterr().err
+
+
+def test_rollback_does_not_remove_replaced_path(tmp_path):
+    target = tmp_path / "pack"
+    target.mkdir()
+    identity = target.lstat()
+    # Rename keeps the old inode alive, preventing inode reuse in this fixture.
+    target.rename(tmp_path / "original")
+    target.mkdir()
+    (target / "keep").write_text("other process")
+    payload.rollback([(target, identity)], tmp_path.resolve())
+    assert (target / "keep").read_text() == "other process"

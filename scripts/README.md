@@ -29,12 +29,19 @@ Output: thư mục `<out>/` có `jpeg/`, `png/`, `payload-manifest.csv`, `README
 `<out>.zip` và `<out>.zip.sha256` nằm cạnh thư mục. Từ chối ghi đè output đã có.
 Ảnh được băm khi kiểm đầu vào, kiểm lại lúc sao chép và đọc lại toàn ZIP trước khi bàn giao.
 Manifest ghi đường dẫn nguồn tương đối, split, nhãn, group, kích thước và SHA256 từng ảnh.
-README ghi commit, trạng thái dirty và hash của **đúng byte labels.csv đã đọc** (CRLF/LF
-có thể làm hash khác bản Git), thống kê kích thước và dung lượng. Tạo gói chính thức từ
-checkout sạch; cùng đầu vào/commit/trạng thái Git và môi trường nén cho cùng ZIP.
+README ghi commit và dirty của **repo chứa script**, lấy trước khi quét ảnh, không theo
+cwd; bản script chép ra ngoài checkout Git bị từ chối. Hash `labels_sha256` băm **byte gốc**:
+CRLF/LF hoặc thứ tự dòng làm hash/provenance và ZIP khác, dù các ảnh được chọn có thể giống.
+Không chuẩn hóa newline trước băm. Đây không tự chứng nhận commit nguồn của labels.csv.
+Tạo gói chính thức từ checkout sạch; cùng byte đầu vào, code/provenance và môi trường nén
+mới cho cùng ZIP. Khi gọi từ thư mục khác, truyền đường dẫn labels/raw/out tuyệt đối.
 Máy cần filesystem hỗ trợ hard link (NTFS/ext4 thông thường); ZIP được công bố nguyên vẹn,
-không ghi trực tiếp ZIP dở vào tên cuối. Nếu xuất gói lỗi sau khi đã tạo thư mục, giữ lại
-để kiểm tra và chọn `--out` mới khi chạy lại.
+không ghi trực tiếp ZIP dở vào tên cuối. Lỗi công bố sẽ rollback chỉ artifact của lần chạy,
+kiểm path và inode trước xóa; không xóa output cũ hoặc output bị thay bởi tiến trình khác.
+Rollback thành công cho phép chạy lại cùng `--out`; nếu dọn lỗi, stderr nêu artifact còn sót
+để người dùng kiểm, giữ nguyên lỗi gốc. Process bị kill/mất điện có thể vẫn để lại output.
+Thiếu raw báo một dòng tổng số và raw_path đầu tiên, trước giải mã; không bỏ mẫu thiếu.
+Hai raw path cùng inode (hard-link alias) bị từ chối; không cấm mọi file có nlink > 1.
 
 **Chỉ dùng đo tải, độ trễ và RPS; không dùng đánh giá độ chính xác.** JPEG là ảnh thật,
 PNG là ảnh AI trong gói này; định dạng gắn với nguồn/nhãn. Không đưa ảnh/ZIP vào Git.

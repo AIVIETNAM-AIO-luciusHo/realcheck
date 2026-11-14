@@ -42,6 +42,11 @@ và `$env:RC_MIX='jpeg=50,png=50'` trước lệnh `locust`.
 `RC_PAYLOAD_DIR` trỏ tới thư mục có trực tiếp `jpeg/`, `png/`; không trỏ vào một nhóm con.
 Manifest và README ở gốc không được Locust đưa vào pool.
 
+Công cụ tạo gói cần Python 3.11+. `labels_sha256` băm byte CSV gốc, nên CRLF/LF làm
+hash/ZIP khác; không thay checksum của gói cũ bằng gói tạo lại. Nhận đủ **ZIP và sidecar**,
+không chỉ thư mục giải nén. Provenance mới lấy từ repo script, không từ cwd. Lỗi công bố
+được rollback có kiểm ownership; nếu còn artifact, đọc cảnh báo cleanup trước khi xử lý.
+
 Gói gồm 100 JPEG thật và 100 PNG AI từ GenImage train, giữ nguyên byte và kích thước gốc.
 **Chỉ dùng đo tải, độ trễ và RPS; không dùng đánh giá độ chính xác.** Không có ảnh cá nhân/Zalo.
 `payload-manifest.csv` cho phép đối chiếu tên payload trong sidecar với SHA256 và nguồn.

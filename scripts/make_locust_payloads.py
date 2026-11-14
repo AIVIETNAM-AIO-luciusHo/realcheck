@@ -17,6 +17,7 @@ from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 # D06/D07 và normalization v1; không nhập runtime ML để đóng gói dữ liệu.
 MAX_BYTES = 5_242_880
 MAX_PIXELS = 24_000_000
@@ -94,6 +95,7 @@ def candidates(content: bytes, root: Path) -> tuple[dict, Counter]:
     pools = {source: [] for source in QUOTAS}
     skipped = Counter()
     seen_paths, seen_hashes = set(), {}
+    prepared, missing, seen_files = [], [], set()
     for row in sorted(rows, key=lambda r: r["raw_path"]):
         source = row["source"]
         if source not in QUOTAS or row["split"] != "train":
@@ -119,7 +121,23 @@ def candidates(content: bytes, root: Path) -> tuple[dict, Counter]:
             raise ValueError(f"Duplicate raw_path: {row['raw_path']}")
         seen_paths.add(path)
         # Missing files are input errors, not silently replaced samples.
-        size = path.stat().st_size
+        try:
+            info = path.stat()
+        except FileNotFoundError:
+            missing.append(row["raw_path"])
+            continue
+        identity = (info.st_dev, info.st_ino)
+        if info.st_ino and identity in seen_files:
+            raise ValueError(f"Hard-link raw alias: {row['raw_path']}")
+        seen_files.add(identity)
+        prepared.append((row, path, info.st_size))
+    if missing:
+        raise FileNotFoundError(
+            f"Missing raw files: {len(missing)}; first: {missing[0]}"
+        )
+    for row, path, size in prepared:
+        source = row["source"]
+        fmt, _, label = QUOTAS[source]
         if not 0 < size <= MAX_BYTES:
             skipped["empty_or_oversize"] += 1
             continue
@@ -224,16 +242,27 @@ def verify_zip(path: Path, rows: list[dict], metadata: dict[str, bytes]) -> None
 def build(labels: Path, raw_dir: Path, out: Path) -> dict:
     """Build folder, ZIP and ZIP checksum without overwriting existing artifacts."""
     out = out.absolute()
+    out = out.parent.resolve() / out.name
     archive_path = Path(str(out) + ".zip")
     checksum_path = Path(str(archive_path) + ".sha256")
-    if any(p.exists() for p in (out, archive_path, checksum_path)):
+    if any(p.exists() or p.is_symlink() for p in (out, archive_path, checksum_path)):
         raise ValueError("Output already exists; choose a new --out")
+    git = ["git", "-c", f"safe.directory={REPO_ROOT.as_posix()}", "-C", str(REPO_ROOT)]
+    toplevel = subprocess.check_output(
+        [*git, "rev-parse", "--show-toplevel"], text=True, stderr=subprocess.PIPE
+    ).strip()
+    if Path(toplevel).resolve() != REPO_ROOT:
+        raise ValueError("Script must run from its own Git checkout")
+    commit = subprocess.check_output(
+        [*git, "rev-parse", "HEAD"], text=True, stderr=subprocess.PIPE
+    ).strip()
+    dirty = bool(
+        subprocess.check_output([*git, "status", "--porcelain"], stderr=subprocess.PIPE)
+    )
     content = labels.read_bytes()
     root = raw_dir.resolve(strict=True)
     pools, skipped = candidates(content, root)
     rows = select(pools)
-    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-    dirty = bool(subprocess.check_output(["git", "status", "--porcelain"]))
     report = {
         "commit": commit,
         "dirty": dirty,
@@ -263,6 +292,9 @@ def build(labels: Path, raw_dir: Path, out: Path) -> dict:
         "Sau giải nén: RC_PAYLOAD_DIR trỏ tới thư mục chứa trực tiếp jpeg/ và png/.\n"
         "Đặt RC_MIX=jpeg=50,png=50; chạy Locust từ máy đo riêng qua gateway.\n"
         "payload-manifest.csv ghi SHA256 của từng file để kiểm sau giải nén.\n\n"
+        "labels_sha256 băm byte gốc CSV: CRLF/LF hoặc thứ tự dòng khác làm hash khác.\n"
+        "Ảnh được chọn tất định từ dữ liệu parse; chỉ cùng byte CSV, ảnh và provenance mới tái lập cùng ZIP.\n"
+        "Commit/dirty thuộc repo chứa script, không tự chứng nhận nguồn commit của labels.csv.\n\n"
         "```json\n" + json.dumps(report, ensure_ascii=False, indent=2) + "\n```\n"
     )
     metadata = {
@@ -301,17 +333,51 @@ def build(labels: Path, raw_dir: Path, out: Path) -> dict:
         with staged_zip.open("rb") as stream:
             sha = hashlib.file_digest(stream, "sha256").hexdigest()
         # Exclusive creation also protects against another process claiming the same output.
-        out.mkdir()
-        for file in folder.iterdir():
-            shutil.move(str(file), out / file.name)
-        staged_checksum = stage / "payload.sha256"
-        staged_checksum.write_text(
-            f"{sha}  {archive_path.name}\n", encoding="utf-8", newline="\n"
-        )
-        # Atomic, exclusive publication on the same filesystem: never expose a partial ZIP.
-        os.link(staged_zip, archive_path)
-        os.link(staged_checksum, checksum_path)
+        owned = []
+        try:
+            out.mkdir()
+            owned.append((out, out.lstat()))
+            for file in folder.iterdir():
+                shutil.move(str(file), out / file.name)
+            staged_checksum = stage / "payload.sha256"
+            staged_checksum.write_text(
+                f"{sha}  {archive_path.name}\n", encoding="utf-8", newline="\n"
+            )
+            # Exclusive publication; remember identity before linking for safe rollback.
+            for source, target in (
+                (staged_zip, archive_path),
+                (staged_checksum, checksum_path),
+            ):
+                info = source.stat()
+                os.link(source, target)
+                owned.append((target, info))
+        except BaseException:
+            rollback(owned, out.parent)
+            raise
     return report | {"zip_sha256": sha}
+
+
+def rollback(owned, parent):
+    """Remove only this run's outputs, never preexisting/concurrently replaced paths."""
+    for path, identity in reversed(owned):
+        try:
+            current = path.lstat()
+            if (
+                path.parent.resolve() != parent
+                or path.is_symlink()
+                or (current.st_dev, current.st_ino)
+                != (identity.st_dev, identity.st_ino)
+            ):
+                raise OSError("Output identity changed; refusing cleanup")
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+        except OSError:
+            print(
+                f"Cleanup incomplete; inspect retained artifact: {path}",
+                file=sys.stderr,
+            )
 
 
 def main(argv: list[str] | None = None) -> int:

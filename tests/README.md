@@ -7,6 +7,11 @@ Test loader dùng Locust thật trong subprocess riêng; cài thêm `locust/requ
 để chạy phần này. Chạy cả file trên môi trường máy đo; CI nhẹ không cài Locust chỉ bỏ qua
 phần kiểm loader, vẫn kiểm tạo và đối chiếu gói. Chưa thay kiểm gói GenImage thật trên máy giữ ảnh.
 
+Regression PR #127: hash byte gốc CRLF/LF, provenance khi cwd ngoài Git hoặc trong repo
+khác, Git lỗi trước scan, missing raw trước decode, hard-link alias và rollback lúc move/
+publish ZIP/sidecar lỗi. Test concurrent output/replaced inode/cleanup lỗi bảo đảm không
+xóa artifact của người khác, không che lỗi gốc và chạy lại cùng out sau rollback thành công.
+
 Phụ trách: Lực
 
 ## Làm gì
