@@ -1,6 +1,7 @@
 """KAN-57/58/59: mẫu SLO, scope check_performance, bảng gate nghiệm thu (không cần locust/mạng)."""
 
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -117,12 +118,35 @@ def _eval(path, **over):
     path.write_text(json.dumps(d), encoding="utf-8")
 
 
+def _audit_report(**over):
+    """Báo cáo audit hợp lệ, không rỗng (còn đặc trưng post không hằng số), theo metadata_audit.py."""
+    ds = {
+        "constant_features": {"post": ["format"]},
+        "n_features": 13,
+        "slices": {
+            "all": {
+                "post": {
+                    "valid": True,
+                    "test_counts": {"0": 50, "1": 50},
+                    "a_eff": 0.52,
+                }
+            }
+        },
+        "controls": {"positive": {"a_eff": 1.0}, "negative": {"a_eff": 0.5}},
+    } | over
+    return {"genimage": ds, "gate": {"passed": True}}
+
+
+def _write_audit(art, report):
+    (art / "metadata-audit.json").write_text(json.dumps(report), encoding="utf-8")
+
+
 def _full(tmp_path):
     art = tmp_path / "art"
     art.mkdir()
     _junit(art / "unit.xml")
     _cov(art / "coverage.xml", 0.8)
-    (art / "metadata-audit.json").write_text('{"gate": {"passed": true}}')
+    _write_audit(art, _audit_report())
     _eval(art / "evaluation.json")
     _junit(art / "integration.xml", 3)
     _junit(art / "ui-gateway.xml", 3)
@@ -186,7 +210,9 @@ def test_slo_chua_duyet_thi_chua_dat(tmp_path, capsys):
         lambda a: _cov(a / "coverage.xml", 0.69),
         lambda a: _junit(a / "unit.xml", 20, '<testcase name="x"><failure/></testcase>'),
         lambda a: _junit(a / "unit.xml", 20, '<testcase name="x"><skipped type="pytest.skip"/></testcase>'),
-        lambda a: (a / "metadata-audit.json").write_text('{"gate": {"passed": "true"}}'),
+        lambda a: (a / "metadata-audit.json").write_text('{"gate": {"passed": true}}'),  # cờ cũ không đủ
+        lambda a: _write_audit(a, _audit_report(constant_features={"post": [f"f{i}" for i in range(13)]})),
+        lambda a: _write_audit(a, _audit_report(slices={"all": {"post": {"valid": True, "test_counts": {"0": 50, "1": 50}, "a_eff": 0.56}}})),
         lambda a: _eval(a / "evaluation.json", quality={"status": "fail"}),
         lambda a: _eval(a / "evaluation.json", quality={"status": True}),
         lambda a: _eval(a / "evaluation.json", test={"n": 100, "accuracy": 0.89}),
@@ -200,7 +226,6 @@ def test_slo_chua_duyet_thi_chua_dat(tmp_path, capsys):
         lambda a: (a / "evaluation.json").write_text("{"),
         lambda a: (a / "evaluation.json").write_text("{}"),
         lambda a: (a / "evaluation.json").write_text("[]"),
-        lambda a: (a / "metadata-audit.json").write_text('{"gate": {"passed": 1}}'),
         lambda a: (a / "metadata-audit.json").write_text("{}"),
         lambda a: (a / "metadata-audit.json").write_text("[]"),
         lambda a: (a / "unit.xml").write_text("<testsuites><oops"),
@@ -293,3 +318,27 @@ def test_g03_voi_bao_cao_that_cua_scripts_evaluate_val_la_chua_dat(
         [out], lambda p: check_mvp_gates._accuracy(p[0])
     )
     assert status == check_mvp_gates.CHUA and "test" in why
+
+
+def test_g02_ba_trang_thai(tmp_path, capsys):
+    art, slo = _full(tmp_path)
+    _, out = _run(art, slo, capsys)
+    assert "G02" in out and "[đạt]" in out  # hợp lệ, A_eff <= 0.55
+    _write_audit(
+        art, _audit_report(constant_features={"post": [f"f{i}" for i in range(13)]})
+    )
+    _, out = _run(art, slo, capsys)
+    assert any("G02" in ln and "[chưa đạt]" in ln for ln in out.splitlines())  # rỗng
+    (art / "metadata-audit.json").unlink()
+    _, out = _run(art, slo, capsys)
+    assert any("G02" in ln and "[thiếu bằng chứng]" in ln for ln in out.splitlines())
+
+
+def test_g02_ban_sao_audit_that_la_chua_dat(tmp_path, capsys):
+    """data/metadata_audit.json thật: 13/13 đặc trưng post hằng số nên G02 phải 'chưa đạt' (#134)."""
+    art, slo = _full(tmp_path)
+    real = Path(__file__).resolve().parents[1] / "data" / "metadata_audit.json"
+    shutil.copy(real, art / "metadata-audit.json")
+    code, out = _run(art, slo, capsys)
+    assert code == 1
+    assert any("G02" in ln and "[chưa đạt]" in ln for ln in out.splitlines())
