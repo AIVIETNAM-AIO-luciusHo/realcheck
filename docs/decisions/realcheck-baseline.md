@@ -10,7 +10,7 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 |---|---|---|---|---|---|
 | D01 Split, seed, group | approved (Lực, 2026-11-14); đề xuất Loan 2026-11-13 | Loan | Lực | 2026-11-14 | Seed 42, split hiện có; `group_id` theo SHA256 ảnh gốc và dHash ≤ 4 (#99); xem [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
 | D02 Chuẩn hóa | Một phần đã chốt trong spec 001 | Kiệt | — | — | [Đã ghi hiện trạng alpha/ICC/subsampling](ml-api-handoff-39.md#d02-hành-vi-version-1-hiện-có); chờ review |
-| D03 Probe metadata | approved (Lực, 2026-11-14) chỉ để ghi nhận; đề xuất Loan 2026-11-13, ghi sau khi đã xem kết quả audit | Loan | Kiệt, Lực | 2026-11-14 | Probe post rỗng do thiết kế chuẩn hóa. Probe tầng pixel đã có code (Loan, 2026-11-14, proposed), chưa chạy trên dữ liệu thật; Kiệt, Lực duyệt trước khi chạy |
+| D03 Probe metadata | approved (Lực, 2026-11-14) chỉ để ghi nhận; đề xuất Loan 2026-11-13, ghi sau khi đã xem kết quả audit | Loan | Kiệt, Lực | 2026-11-14 | Probe post rỗng do thiết kế chuẩn hóa. Probe tầng pixel đã có code (Loan, 2026-11-14, proposed), chưa chạy trên dữ liệu thật; Lực duyệt bốn đặc trưng pixel (`bytes_per_px`, `blockiness`, `hf_energy`, `noise_std`) ngày 2026-11-15 để chạy; Kiệt chưa phản hồi; kết quả probe được ghi nguyên văn kể cả khi G02 chưa đạt |
 | D04 Protocol audit | Chưa làm (Loan, 2026-11-13) | Loan | Lực | — | Giá trị tạm trong mã: 100 ảnh mỗi lớp, 1.000 bootstrap; làm sau 15/11 |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
 | D05 Lỗi gateway | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | Loan đã xác nhận UI (2026-11-13): UI chọn thông báo theo mã HTTP, thêm 502; `app/schemas.py` đã thêm `RATE_LIMITED`, `API_UNAVAILABLE`, `GATEWAY_TIMEOUT` (2026-11-13), `tests/test_gateway_error_codes.py` khóa câu chữ khớp `nginx.conf` |
@@ -310,5 +310,6 @@ Nguồn bằng chứng: `docs/qa/local-real-model-verification-20261111.md`, `do
 | (g) Nơi đo | VPS của Quang chỉ kiểm chức năng (file ghi đè, #122), không đo tải hay SLO trên VPS. Đo hiệu năng ở máy Lực (WSL2, client cùng phần cứng vật lý nên số hơi lạc quan, không gọi là lab) |
 | (h) Giám sát (#45–#48) | Cắt khỏi đợt này |
 | (i) Python và môi trường chạy | Python 3.12.14 cho lượt ADV-08 trên máy Mac (theo Kiệt) và cho lượt QA độc lập G03 (#131); Pillow 13.0.0 bắt buộc. Protocol phải có `environment` (Python và `packages_sha256`, PR #135) và lượt chạy thật lưu `pip freeze` |
+| (j) Probe pixel (D03) | Lực duyệt (2026-11-15) bộ bốn đặc trưng tầng pixel của PR #140 để Loan chạy trên dữ liệu thật (Python 3.12.14, Pillow 13.0.0, lưu `pip freeze`). Không đổi đặc trưng sau khi xem kết quả. G02 ghi theo kết quả thật, kể cả "chưa đạt" vì shortcut dung lượng file đã biết |
 
 **Chưa duyệt:** D09, D10 và SLO vẫn chờ số đo và chữ ký; không ghi `approved`.
