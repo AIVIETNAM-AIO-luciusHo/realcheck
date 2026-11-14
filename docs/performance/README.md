@@ -70,7 +70,7 @@ t_ok = float(next(l.split()[0] for l in open("artifacts/recovery-run3/timeline.l
 print("warmup_seconds =", round(t_ok + 60 - t_first, 1))
 PY
 python -m scripts.perf_report artifacts/recovery-run3/recovery.jsonl --warmup-seconds <N> --output artifacts/recovery-run3/recovery-report.json
-python -m scripts.check_performance --sidecar artifacts/recovery-run3/recovery.jsonl --slo docs/performance/slo.json --scope recovery --warmup-seconds <N>
+python -m scripts.check_performance --sidecar artifacts/recovery-run3/recovery.jsonl --slo <slo.json đã ký> --scope recovery --warmup-seconds <N>
 ```
 Phần gián đoạn (trước cửa sổ đo): chạy lại `summarize` với `--warmup-seconds 0` trên bản lọc `t < T_ok + 60`:
 ```bash
@@ -83,6 +83,8 @@ print(json.dumps(summarize(meta, [r for r in recs if r["t"] < t_ok + 60], 0)["co
 PY
 ```
 Ghi giá trị `N` đã dùng vào báo cáo.
+
+**Lưu ý chạy thật (T-13, 15/11):** repo không có `docs/performance/slo.json` (chỉ `slo.template.json`), nên truyền đường dẫn tới `slo.json` đã ký ở ngoài repo. Script trên giả định Locust chạy cùng máy với Docker (WSL); khi chạy Locust trên Windows thì `docker`/`curl` chạy trong WSL và Locust được gọi riêng, nhưng vẫn ghi cùng các mốc vào `timeline.log`. Lượt 3 thật: 10 phút cho 198 request 200 (0,47 request/giây); 8 phút chỉ khoảng 130 đến 140.
 
 ### 4. Tiêu chí hợp lệ
 - Cửa sổ đo phải có **tối thiểu 100 request 200** (`counts["200"]` của `perf_report` sau warmup). Ít hơn thì lượt **không hợp lệ**: ghi rõ "không hợp lệ", **không** tính đạt hay không đạt, rồi kéo dài `-t` và chạy lại. Với 1 user và think time 1 đến 3 s, 8 phút chỉ dư một chút so với 100 mẫu (xem ước lượng lúc chạy); thiếu mẫu thì kéo dài, đừng giảm yêu cầu.
