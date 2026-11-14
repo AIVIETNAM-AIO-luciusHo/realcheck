@@ -1,9 +1,12 @@
 """Kiểm tra rò rỉ metadata: đoán thật/AI chỉ từ metadata ảnh (T007, bản nháp).
 
-Probe chỉ đọc metadata hình ảnh (định dạng, kích thước, mode, EXIF, ICC, bảng
-lượng tử và subsampling JPEG); không dùng pixel, dung lượng file, đường dẫn hay
-nguồn. Chạy trên ảnh gốc (chẩn đoán) và ảnh đã chuẩn hóa:
+Probe đọc metadata hình ảnh (định dạng, kích thước, mode, EXIF, ICC, bảng lượng tử và
+subsampling JPEG); không dùng đường dẫn hay nguồn. Chạy trên ảnh gốc (chẩn đoán) và ảnh
+đã chuẩn hóa:
     A_eff = max(AUROC, 1 - AUROC) <= 0.55 với mọi slice hợp lệ.
+Ảnh đã chuẩn hóa có metadata hằng số theo thiết kế (A_eff = 0.5 "rỗng"), nên probe post
+thêm đặc trưng tầng pixel (PIXEL_FEATURES, D03 proposed): dung lượng JPEG trên mỗi pixel,
+dấu khối 8×8, năng lượng tần số cao và nhiễu dư của kênh sáng.
 Chính sách 2026-11-12: script này CHỈ CẢNH BÁO khi A_eff vượt ngưỡng (thoát 0); lỗi
 dữ liệu (slice không hợp lệ, A_eff NaN, control sai) thoát 1. Việc chặn release là của
 scripts/check_release_audit.py đọc báo cáo JSON này.
@@ -39,6 +42,9 @@ FEATURES = (
     "format", "mode", "width", "height", "aspect", "has_exif", "has_make", "has_model",
     "has_icc", "progressive", "subsampling", "q_luma_mean", "q_chroma_mean",
 )  # fmt: skip
+PIXEL_FEATURES = ("bytes_per_px", "blockiness", "hf_energy", "noise_std")
+BLOCK = 8  # cạnh khối DCT của JPEG
+HF_CUTOFF = 0.25  # chu kỳ/pixel; nửa trên của dải tần (Nyquist 0.5)
 
 
 def extract(path: str) -> dict:
@@ -62,6 +68,39 @@ def extract(path: str) -> dict:
             "q_luma_mean": np.mean(q[0]) if 0 in q else np.nan,
             "q_chroma_mean": np.mean(q[1]) if 1 in q else np.nan,
         }
+
+
+def _blockiness(y: np.ndarray) -> float:
+    """Chênh lệch sáng trung bình qua biên khối 8×8 chia cho trong khối (1 = không có dấu khối)."""
+    edge, inner = [], []
+    for d in (np.abs(np.diff(y, axis=1)), np.abs(np.diff(y, axis=0)).T):
+        at = np.arange(1, d.shape[1] + 1) % BLOCK == 0  # cột j so pixel j với j + 1
+        edge.append(d[:, at].ravel())
+        inner.append(d[:, ~at].ravel())
+    e, i = np.concatenate(edge), np.concatenate(inner)
+    if not e.size or not i.size:
+        return np.nan
+    return float((e.mean() + 1e-6) / (i.mean() + 1e-6))
+
+
+def pixel_features(path: str) -> dict:
+    """Đặc trưng tầng pixel của ảnh (dùng cho ảnh đã chuẩn hóa, nơi metadata là hằng số)."""
+    with Image.open(path) as im:
+        y = np.asarray(im.convert("L"), dtype=np.float64)
+    power = np.abs(np.fft.fft2(y - y.mean())) ** 2
+    fy, fx = np.meshgrid(*(np.abs(np.fft.fftfreq(n)) for n in y.shape), indexing="ij")
+    total = power.sum()
+    laplacian = (
+        4 * y[1:-1, 1:-1] - y[:-2, 1:-1] - y[2:, 1:-1] - y[1:-1, :-2] - y[1:-1, 2:]
+    )
+    return {
+        "bytes_per_px": Path(path).stat().st_size / y.size,
+        "blockiness": _blockiness(y),
+        "hf_energy": float(power[np.maximum(fy, fx) > HF_CUTOFF].sum() / total)
+        if total > 0
+        else 0.0,
+        "noise_std": float(laplacian.std()) if laplacian.size else np.nan,
+    }
 
 
 def a_eff(y: np.ndarray, p: np.ndarray) -> float:
@@ -129,7 +168,10 @@ def main() -> None:
     df = pd.read_csv(LABELS_CSV)
     views = {}
     for view, col in (("raw", "raw_path"), ("post", "filepath")):
-        x = pd.DataFrame([extract(p) for p in df[col]], index=df.index)
+        rows = [
+            extract(p) | (pixel_features(p) if view == "post" else {}) for p in df[col]
+        ]
+        x = pd.DataFrame(rows, index=df.index)
         views[view] = x.astype({c: "category" for c in CATEGORICAL})
 
     report, passed, errors, warnings = {}, True, [], []
