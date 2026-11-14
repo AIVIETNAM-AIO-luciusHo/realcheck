@@ -25,6 +25,7 @@ mkdir -p artifacts
 ## 1. G01: unit test và coverage
 
 ```bash
+pip install -r requirements.txt -r models/requirements-ml.txt -r streamlit/requirements.txt -r locust/requirements.txt   # thiếu streamlit thì tests/test_ui.py lỗi thu thập: No module named streamlit.testing
 python -m ruff check . && python -m ruff format --check .
 python -m pytest --junitxml=artifacts/unit.xml --cov=app --cov-report=xml:artifacts/coverage.xml --cov-fail-under=70 -q -ra
 ```
@@ -109,6 +110,8 @@ RC_PAYLOAD_DIR=<thư mục payload> RC_SIDECAR=artifacts/recovery.jsonl locust -
 python -m scripts.check_performance --sidecar artifacts/recovery.jsonl --slo docs/performance/slo.json --scope recovery
 ```
 Sidecar phải có meta `scenario` đúng scope (load là `baseline`, `soak`, `recovery`); không khớp thì `check_performance` thoát 2.
+
+**Lưu ý warmup của G09:** `check_mvp_gates` không có `--warmup-seconds`; nó đọc `warmup_seconds` từ meta của sidecar gốc. Lượt recovery có gián đoạn chạy với meta 0 nên `check_mvp_gates` tính cả phần gián đoạn và có thể cho "chưa đạt" khi `check_performance --warmup-seconds N` đạt. Dùng `check_performance --warmup-seconds N` làm bằng chứng, ghi rõ khác biệt, **không sửa sidecar**; lần sau đặt `RC_WARMUP_SECONDS` biết trước khi chạy Locust: xem [Quy trình recovery](../performance/README.md#quy-trình-recovery-g09-130).
 
 ## Ghi SHA256 và chạy cổng
 
