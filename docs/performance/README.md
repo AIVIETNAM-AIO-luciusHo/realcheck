@@ -84,6 +84,12 @@ PY
 ```
 Ghi giá trị `N` đã dùng vào báo cáo.
 
+**`check_mvp_gates` không có cờ `--warmup-seconds`.** Nó (qua `check_performance.run`) đọc warmup từ **meta của sidecar gốc** (`warmup_seconds`, ghi lúc chạy Locust bằng `RC_WARMUP_SECONDS`, mặc định 0). `N` chỉ biết sau khi có `T_ok`, nên nếu Locust chạy với meta 0 thì `check_mvp_gates` tính **cả phần gián đoạn**: lượt 3 cho lỗi 0,0842 > 0,08 nên G09 "chưa đạt", trong khi `check_performance --warmup-seconds 171.4` đạt. Hai kết quả khác nhau do cách đọc warmup, không do số đo.
+
+- **Bằng chứng cho G09 khi có gián đoạn:** dùng `check_performance --scope recovery --warmup-seconds N` (lệnh ở trên) và ghi rõ trong báo cáo rằng `check_mvp_gates` đọc sidecar gốc nên có thể báo khác.
+- **Không sửa sidecar sau khi chạy** (kể cả chỉ dòng meta, kể cả giữ bản gốc): làm thay đổi bằng chứng.
+- **Lần chạy sau:** đặt `RC_WARMUP_SECONDS` bằng giá trị biết trước khi chạy Locust (ví dụ ước lượng thời gian từ lệnh stop tới `/health` 200 cộng 60 s; ước lượng này tính từ request đầu, tức cộng cả 60 s trước khi stop), để meta đúng ngay từ đầu và `check_mvp_gates` đọc cùng cửa sổ. Vẫn tính `N` chính xác bằng quy trình trên để **kiểm tra** (không để thay meta); lệch nhiều thì báo cả hai.
+
 ### 4. Tiêu chí hợp lệ
 - Cửa sổ đo phải có **tối thiểu 100 request 200** (`counts["200"]` của `perf_report` sau warmup). Ít hơn thì lượt **không hợp lệ**: ghi rõ "không hợp lệ", **không** tính đạt hay không đạt, rồi kéo dài `-t` và chạy lại. Với 1 user và think time 1 đến 3 s, 8 phút chỉ dư một chút so với 100 mẫu (xem ước lượng lúc chạy); thiếu mẫu thì kéo dài, đừng giảm yêu cầu.
 - **Một lần mỗi lần công bố.** Không chọn lượt đẹp. Có chạy lại thì báo **cả hai** kết quả và nêu lý do (ví dụ lượt không hợp lệ vì thiếu mẫu).
