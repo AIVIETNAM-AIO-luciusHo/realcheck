@@ -10,6 +10,10 @@
     "tests_ref": null
   },
   "analysis_commit": null,
+  "environment": {
+    "python": null,
+    "packages_sha256": null
+  },
   "profile": {
     "clip_model_id": "sentence-transformers/clip-ViT-B-32",
     "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",

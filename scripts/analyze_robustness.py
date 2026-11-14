@@ -102,6 +102,14 @@ def validate_handoff(protocol_path, manifest_path, *, decode=False, observations
     _require(_text(runner.get("handoff_ref")), "Missing runner handoff reference")
     _require(_text(runner.get("tests_ref")), "Missing runner test evidence")
     _require(_commit(protocol.get("analysis_commit")), "Missing analysis commit")
+    env = protocol.get("environment")
+    _require(
+        isinstance(env, dict)
+        and set(env) == {"python", "packages_sha256"}
+        and _text(env["python"])
+        and _sha(env["packages_sha256"]),
+        "Missing environment: python and packages_sha256 (python -m models.run_info)",
+    )
     _require(protocol.get("thresholds") == THRESHOLDS, "Thresholds are not locked")
     _require(protocol.get("bootstrap") == BOOTSTRAP, "Bootstrap config is not locked")
     profile = {
@@ -348,6 +356,7 @@ def preflight_report(protocol_path, manifest_path):
         "manifest_sha256": protocol["artifacts"]["manifest"]["sha256"],
         "protocol_sha256": sha256_file(protocol_path),
         "runner": protocol["runner"],
+        "environment": protocol["environment"],
         "thresholds": THRESHOLDS,
         "profile": protocol["profile"],
         "inference_performed": False,
@@ -699,6 +708,7 @@ def analyze(protocol_path, manifest_path, predictions_path):
         "profile": protocol["profile"],
         "bootstrap": BOOTSTRAP,
         "runner": protocol["runner"],
+        "environment": protocol["environment"],
         "parent_exposure": protocol["parent_exposure"],
         "observed_transforms": observed_transforms(rows, observations),
         "transition_order": list(VERDICTS),
