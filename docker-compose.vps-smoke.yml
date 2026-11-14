@@ -1,0 +1,28 @@
+# Ghi đè Compose để kiểm CHỨC NĂNG trên VPS nhỏ (2 nhân, ~1,1 GiB RAM trống, dùng chung với dịch vụ khác).
+# Dùng: docker compose -f docker-compose.yml -f docker-compose.vps-smoke.yml up -d
+# KHÔNG dùng để đo tải/SLO: cpus thấp hơn bản chính nên số đo không đại diện.
+#
+# CẢNH BÁO:
+# - cpus/mem_limit ở đây GHI ĐÈ giá trị trong docker-compose.yml (scalar thì lớp sau thắng).
+# - `ports` là danh sách: Compose mặc định NỐI các lớp, nên nếu không có `!override` thì nginx
+#   sẽ bind cả "80:80" lẫn 127.0.0.1:8081 và tranh cổng 80 của dịch vụ khác. Luôn kiểm bằng
+#   `docker compose -f docker-compose.yml -f docker-compose.vps-smoke.yml config` (chỉ còn 127.0.0.1:8081).
+# - `!override` cần Compose v2.24 trở lên.
+# - CLIP trong code đặt 4 luồng (models/clip_input.py) nhưng api chỉ có 1,5 nhân: bị CFS giới hạn, chậm hơn
+#   nhưng không lỗi. Giữ 1 worker, REALCHECK_INFERENCE_SLOTS=1 (đã có ở file chính).
+# - Cổng chỉ bind 127.0.0.1: truy cập từ máy ngoài qua SSH tunnel (D13), không mở ra Internet.
+
+services:
+  api:
+    cpus: 1.5
+    mem_limit: 900m
+
+  ui:
+    cpus: 0.3
+    mem_limit: 200m
+
+  nginx:
+    cpus: 0.2
+    mem_limit: 64m
+    ports: !override
+      - "127.0.0.1:8081:80"
