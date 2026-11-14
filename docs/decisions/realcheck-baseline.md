@@ -8,9 +8,9 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 
 | Mục | Trạng thái | Người quyết định | Reviewer | Ngày | Còn chờ |
 |---|---|---|---|---|---|
-| D01 Split, seed, group | proposed (Loan, 2026-11-13) | Loan | Lực | 2026-11-13 | Seed 42, split hiện có; `group_id` theo SHA256 ảnh gốc và dHash ≤ 4 (#99); xem [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
+| D01 Split, seed, group | approved (Lực, 2026-11-14); đề xuất Loan 2026-11-13 | Loan | Lực | 2026-11-14 | Seed 42, split hiện có; `group_id` theo SHA256 ảnh gốc và dHash ≤ 4 (#99); xem [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
 | D02 Chuẩn hóa | Một phần đã chốt trong spec 001 | Kiệt | — | — | [Đã ghi hiện trạng alpha/ICC/subsampling](ml-api-handoff-39.md#d02-hành-vi-version-1-hiện-có); chờ review |
-| D03 Probe metadata | proposed (Loan, 2026-11-13), ghi sau khi đã xem kết quả audit | Loan | Kiệt, Lực | 2026-11-13 | Probe post rỗng do thiết kế chuẩn hóa; hướng probe tầng pixel làm sau 15/11 |
+| D03 Probe metadata | approved (Lực, 2026-11-14) chỉ để ghi nhận; đề xuất Loan 2026-11-13, ghi sau khi đã xem kết quả audit | Loan | Kiệt, Lực | 2026-11-14 | Probe post rỗng do thiết kế chuẩn hóa; hướng probe tầng pixel làm sau 15/11 |
 | D04 Protocol audit | Chưa làm (Loan, 2026-11-13) | Loan | Lực | — | Giá trị tạm trong mã: 100 ảnh mỗi lớp, 1.000 bootstrap; làm sau 15/11 |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
 | D05 Lỗi gateway | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | Loan đã xác nhận UI (2026-11-13): UI chọn thông báo theo mã HTTP, thêm 502; `app/schemas.py` đã thêm `RATE_LIMITED`, `API_UNAVAILABLE`, `GATEWAY_TIMEOUT` (2026-11-13), `tests/test_gateway_error_codes.py` khóa câu chữ khớp `nginx.conf` |
@@ -217,7 +217,7 @@ Quang kiểm ngày 2026-11-11 trên Windows 11, Python 3.11.9, torch 2.15.0+cpu,
 
 ## D01–D04. Dữ liệu và audit
 
-D01 và D03 là đề xuất của Loan (2026-11-13), **chưa duyệt**; D02 là hiện trạng trong mã; D04 chưa làm.
+D01 và D03 do Loan đề xuất (2026-11-13), Lực duyệt 2026-11-14 (D03 chỉ ghi nhận: audit post rỗng do thiết kế chuẩn hóa, probe tầng pixel làm sau 15/11); D02 là hiện trạng trong mã; D04 chưa làm.
 
 | Mục | Nội dung | Còn thiếu |
 |---|---|---|
@@ -296,3 +296,18 @@ Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và K
 | Giới hạn exif 64 ký tự mỗi giá trị (tối đa 129) | Không thuộc đợt này; giữ như đã ghi ở D05 làm rõ |
 
 Nguồn bằng chứng: `docs/qa/local-real-model-verification-20261111.md`, `docs/qa/kan-25-model-loading-review.md`, issue #44.
+
+## Quyết định của Lực ngày 14/11/2026
+
+| Mục | Quyết định |
+|---|---|
+| (a) D01, D03 | Chuyển từ `proposed` sang `approved` (Lực, 2026-11-14). D03 chỉ ghi nhận: audit post rỗng do thiết kế chuẩn hóa; probe tầng pixel làm sau 15/11 |
+| (b) Hướng bản nộp | Phương án A: giữ e571, hoãn mixed-v3 sau 15/11. Cohort ADV-06 đã được dùng để so sánh nên không còn độc lập |
+| (c) 503 `SERVICE_BUSY` khi đo SLO | Tính là lỗi (nằm trong `error_ratio_excl_429`). Đo với tải vừa phải và ghi rõ năng lực của hệ thống |
+| (d) D14 soak | 30 phút. Soak ngắn, không chứng minh không rò bộ nhớ dài hạn |
+| (e) RSS | Theo `docker stats` (cgroup), không phải VmRSS |
+| (f) G03 | Dùng `docs/reports/ml-final-experiment.json` làm `evaluation.json`; ghi rõ chưa QA độc lập, kèm tái lập của Kiệt khi có (#124) |
+| (g) Nơi đo | VPS của Quang chỉ kiểm chức năng (file ghi đè, #122), không đo tải hay SLO trên VPS. Đo hiệu năng ở máy Lực (WSL2, client cùng phần cứng vật lý nên số hơi lạc quan, không gọi là lab) |
+| (h) Giám sát (#45–#48) | Cắt khỏi đợt này |
+
+**Chưa duyệt:** D09, D10 và SLO vẫn chờ số đo và chữ ký; không ghi `approved`.
