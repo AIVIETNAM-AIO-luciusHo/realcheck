@@ -48,6 +48,7 @@ Users/spawn/thời lượng: `baseline.conf` mặc định **5 user, spawn 1/s, 
 - 429/503/504 không bao giờ tính vào RPS thành công.
 - Số đo chỉ là baseline cho tới khi nhóm ký SLO sau MVP-10.
 - Chưa chạy thật với `/v1/analyze` (chưa có server); chỉ kiểm bằng mock HTTP tạm, mock không phải số đo.
+- Quy trình recovery (thời lượng, giờ dừng/bật API, cửa sổ đo, `--warmup-seconds`, tiêu chí hợp lệ): xem [`docs/performance/README.md`](../docs/performance/README.md#quy-trình-recovery-g09-130).
 - Schema SLO và cách điền: xem [`docs/performance/README.md`](../docs/performance/README.md). Sidecar phải có meta `scenario` khớp scope (load=baseline, soak, recovery), nếu không `check_performance` thoát 2. Chưa có percentile toàn traffic.
 - Sidecar có latency âm hoặc `--warmup-*` âm bị từ chối (thoát 2).
 - `RC_MIX` sai (nhóm lạ, trọng số âm/không hữu hạn, tổng bằng 0) làm Locust thoát với thông báo `RC_MIX`. Meta `wait` ghi đúng wait thật (rate_only là `[0, 0]`). Mốc `t` là `time.time()`; latency không gồm đọc file payload.
