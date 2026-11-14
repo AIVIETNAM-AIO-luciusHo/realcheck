@@ -1,5 +1,17 @@
 # tests/ – pytest
 
+Payload Locust #123: `pytest tests/test_make_locust_payloads.py` kiểm bằng ảnh tổng hợp:
+đủ 100 JPEG/100 PNG, nguồn/split, giữ nguyên byte, hash/manifest/ZIP, chọn mẫu tất định,
+giới hạn API, ảnh hỏng/đa khung, đường dẫn không an toàn, thiếu quota và từ chối ghi đè.
+Test loader dùng Locust thật trong subprocess riêng; cài thêm `locust/requirements.txt`
+để chạy phần này. Chạy cả file trên môi trường máy đo; CI nhẹ không cài Locust chỉ bỏ qua
+phần kiểm loader, vẫn kiểm tạo và đối chiếu gói. Chưa thay kiểm gói GenImage thật trên máy giữ ảnh.
+
+Regression PR #127: hash byte gốc CRLF/LF, provenance khi cwd ngoài Git hoặc trong repo
+khác, Git lỗi trước scan, missing raw trước decode, hard-link alias và rollback lúc move/
+publish ZIP/sidecar lỗi. Test concurrent output/replaced inode/cleanup lỗi bảo đảm không
+xóa artifact của người khác, không che lỗi gốc và chạy lại cùng out sau rollback thành công.
+
 Phụ trách: Lực
 
 ## Làm gì

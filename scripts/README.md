@@ -8,6 +8,46 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 ## Cách chạy
 `python -m scripts.<tên_script>` từ thư mục gốc repo.
 
+### Gói payload Locust GenImage (#123)
+
+Chạy trên máy đang giữ ảnh gốc, với Python 3.11+ và Pillow từ `requirements.txt`:
+
+```bash
+python -m scripts.make_locust_payloads --labels data/labels.csv --raw-dir "<thu-muc-raw>" --out .cache/locust-payloads-genimage
+```
+
+`--raw-dir` chứa `genimage/real`, `genimage/glide`, `genimage/midjourney`, `genimage/sd14`.
+Script chỉ đọc ảnh gốc thuộc split **train** của manifest hiện tại: 100 JPEG thật,
+33 PNG GLIDE, 33 PNG Midjourney, 34 PNG SD1.4. Chọn cách đều theo diện tích pixel,
+dung lượng và raw_path trong từng nguồn; giữ nguyên byte, không resize/nén lại.
+File phải giải mã được, một khung, đúng định dạng, ≤5.242.880 byte, cạnh ngắn ≥256,
+cạnh dài ≤10.000 và ≤24 MP. Loại bản trùng SHA256, ảnh hỏng/vượt giới hạn và ghi số loại;
+thiếu file, sai manifest, nhóm train giao test hoặc không đủ quota thì thoát 2.
+Chỉ nguồn GenImage được phép, không dùng CIFAKE, ảnh cá nhân hay Zalo.
+
+Output: thư mục `<out>/` có `jpeg/`, `png/`, `payload-manifest.csv`, `README.md`;
+`<out>.zip` và `<out>.zip.sha256` nằm cạnh thư mục. Từ chối ghi đè output đã có.
+Ảnh được băm khi kiểm đầu vào, kiểm lại lúc sao chép và đọc lại toàn ZIP trước khi bàn giao.
+Manifest ghi đường dẫn nguồn tương đối, split, nhãn, group, kích thước và SHA256 từng ảnh.
+README ghi commit và dirty của **repo chứa script**, lấy trước khi quét ảnh, không theo
+cwd; bản script chép ra ngoài checkout Git bị từ chối. Hash `labels_sha256` băm **byte gốc**:
+CRLF/LF hoặc thứ tự dòng làm hash/provenance và ZIP khác, dù các ảnh được chọn có thể giống.
+Không chuẩn hóa newline trước băm. Đây không tự chứng nhận commit nguồn của labels.csv.
+Tạo gói chính thức từ checkout sạch; cùng byte đầu vào, code/provenance và môi trường nén
+mới cho cùng ZIP. Khi gọi từ thư mục khác, truyền đường dẫn labels/raw/out tuyệt đối.
+Máy cần filesystem hỗ trợ hard link (NTFS/ext4 thông thường); ZIP được công bố nguyên vẹn,
+không ghi trực tiếp ZIP dở vào tên cuối. Lỗi công bố sẽ rollback chỉ artifact của lần chạy,
+kiểm path và inode trước xóa; không xóa output cũ hoặc output bị thay bởi tiến trình khác.
+Rollback thành công cho phép chạy lại cùng `--out`; nếu dọn lỗi, stderr nêu artifact còn sót
+để người dùng kiểm, giữ nguyên lỗi gốc. Process bị kill/mất điện có thể vẫn để lại output.
+Thiếu raw báo một dòng tổng số và raw_path đầu tiên, trước giải mã; không bỏ mẫu thiếu.
+Hai raw path cùng inode (hard-link alias) bị từ chối; không cấm mọi file có nlink > 1.
+
+**Chỉ dùng đo tải, độ trễ và RPS; không dùng đánh giá độ chính xác.** JPEG là ảnh thật,
+PNG là ảnh AI trong gói này; định dạng gắn với nguồn/nhãn. Không đưa ảnh/ZIP vào Git.
+Gửi ZIP và checksum cho Lực qua kênh nhóm; chỉ ghi nhận hoàn tất bàn giao khi bên nhận
+kiểm checksum và đọc được gói. Cách dùng: [locust/README.md](../locust/README.md#payload-genimage-123).
+
 | Script | Người viết | Làm gì |
 |---|---|---|
 | `download_data.py` | Loan | Tải CIFAKE, GenImage về `data/raw/` |
