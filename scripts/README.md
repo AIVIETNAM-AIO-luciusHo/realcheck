@@ -8,6 +8,39 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 ## Cách chạy
 `python -m scripts.<tên_script>` từ thư mục gốc repo.
 
+### Gói payload Locust GenImage (#123)
+
+Chạy trên máy đang giữ ảnh gốc, với Python 3.11+ và Pillow từ `requirements.txt`:
+
+```bash
+python -m scripts.make_locust_payloads --labels data/labels.csv --raw-dir "<thu-muc-raw>" --out .cache/locust-payloads-genimage
+```
+
+`--raw-dir` chứa `genimage/real`, `genimage/glide`, `genimage/midjourney`, `genimage/sd14`.
+Script chỉ đọc ảnh gốc thuộc split **train** của manifest hiện tại: 100 JPEG thật,
+33 PNG GLIDE, 33 PNG Midjourney, 34 PNG SD1.4. Chọn cách đều theo diện tích pixel,
+dung lượng và raw_path trong từng nguồn; giữ nguyên byte, không resize/nén lại.
+File phải giải mã được, một khung, đúng định dạng, ≤5.242.880 byte, cạnh ngắn ≥256,
+cạnh dài ≤10.000 và ≤24 MP. Loại bản trùng SHA256, ảnh hỏng/vượt giới hạn và ghi số loại;
+thiếu file, sai manifest, nhóm train giao test hoặc không đủ quota thì thoát 2.
+Chỉ nguồn GenImage được phép, không dùng CIFAKE, ảnh cá nhân hay Zalo.
+
+Output: thư mục `<out>/` có `jpeg/`, `png/`, `payload-manifest.csv`, `README.md`;
+`<out>.zip` và `<out>.zip.sha256` nằm cạnh thư mục. Từ chối ghi đè output đã có.
+Ảnh được băm khi kiểm đầu vào, kiểm lại lúc sao chép và đọc lại toàn ZIP trước khi bàn giao.
+Manifest ghi đường dẫn nguồn tương đối, split, nhãn, group, kích thước và SHA256 từng ảnh.
+README ghi commit, trạng thái dirty và hash của **đúng byte labels.csv đã đọc** (CRLF/LF
+có thể làm hash khác bản Git), thống kê kích thước và dung lượng. Tạo gói chính thức từ
+checkout sạch; cùng đầu vào/commit/trạng thái Git và môi trường nén cho cùng ZIP.
+Máy cần filesystem hỗ trợ hard link (NTFS/ext4 thông thường); ZIP được công bố nguyên vẹn,
+không ghi trực tiếp ZIP dở vào tên cuối. Nếu xuất gói lỗi sau khi đã tạo thư mục, giữ lại
+để kiểm tra và chọn `--out` mới khi chạy lại.
+
+**Chỉ dùng đo tải, độ trễ và RPS; không dùng đánh giá độ chính xác.** JPEG là ảnh thật,
+PNG là ảnh AI trong gói này; định dạng gắn với nguồn/nhãn. Không đưa ảnh/ZIP vào Git.
+Gửi ZIP và checksum cho Lực qua kênh nhóm; chỉ ghi nhận hoàn tất bàn giao khi bên nhận
+kiểm checksum và đọc được gói. Cách dùng: [locust/README.md](../locust/README.md#payload-genimage-123).
+
 | Script | Người viết | Làm gì |
 |---|---|---|
 | `download_data.py` | Loan | Tải CIFAKE, GenImage về `data/raw/` |
