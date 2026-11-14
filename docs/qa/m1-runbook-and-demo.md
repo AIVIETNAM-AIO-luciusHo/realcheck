@@ -116,13 +116,15 @@ Hệ quả cho demo:
 - Số 94,53% là trên **384 ảnh test đã lọc** (65 ảnh thật), chưa được duyệt độc lập; validation GenImage 97,24% (N = 871) đã được dùng khi chọn tham số nên không phải kết quả độc lập. **Không nói "đạt 90%".**
 - Cohort rất nhỏ (56 / 32 / 36 ảnh), ảnh điện thoại gần như chỉ từ iPhone 11, khoảng tin cậy rộng; xem phần "Hạn chế" trong báo cáo cohort.
 - Lần diễn tập 11/11 cũng cho thấy: cả 11 ảnh hợp lệ thử (tổng hợp và ảnh hoa mẫu) đều ra "Ảnh AI" (điểm 0,708 đến 0,999), ảnh chụp màn hình giả lập bị kết luận AI 93%, không ảnh nào rơi vào vùng "Chưa chắc".
-- Ảnh MPO (ảnh chân dung iPhone): hiện API từ chối với `UNSUPPORTED_FORMAT` (2 ảnh MPO của cohort không có điểm). Đã quyết định chấp nhận MPO và PR #106 đã sẵn sàng review; **chỉ có hiệu lực khi #106 được merge**, khi đó ảnh MPO được chấm theo khung đầu. Cho tới lúc đó khi demo đừng dùng ảnh chân dung iPhone (hoặc dùng để minh họa lỗi định dạng).
+- Ảnh MPO (ảnh chân dung iPhone): từ PR #106 (đã merge) API nhận MPO và **chỉ chấm khung đầu**; GIF, WebP động và APNG vẫn bị từ chối `UNSUPPORTED_FORMAT`. Hai ảnh MPO của cohort ADV-06 không có điểm vì lượt chấm 12/11 chạy ở commit `1e77b60`, trước khi nhận MPO. **Chưa thử file MPO thật của iPhone**: Tester (T-6) mới thử MPO do Pillow tạo, điểm bằng điểm của JPEG khung đầu (0,9591100811958313). Khi demo không dùng ảnh chân dung iPhone.
 
 ### Chuẩn bị trước 1 giờ
 - [ ] Chạy đủ mục 2 đến 6; `/health` 200 trước khi lên sân khấu.
 - [ ] Chọn 6 ảnh và **thử trước từng ảnh**, ghi kết quả thật vào bảng bên dưới. Không giả định ảnh nào ra kết quả nào, đặc biệt ảnh thật chụp bằng điện thoại.
 - [ ] Mở sẵn 3 tab: Streamlit, `http://localhost:8000/docs`, terminal có log.
 - [ ] Có phương án B (mục 8.4).
+
+Cột "Kết quả khi thử" điền sau khi thử trên máy demo; chưa có kết quả tại 13/11.
 
 | # | Ảnh | Mục đích | Điều đã quan sát (nguồn) | Kết quả khi thử (điền) |
 |---|---|---|---|---|
@@ -165,7 +167,7 @@ Hệ quả cho demo:
 | Có học đường tắt (dung lượng file, định dạng) không? | Đã đo: baseline chỉ dùng dung lượng file đạt 84,54% ở cặp thật với GLIDE, nên nguy cơ còn, chưa loại trừ |
 | Chịu tải được bao nhiêu? | **Chưa có số đã duyệt.** Công cụ Locust đã có; baseline sơ bộ trên máy phát triển ở [biên bản 11/11](local-real-model-verification-20261111.md), không phải năng lực của máy lab |
 | Có chạy trên server chưa? | Chưa; M1 chạy localhost. Compose và Nginx có hướng dẫn trong `docs/deploy.md`, chưa có bằng chứng trên máy lab |
-| Sao không nhận ảnh chân dung iPhone? | Ảnh MPO hiện bị từ chối `UNSUPPORTED_FORMAT`; đã quyết định nhận MPO, chỉ có hiệu lực khi PR #106 được merge |
+| Sao không nhận ảnh chân dung iPhone? | Có nhận: từ PR #106 API chấm ảnh MPO theo khung đầu. Chưa thử file MPO thật của iPhone (mới thử MPO do Pillow tạo), nên chưa nói là đã kiểm với ảnh thật |
 
 ## 9. Rủi ro đã biết khi demo
 - Lần khởi động đầu chậm (30 đến 75 giây tùy cache đĩa) và cần cache CLIP; bật API sớm.
