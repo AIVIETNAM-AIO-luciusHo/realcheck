@@ -24,7 +24,33 @@ python -m scripts.check_performance --sidecar artifacts/run1.jsonl --slo docs/pe
 ```
 `RC_PAYLOAD_DIR` có các thư mục con (ví dụ `jpeg/`, `png/`, `phone/`) chứa ảnh `.jpg/.png` thật, raw. Locustfile gửi nguyên byte, không resize, không model stub. Locust CLI (`-u -r -t`) ghi đè file conf.
 
+## Payload GenImage (#123)
+
+Tạo gói trên máy có raw GenImage bằng [script đóng gói](../scripts/README.md#gói-payload-locust-genimage-123).
+Nhận `<goi>.zip` và `<goi>.zip.sha256` qua kênh nhóm; kiểm hash trước khi giải nén:
+
+```bash
+sha256sum -c <goi>.zip.sha256
+unzip <goi>.zip -d payloads-genimage
+mkdir -p .cache
+RC_PAYLOAD_DIR=payloads-genimage RC_MIX=jpeg=50,png=50 RC_SIDECAR=.cache/baseline.jsonl locust --config locust/baseline.conf --host http://<gateway>
+```
+
+PowerShell: dùng `Get-FileHash <goi>.zip -Algorithm SHA256`, so với file checksum,
+`Expand-Archive <goi>.zip payloads-genimage`, rồi đặt `$env:RC_PAYLOAD_DIR='payloads-genimage'`
+và `$env:RC_MIX='jpeg=50,png=50'` trước lệnh `locust`.
+`RC_PAYLOAD_DIR` trỏ tới thư mục có trực tiếp `jpeg/`, `png/`; không trỏ vào một nhóm con.
+Manifest và README ở gốc không được Locust đưa vào pool.
+
+Gói gồm 100 JPEG thật và 100 PNG AI từ GenImage train, giữ nguyên byte và kích thước gốc.
+**Chỉ dùng đo tải, độ trễ và RPS; không dùng đánh giá độ chính xác.** Không có ảnh cá nhân/Zalo.
+`payload-manifest.csv` cho phép đối chiếu tên payload trong sidecar với SHA256 và nguồn.
+Baseline thật do QA chạy từ máy đo riêng, trên máy chủ đủ cấu hình; không đo tải trên VPS
+dùng chung chỉ dành cho kiểm chức năng theo quyết định ở issue #42. Chưa có SLO được duyệt
+thì kết quả chỉ là baseline. Kết quả gói/loader bằng test tổng hợp không phải số đo tải.
+
 ## Tham số
+
 | Biến | Mặc định | Ý nghĩa |
 |---|---|---|
 | `RC_PAYLOAD_DIR` | `payloads` | Thư mục payload |
