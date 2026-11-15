@@ -1,0 +1,367 @@
+{
+  "base_url": "http://127.0.0.1:18090",
+  "started_at": "2026-11-14T14:48:23.444302+00:00",
+  "finished_at": "2026-11-14T14:49:33.607966+00:00",
+  "exit_code": 0,
+  "fatal": null,
+  "results": [
+    {
+      "case": "GET /health",
+      "expected": "200 model_ready",
+      "actual": "200 ok",
+      "status": "đạt"
+    },
+    {
+      "case": "GET /docs",
+      "expected": "200",
+      "actual": "200",
+      "status": "đạt"
+    },
+    {
+      "case": "GET /openapi.json",
+      "expected": "200",
+      "actual": "200",
+      "status": "đạt"
+    },
+    {
+      "case": "JPEG 4000x3000 có EXIF",
+      "expected": "200 + 4 trường hợp lệ",
+      "actual": "200 hợp lệ",
+      "status": "đạt"
+    },
+    {
+      "case": "JPEG 4000x3000 không EXIF",
+      "expected": "200 + 4 trường hợp lệ",
+      "actual": "200 hợp lệ",
+      "status": "đạt"
+    },
+    {
+      "case": "JPEG Orientation=6",
+      "expected": "200 + 4 trường hợp lệ",
+      "actual": "200 hợp lệ",
+      "status": "đạt"
+    },
+    {
+      "case": "PNG hợp lệ",
+      "expected": "200 + 4 trường hợp lệ",
+      "actual": "200 hợp lệ",
+      "status": "đạt"
+    },
+    {
+      "case": "Biên 256x256",
+      "expected": "200 + 4 trường hợp lệ",
+      "actual": "200 hợp lệ",
+      "status": "đạt"
+    },
+    {
+      "case": "Đúng 5.242.880 byte (cần xác nhận)",
+      "expected": "200 + 4 trường hợp lệ",
+      "actual": "200 hợp lệ",
+      "status": "đạt"
+    },
+    {
+      "case": "File 0 byte",
+      "expected": "400 EMPTY_FILE",
+      "actual": "400 EMPTY_FILE",
+      "status": "đạt"
+    },
+    {
+      "case": "Text giả .jpg",
+      "expected": "400 INVALID_IMAGE",
+      "actual": "400 INVALID_IMAGE",
+      "status": "đạt"
+    },
+    {
+      "case": "JPEG bị cắt cụt",
+      "expected": "400 INVALID_IMAGE",
+      "actual": "400 INVALID_IMAGE",
+      "status": "đạt"
+    },
+    {
+      "case": "APNG nhiều khung",
+      "expected": "415 UNSUPPORTED_FORMAT",
+      "actual": "415 UNSUPPORTED_FORMAT",
+      "status": "đạt"
+    },
+    {
+      "case": "GIF nhiều khung",
+      "expected": "415 UNSUPPORTED_FORMAT",
+      "actual": "415 UNSUPPORTED_FORMAT",
+      "status": "đạt"
+    },
+    {
+      "case": "Ảnh 200x200",
+      "expected": "422 IMAGE_TOO_SMALL",
+      "actual": "422 IMAGE_TOO_SMALL",
+      "status": "đạt"
+    },
+    {
+      "case": "Ảnh 255x400",
+      "expected": "422 IMAGE_TOO_SMALL",
+      "actual": "422 IMAGE_TOO_SMALL",
+      "status": "đạt"
+    },
+    {
+      "case": "5.242.881 byte",
+      "expected": "413 FILE_TOO_LARGE",
+      "actual": "413 FILE_TOO_LARGE",
+      "status": "đạt"
+    },
+    {
+      "case": "6000x6000 (36 MP)",
+      "expected": "413 TOO_MANY_PIXELS",
+      "actual": "413 TOO_MANY_PIXELS",
+      "status": "đạt"
+    },
+    {
+      "case": "Cạnh 10001 px",
+      "expected": "413 TOO_MANY_PIXELS",
+      "actual": "413 TOO_MANY_PIXELS",
+      "status": "đạt"
+    },
+    {
+      "case": "Thiếu trường file",
+      "expected": "422 MISSING_FILE",
+      "actual": "422 MISSING_FILE",
+      "status": "đạt"
+    },
+    {
+      "case": "Hai file",
+      "expected": "422 MULTIPLE_FILES",
+      "actual": "422 MULTIPLE_FILES",
+      "status": "đạt"
+    },
+    {
+      "case": "GET đường dẫn lạ",
+      "expected": "404 NOT_FOUND",
+      "actual": "404 NOT_FOUND",
+      "status": "đạt"
+    },
+    {
+      "case": "GET /v1/analyze",
+      "expected": "405 METHOD_NOT_ALLOWED",
+      "actual": "405 METHOD_NOT_ALLOWED",
+      "status": "đạt"
+    },
+    {
+      "case": "X-Request-ID khác nhau giữa các request",
+      "expected": "mỗi request một ID",
+      "actual": "23 ID khác nhau",
+      "status": "đạt"
+    },
+    {
+      "case": "Ảnh --real",
+      "expected": "200 trong schema (nhãn không kiểm)",
+      "actual": "verdict=likely_real score=0.026136046275496483",
+      "status": "ghi nhận"
+    },
+    {
+      "case": "Ảnh --ai",
+      "expected": "200 trong schema (nhãn không kiểm)",
+      "actual": "verdict=likely_ai score=0.9849315881729126",
+      "status": "ghi nhận"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "file": null,
+      "status": 200,
+      "ms": 130.3,
+      "request_id": "5c36885a-e50c-c96f-ac6e-e3624c44a50e"
+    },
+    {
+      "method": "GET",
+      "path": "/docs",
+      "file": null,
+      "status": 200,
+      "ms": 62.7,
+      "request_id": "b4195c61-cef2-e70a-085b-57b3f6af80c8"
+    },
+    {
+      "method": "GET",
+      "path": "/openapi.json",
+      "file": null,
+      "status": 200,
+      "ms": 116.7,
+      "request_id": "f1fc1376-00ac-f9fb-774d-3f197ea0ae41"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "ok_4000x3000_exif.jpg",
+      "status": 200,
+      "ms": 2949.5,
+      "request_id": "b20e573c-1407-7973-f116-9a02de515928"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "ok_4000x3000_noexif.jpg",
+      "status": 200,
+      "ms": 3020.2,
+      "request_id": "42083e11-18a0-6ed3-e714-ebd286a37497"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "ok_orientation6.jpg",
+      "status": 200,
+      "ms": 332.0,
+      "request_id": "f2f47dd9-078d-9f20-cbba-5f9f3d931eec"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "ok_valid.png",
+      "status": 200,
+      "ms": 397.5,
+      "request_id": "234bcc4d-24d1-21af-75b1-568216d7b476"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "ok_256x256.png",
+      "status": 200,
+      "ms": 391.0,
+      "request_id": "d4984e6a-8d9b-9949-2a3a-ca6bc81015d3"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "limit_5242880.jpg",
+      "status": 200,
+      "ms": 23958.1,
+      "request_id": "d4d8e9d4-ff5b-bfd6-8df2-17bf4be178e1"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "empty.jpg",
+      "status": 400,
+      "ms": 96.0,
+      "request_id": "342181fc-1b2d-3135-c2c5-570a4cca11f1"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "fake_text.jpg",
+      "status": 400,
+      "ms": 203.2,
+      "request_id": "cb812873-e272-6cea-b9fa-9c5475a874d9"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "truncated.jpg",
+      "status": 400,
+      "ms": 126.7,
+      "request_id": "1223a71e-c0ce-8789-4512-e44dd7c6c7b1"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "multiframe.png",
+      "status": 415,
+      "ms": 94.5,
+      "request_id": "1b154af8-b89f-07a8-a13e-3c6a1ddb439c"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "multiframe.gif",
+      "status": 415,
+      "ms": 119.4,
+      "request_id": "090de41f-2ccc-74e1-62c0-e436a501d5b9"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "small_200x200.jpg",
+      "status": 422,
+      "ms": 187.4,
+      "request_id": "32565cca-cf3a-0ae0-cd53-b3f8eb243227"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "small_255x400.jpg",
+      "status": 422,
+      "ms": 245.5,
+      "request_id": "332c9101-eb38-e3d9-5155-99fc6c6a01ba"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "over_5242881.jpg",
+      "status": 413,
+      "ms": 26468.4,
+      "request_id": "f8ee2749-cfc8-1692-b236-f29cbc67fd21"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "many_pixels_6000x6000.png",
+      "status": 413,
+      "ms": 292.3,
+      "request_id": "6dbd43e5-f739-14f1-0efb-fe14bd106fc0"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "many_side_10001x300.png",
+      "status": 413,
+      "ms": 115.9,
+      "request_id": "8e8a2468-fcbf-3b6d-7d35-19a2483d49ea"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": null,
+      "status": 422,
+      "ms": 147.9,
+      "request_id": "bb398476-184b-4284-1118-f793a9388966"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "2 file",
+      "status": 422,
+      "ms": 128.0,
+      "request_id": "caa53309-2f8e-6f5e-3f65-bf6b178403af"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/khong-co-duong-nay",
+      "file": null,
+      "status": 404,
+      "ms": 61.6,
+      "request_id": "d639e9d4-066a-1747-7403-a4cdfb9a0e42"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/analyze",
+      "file": null,
+      "status": 405,
+      "ms": 63.7,
+      "request_id": "a36895c4-b269-65c7-e53d-0f0035cde248"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "real_train-00002_1238.jpg",
+      "status": 200,
+      "ms": 469.5,
+      "request_id": "fdbef0c2-c62a-c94e-db39-33b8f2a88e37"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file": "midjourney_train-00000_1771.png",
+      "status": 200,
+      "ms": 5325.2,
+      "request_id": "434c13c4-7418-6646-2dcd-60156eee420f"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "time": "2026-11-14T14:53:37.786967+00:00",
+  "base_url": "http://127.0.0.1:18090",
+  "rate": 10.0,
+  "burst": 10,
+  "results": [
+    {
+      "case": "Dưới giới hạn vẫn 200 + X-Request-ID",
+      "expected": "3 request, nửa 10 r/s → 200",
+      "actual": "3/3 là 200",
+      "status": "đạt"
+    },
+    {
+      "case": "Vượt giới hạn trả 429 (không 5xx)",
+      "expected": "≥1 request 429, envelope, không 500",
+      "actual": "27/50 là 429",
+      "status": "đạt"
+    },
+    {
+      "case": "Phục hồi sau rate limit",
+      "expected": "request hợp lệ lại 200",
+      "actual": "200 sau 2.1s chờ",
+      "status": "đạt"
+    },
+    {
+      "case": "Body 6291456 B bị chặn",
+      "expected": "413 FILE_TOO_LARGE + envelope",
+      "actual": "413",
+      "status": "đạt"
+    },
+    {
+      "case": "Biên đúng 5.242.880 B",
+      "expected": "không 413/429/5xx",
+      "actual": "HTTP 200",
+      "status": "đạt"
+    },
+    {
+      "case": "Biên 5.242.881 B",
+      "expected": "413",
+      "actual": "HTTP 413",
+      "status": "đạt"
+    },
+    {
+      "case": "Upstream tắt/chậm trả lỗi gateway sạch",
+      "expected": "502/503/504 + envelope, không lộ nội bộ",
+      "actual": "HTTP 504",
+      "status": "đạt"
+    },
+    {
+      "case": "Phục hồi sau khi upstream trở lại",
+      "expected": "200 trong thời hạn",
+      "actual": "200 sau 14.1s",
+      "status": "đạt"
+    }
+  ]
+}

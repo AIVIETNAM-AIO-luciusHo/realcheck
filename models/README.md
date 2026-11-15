@@ -138,3 +138,7 @@ Ban đầu người dùng xác nhận chưa chốt manifest và chưa mở GenIm
 Đã train candidate `realcheck_mixed_v3` trên 9.936 ảnh, giữ CLIP/normalization và GenImage validation cũ; [số liệu, artifact và giới hạn](../docs/ml-data-expansion-20261110.md). `models.data_sources` khai báo source/label và dataset dùng chung cho extract/train/loader; mixed v3 nhận các nguồn GenImage, OpenFake và Community, không nhận CIFAKE vào fit. BigGAN/VQDM là audit-only; mixed v2 tiếp tục loại SD14. GenImage test vẫn chỉ qua protocol riêng; `train --evaluate-test` chỉ dành CIFAKE.
 
 `load_bundle`/`load_scorer` nhận bundle mixed có checksum/profile đúng; việc này không thay đường dẫn model, registry hay phê duyệt phục vụ của Backend. Candidate mới cải thiện Reddit nhưng giảm GenImage validation/core; chưa đề xuất thay artifact hiện hành.
+
+## ADV-12: đặc trưng nhiều lớp ViT (THỬ NGHIỆM, #144)
+`models/clip_layers.py` trích CLS của nhiều lớp `CLIPVisionModel` (`output_hidden_states`) theo danh sách lớp (`0` là embedding, `1..N` là các khối, số âm đếm từ cuối), trả nối `(B, L*D)` hoặc riêng `(B, L, D)`. **Đây là thí nghiệm cho ADV-12, không dùng cho model phục vụ:** đặc trưng không cùng không gian với `models.clip_input` (bản đóng băng của e571) nên không thể đưa vào probe e571 hay `models.score`. `load_vision_model` tải trọng số Hugging Face (cần mạng hoặc cache, nên ghim `revision`); test dùng `CLIPVisionConfig` nhỏ khởi tạo ngẫu nhiên, không tải gì và tự bỏ qua khi máy thiếu `torch`/`transformers` (cài `models/requirements-ml.txt`).
+
