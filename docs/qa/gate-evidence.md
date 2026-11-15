@@ -86,8 +86,8 @@ cp docs/performance/slo.template.json docs/performance/slo.json   # điền số
 
 Từ máy đo (không phải server), cài `pip install -r locust/requirements.txt`:
 ```bash
-RC_PAYLOAD_DIR=<thư mục payload> RC_SIDECAR=artifacts/load.jsonl RC_COMMIT=<sha> RC_MODEL=<hash> RC_CLIENT="<cpu/ram>" RC_SERVER="<cpu/ram>" \
-  locust --config locust/baseline.conf --host http://<gateway>
+RC_WARMUP_SECONDS=30 RC_PAYLOAD_DIR=<thư mục payload> RC_SIDECAR=artifacts/load.jsonl RC_COMMIT=<sha> RC_MODEL=<hash> RC_CLIENT="<cpu/ram>" RC_SERVER="<cpu/ram>" \
+  locust --config locust/baseline.conf -u 2 -r 1 --host http://<gateway>
 python -m scripts.perf_report artifacts/load.jsonl --warmup-seconds 30 --output artifacts/load-report.json
 python -m scripts.check_performance --sidecar artifacts/load.jsonl --slo docs/performance/slo.json --scope load
 ```
@@ -96,7 +96,7 @@ python -m scripts.check_performance --sidecar artifacts/load.jsonl --slo docs/pe
 ## 8. G08: soak và RSS
 
 ```bash
-RC_PAYLOAD_DIR=<thư mục payload> RC_SIDECAR=artifacts/soak.jsonl locust --config locust/soak.conf -t 30m --host http://<gateway>
+RC_WARMUP_SECONDS=300 RC_PAYLOAD_DIR=<thư mục payload> RC_SIDECAR=artifacts/soak.jsonl locust --config locust/soak.conf -u 2 -r 1 -t 30m --host http://<gateway>
 python -m scripts.soak_rss --container <tên container api> --duration-seconds 1800 --warmup-seconds 300 --output artifacts/soak-rss.json   # chạy song song, từ máy có docker
 python -m scripts.check_performance --sidecar artifacts/soak.jsonl --slo docs/performance/slo.json --scope soak --rss artifacts/soak-rss.json
 ```
@@ -106,9 +106,11 @@ python -m scripts.check_performance --sidecar artifacts/soak.jsonl --slo docs/pe
 
 Chạy sau stress, cùng server (xem `locust/README.md`):
 ```bash
-RC_PAYLOAD_DIR=<thư mục payload> RC_SIDECAR=artifacts/recovery.jsonl locust --config locust/recovery.conf --host http://<gateway>
+RC_WARMUP_SECONDS=<N> RC_PAYLOAD_DIR=<thư mục payload> RC_SIDECAR=artifacts/recovery.jsonl locust --config locust/recovery.conf -t 10m --host http://<gateway>
 python -m scripts.check_performance --sidecar artifacts/recovery.jsonl --slo docs/performance/slo.json --scope recovery
 ```
+`-t 10m` là thời lượng tối thiểu của quy trình G09 (`recovery.conf` mặc định 2 phút); `<N>` ước lượng theo [Quy trình recovery](../performance/README.md#quy-trình-recovery-g09-130) (lượt T-16 dùng 175). Giá trị warmup 30 (tải) và 300 (soak) là meta của lượt T-16 và `soak_rss`; `-u 2` theo SLO (2 user), vì `baseline.conf` và `soak.conf` đặt 5 user. `check_mvp_gates` đọc warmup từ meta sidecar, nên phải đặt `RC_WARMUP_SECONDS` trước khi chạy Locust.
+
 Sidecar phải có meta `scenario` đúng scope (load là `baseline`, `soak`, `recovery`); không khớp thì `check_performance` thoát 2.
 
 **Lưu ý warmup của G09:** `check_mvp_gates` không có `--warmup-seconds`; nó đọc `warmup_seconds` từ meta của sidecar gốc. Lượt recovery có gián đoạn chạy với meta 0 nên `check_mvp_gates` tính cả phần gián đoạn và có thể cho "chưa đạt" khi `check_performance --warmup-seconds N` đạt. Dùng `check_performance --warmup-seconds N` làm bằng chứng, ghi rõ khác biệt, **không sửa sidecar**; lần sau đặt `RC_WARMUP_SECONDS` biết trước khi chạy Locust: xem [Quy trình recovery](../performance/README.md#quy-trình-recovery-g09-130).
