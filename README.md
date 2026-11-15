@@ -15,7 +15,7 @@ API FastAPI phát hiện ảnh do AI tạo: trả **Ảnh thật / Ảnh AI / Ch
 
 - **Chạy được:** `POST /v1/analyze` và `GET /health` qua `uvicorn` hoặc Docker Compose + Nginx; model phục vụ là **reference e571** (CLIP ViT-B/32 + Logistic Regression, SHA256 `e5718345…9494`); giao diện Streamlit; bộ kiểm thử và công cụ đánh giá.
 - **Demo một máy (M1):** đạt, xem [runbook](docs/qa/m1-runbook-and-demo.md).
-- **Nghiệm thu core trên server lab (M2):** chưa đạt; chưa có máy lab, nên chưa có bằng chứng triển khai thật. Các cổng nghiệm thu: `python -m scripts.check_mvp_gates`.
+- **Nghiệm thu core trên server lab (M2):** chưa đạt. Đã deploy Compose lên một server Linux mượn ngày 14/11 (smoke, gateway, rollback đạt; [biên bản](docs/reports/deploy-lab-20261114.md)), nhưng máy thấp hơn yêu cầu (2 nhân, 1,9 GiB RAM) và chưa đo tải, soak. Các cổng nghiệm thu: `python -m scripts.check_mvp_gates`.
 - **Độ chính xác:** 94,53% (384 ảnh test GenImage đã lọc) **chưa được duyệt độc lập**, đừng trích là "đạt 90%". Trên cohort ảnh thật ngoài GenImage ([ADV-06](docs/cohorts-adv06.md)), 64/76 ảnh thật chụp điện thoại hoặc gửi qua Zalo bị gọi "Ảnh AI". Đây là giới hạn đã biết của model hiện tại.
 - **Giám sát (`/metrics`, Prometheus, Grafana):** chưa triển khai; dùng báo cáo HTML của Locust.
 
