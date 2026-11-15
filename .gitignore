@@ -246,3 +246,7 @@ PENDING_SETUP.md
 
 # Local dataset expansion images, caches and reports with machine-specific paths.
 outputs/data-expansion-20261110/
+
+# Local payload archives/folders; never commit image load-test bundles.
+*.zip
+payloads*/

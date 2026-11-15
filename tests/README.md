@@ -1,5 +1,17 @@
 # tests/ – pytest
 
+Payload Locust #123: `pytest tests/test_make_locust_payloads.py` kiểm bằng ảnh tổng hợp:
+đủ 100 JPEG/100 PNG, nguồn/split, giữ nguyên byte, hash/manifest/ZIP, chọn mẫu tất định,
+giới hạn API, ảnh hỏng/đa khung, đường dẫn không an toàn, thiếu quota và từ chối ghi đè.
+Test loader dùng Locust thật trong subprocess riêng; cài thêm `locust/requirements.txt`
+để chạy phần này. Chạy cả file trên môi trường máy đo; CI nhẹ không cài Locust chỉ bỏ qua
+phần kiểm loader, vẫn kiểm tạo và đối chiếu gói. Chưa thay kiểm gói GenImage thật trên máy giữ ảnh.
+
+Regression PR #127: hash byte gốc CRLF/LF, provenance khi cwd ngoài Git hoặc trong repo
+khác, Git lỗi trước scan, missing raw trước decode, hard-link alias và rollback lúc move/
+publish ZIP/sidecar lỗi. Test concurrent output/replaced inode/cleanup lỗi bảo đảm không
+xóa artifact của người khác, không che lỗi gốc và chạy lại cùng out sau rollback thành công.
+
 Phụ trách: Lực
 
 ## Làm gì
@@ -50,7 +62,7 @@ Công cụ kiểm thử tích hợp KAN-29: `test_smoke_api.py` chạy `scripts/
 - Test recipe JPEG chỉ tái viết các lệnh Pillow trên ảnh tổng hợp. Chưa chạy code `prepare_data` cũ với baseline thật của Loan; T013 và lần chạy `check_normalization.py` trên raw độc lập (T016/T022/T030) vẫn chưa hoàn thành.
 - `test_data_scripts.py`: chạy CLI chuẩn hóa với worker thật trên ảnh tổng hợp; kiểm chia tập, giữ test CIFAKE, loại trùng, tách CSV ảnh nhỏ/hỏng, chống ghi đè, lỗi ghi file, decompression bomb và checker bắt buộc `norm_version`.
 - `test_verify_ml.py`: kiểm chính script audit bằng mock; chỉ chọn validation, ghi môi trường, fail khi byte JPEG/tensor/score sai hoặc encoder không frozen. Không tải torch hay weights trên CI.
-- `test_api_mpo.py` (bản nháp #95): MPO hợp lệ trả 200 và scorer nhận đúng pixel khung đầu (không lẫn khung phụ), MPO 5 khung chỉ chấm khung đầu, chuẩn hóa thật ra cùng ảnh với JPEG khung đầu; GIF, WebP động, APNG vẫn 415; MPO cắt cụt và file text đuôi `.jpg` là 400; giới hạn pixel, cạnh, dung lượng vẫn chặn; giải mã đúng một lần. Ảnh tổng hợp từ Pillow 13.0.0, chưa thử file MPO thật của iPhone.
+- `test_api_mpo.py` (#95, PR #106): MPO hợp lệ trả 200 và scorer nhận đúng pixel khung đầu (không lẫn khung phụ), MPO 5 khung chỉ chấm khung đầu, chuẩn hóa thật ra cùng ảnh với JPEG khung đầu; GIF, WebP động, APNG vẫn 415; MPO cắt cụt và file text đuôi `.jpg` là 400; giới hạn pixel, cạnh, dung lượng vẫn chặn; giải mã đúng một lần. Ảnh tổng hợp từ Pillow 13.0.0, chưa thử file MPO thật của iPhone.
 - `test_check_release_audit.py`, `test_metadata_audit.py`: chính sách audit 2026-11-12. Release checker chặn từng ca (A_eff vượt ngưỡng, slice thiếu hoặc thiếu lớp, NaN, control sai) và có mã thoát 0/1/2; đặc trưng post toàn hằng số chỉ cảnh báo mạnh (`vacuous`), `--fail-on-vacuous` mới chặn; `metadata_audit.py` trên ảnh tổng hợp chỉ cảnh báo (thoát 0) khi format lộ nhãn, và thoát 1 khi slice thiếu mẫu. Không cần torch.
 - `test_run_info.py`: UUID phân biệt hai run dù đồng hồ trùng; không bịa commit nếu Git không có sẵn. CLI train cũng có test đối chiếu lệnh và hash artifact trong báo cáo.
 

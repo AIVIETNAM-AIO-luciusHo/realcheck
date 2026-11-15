@@ -9,7 +9,7 @@ Constitution quy định kiến trúc và tiêu chí kỹ thuật cho RealCheck:
 
 Nguồn quyết định yêu cầu dự án:
 
-1. `docs-local/final_realcheck (3).pdf`, mục 1–6: kế hoạch chính, kiến trúc,
+1. `docs-local/final_realcheck (3).pdf` (tài liệu cục bộ, không có trong repo), mục 1–6: kế hoạch chính, kiến trúc,
    phân công, QA và đánh giá.
 2. `docs/technical-report/report.tex` và bản PDF
    `docs/technical-report/RealCheck_Technical_Report_Week1.pdf`: phạm vi tuần 1,

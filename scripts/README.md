@@ -8,6 +8,46 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 ## Cách chạy
 `python -m scripts.<tên_script>` từ thư mục gốc repo.
 
+### Gói payload Locust GenImage (#123)
+
+Chạy trên máy đang giữ ảnh gốc, với Python 3.11+ và Pillow từ `requirements.txt`:
+
+```bash
+python -m scripts.make_locust_payloads --labels data/labels.csv --raw-dir "<thu-muc-raw>" --out .cache/locust-payloads-genimage
+```
+
+`--raw-dir` chứa `genimage/real`, `genimage/glide`, `genimage/midjourney`, `genimage/sd14`.
+Script chỉ đọc ảnh gốc thuộc split **train** của manifest hiện tại: 100 JPEG thật,
+33 PNG GLIDE, 33 PNG Midjourney, 34 PNG SD1.4. Chọn cách đều theo diện tích pixel,
+dung lượng và raw_path trong từng nguồn; giữ nguyên byte, không resize/nén lại.
+File phải giải mã được, một khung, đúng định dạng, ≤5.242.880 byte, cạnh ngắn ≥256,
+cạnh dài ≤10.000 và ≤24 MP. Loại bản trùng SHA256, ảnh hỏng/vượt giới hạn và ghi số loại;
+thiếu file, sai manifest, nhóm train giao test hoặc không đủ quota thì thoát 2.
+Chỉ nguồn GenImage được phép, không dùng CIFAKE, ảnh cá nhân hay Zalo.
+
+Output: thư mục `<out>/` có `jpeg/`, `png/`, `payload-manifest.csv`, `README.md`;
+`<out>.zip` và `<out>.zip.sha256` nằm cạnh thư mục. Từ chối ghi đè output đã có.
+Ảnh được băm khi kiểm đầu vào, kiểm lại lúc sao chép và đọc lại toàn ZIP trước khi bàn giao.
+Manifest ghi đường dẫn nguồn tương đối, split, nhãn, group, kích thước và SHA256 từng ảnh.
+README ghi commit và dirty của **repo chứa script**, lấy trước khi quét ảnh, không theo
+cwd; bản script chép ra ngoài checkout Git bị từ chối. Hash `labels_sha256` băm **byte gốc**:
+CRLF/LF hoặc thứ tự dòng làm hash/provenance và ZIP khác, dù các ảnh được chọn có thể giống.
+Không chuẩn hóa newline trước băm. Đây không tự chứng nhận commit nguồn của labels.csv.
+Tạo gói chính thức từ checkout sạch; cùng byte đầu vào, code/provenance và môi trường nén
+mới cho cùng ZIP. Khi gọi từ thư mục khác, truyền đường dẫn labels/raw/out tuyệt đối.
+Máy cần filesystem hỗ trợ hard link (NTFS/ext4 thông thường); ZIP được công bố nguyên vẹn,
+không ghi trực tiếp ZIP dở vào tên cuối. Lỗi công bố sẽ rollback chỉ artifact của lần chạy,
+kiểm path và inode trước xóa; không xóa output cũ hoặc output bị thay bởi tiến trình khác.
+Rollback thành công cho phép chạy lại cùng `--out`; nếu dọn lỗi, stderr nêu artifact còn sót
+để người dùng kiểm, giữ nguyên lỗi gốc. Process bị kill/mất điện có thể vẫn để lại output.
+Thiếu raw báo một dòng tổng số và raw_path đầu tiên, trước giải mã; không bỏ mẫu thiếu.
+Hai raw path cùng inode (hard-link alias) bị từ chối; không cấm mọi file có nlink > 1.
+
+**Chỉ dùng đo tải, độ trễ và RPS; không dùng đánh giá độ chính xác.** JPEG là ảnh thật,
+PNG là ảnh AI trong gói này; định dạng gắn với nguồn/nhãn. Không đưa ảnh/ZIP vào Git.
+Gửi ZIP và checksum cho Lực qua kênh nhóm; chỉ ghi nhận hoàn tất bàn giao khi bên nhận
+kiểm checksum và đọc được gói. Cách dùng: [locust/README.md](../locust/README.md#payload-genimage-123).
+
 | Script | Người viết | Làm gì |
 |---|---|---|
 | `download_data.py` | Loan | Tải CIFAKE, GenImage về `data/raw/` |
@@ -18,18 +58,20 @@ Script đánh giá (Accuracy, Precision, Recall, confusion matrix, % "Chưa ch�
 | `check_raw_baseline.py` | Lực | T013: `python -m scripts.check_raw_baseline --raw-dir <data/raw của bản sao T013> [--rejected-small f.csv]`. Độc lập với `models.normalize`: dùng lại công thức `prepare_data` cũ (exif, RGB, fit 256 chỉ genimage, JPEG q95) cho MỌI dòng baseline, so sha256, in số OK/FAILED/thiếu; kiểm header baseline (commit, Pillow, sha `labels.csv`), `norm_version`, và (có `--rejected-small`) ảnh genimage <256px phải bị loại; thiếu `--rejected-small` thì in WARNING rõ ràng rằng kiểm ảnh nhỏ bị bỏ qua (OK không gồm kiểm này); khi sha lệch và Pillow khác header, WARNING Pillow được in lại cạnh dòng FAILED. Thoát 0 đạt, 1 lệch/thiếu/sai phiên bản, 2 thiếu đầu vào (kèm hướng dẫn dựng dữ liệu), 3 ảnh thô hỏng. Chưa chạy trên raw thật |
 | `jpeg_trace_check.py` | Lực | **Chưa có** (T027, KAN-46): chờ nhóm xác nhận phương pháp JPEG ghost; chưa dùng được |
 | `perf_report.py` | Lực | `python -m scripts.perf_report <sidecar.jsonl> [--warmup-seconds N] [--warmup-requests N] [--output f.json]`: p50/p95/p99 chỉ của 200, offered RPS, RPS 200, đếm 429/503/504/5xx/other, tỉ lệ lỗi không tính 429; số đo thiếu ghi "thiếu". Thoát 2 nếu sidecar thiếu/rỗng/hỏng. Thuần stdlib |
-| `check_performance.py` | Lực | `python -m scripts.check_performance --sidecar <jsonl> --slo docs/performance/slo.json [--scope load\|soak\|recovery] [--rss rss.json]`: thoát 0 đạt, 1 không đạt, 2 thiếu/hỏng/chưa duyệt SLO, scenario sidecar lệch scope hoặc sidecar hỏng (in "chỉ là baseline, không kết luận đạt SLA"). Schema SLO và mẫu: [`docs/performance/`](../docs/performance/README.md). `soak` thêm kiểm RSS tăng, `recovery` chỉ xét p95 và lỗi. |
-| `check_mvp_gates.py` | Lực | `python -m scripts.check_mvp_gates [--artifacts artifacts] [--slo docs/performance/slo.json]`: bảng 9 gate nghiệm thu core (nguồn spec 000 SC/AC và DoD T021-T031), file bằng chứng, trạng thái đạt / chưa đạt / thiếu bằng chứng. File thiếu hoặc rỗng không bao giờ là đạt. Thoát 0 chỉ khi mọi gate đạt, ngược lại 1. |
+| `check_performance.py` | Lực | `python -m scripts.check_performance --sidecar <jsonl> --slo docs/performance/slo.json [--scope load\|soak\|recovery] [--rss rss.json]`: (chưa có trong repo: repo chỉ có `slo.template.json`; `slo.json` cố ý không commit vì chỉ điền từ số đo thật và chữ ký nhóm, xem `docs/performance/README.md`)  thoát 0 đạt, 1 không đạt, 2 thiếu/hỏng/chưa duyệt SLO, scenario sidecar lệch scope hoặc sidecar hỏng (in "chỉ là baseline, không kết luận đạt SLA"). Schema SLO và mẫu: [`docs/performance/`](../docs/performance/README.md). `soak` thêm kiểm RSS tăng, `recovery` chỉ xét p95 và lỗi. |
+| `check_mvp_gates.py` | Lực | `python -m scripts.check_mvp_gates [--artifacts artifacts] [--slo docs/performance/slo.json]`: (chưa có trong repo: repo chỉ có `slo.template.json`; `slo.json` cố ý không commit vì chỉ điền từ số đo thật và chữ ký nhóm, xem `docs/performance/README.md`)  bảng 9 gate nghiệm thu core (nguồn spec 000 SC/AC và DoD T021-T031), file bằng chứng, trạng thái đạt / chưa đạt / thiếu bằng chứng. File thiếu hoặc rỗng không bao giờ là đạt. G02 gọi logic của `check_release_audit` với chế độ chặn khi rỗng: audit mà mọi đặc trưng post là hằng số (như `data/metadata_audit.json` hiện tại) là **chưa đạt**, không còn "đạt rỗng"; chỉ đạt khi có probe có nghĩa và A_eff ≤ 0,55 (#134). Thoát 0 chỉ khi mọi gate đạt, ngược lại 1. |
+| `soak_rss.py` | Lực | `python -m scripts.soak_rss --container <tên container api> --duration-seconds N --warmup-seconds M --output artifacts/soak-rss.json [--interval-seconds 30]`: chạy song song với Locust soak trên máy có Docker; lấy mẫu `docker stats --no-stream` (mức dùng bộ nhớ cgroup của container, gần RSS nhưng không đồng nhất với VmRSS; mỗi lần gọi docker mất khoảng 1–2 giây nên khoảng cách mẫu thực tế dài hơn một chút) mỗi 30 giây và ghi `{"rss_after_warmup_mb", "rss_end_mb"}` (MiB; mẫu đầu tiên ở hoặc sau warmup, và mẫu cuối) đúng định dạng `--rss` của `check_performance`. Cần ít nhất 2 mẫu sau warmup. Thoát 0 đạt, 2 tham số sai hoặc docker lỗi (không ghi file). Không thêm dependency; test `tests/test_soak_rss.py` dùng docker giả. Chưa chạy trên soak thật |
 | `make_fixtures.py` | Lực | `python -m scripts.make_fixtures --out .cache/smoke-fixtures` (mặc định; `.cache/` đã gitignore): ảnh mẫu tổng hợp, tất định, cho smoke API (4000x3000 có/không EXIF, Orientation=6, quá nhỏ/biên, 0 byte, text giả, cắt cụt, APNG/GIF, đúng 5.242.880 và +1 byte bằng JPEG hợp lệ đệm byte 0 sau EOI, 6000x6000 và cạnh 10001 đơn sắc để thử D07) |
 | `smoke_api.py` | Lực | `python -m scripts.smoke_api --base-url http://localhost:8000 --fixtures <thư mục> [--real ảnh] [--ai ảnh] [--out json]`: kiểm `/health`, `/docs`, `/openapi.json`, schema `/v1/analyze` và mã lỗi D05 qua HTTP thật (không import `app/`). Thoát 0 đạt, 1 có ca lỗi, 2 không kết nối, timeout (dừng ngay ở request đầu tiên quá `--timeout`, mặc định 60 s, dài hơn timeout model 10 s của D11; Nginx/UI cũng phải dài hơn 10 s) hoặc thiếu fixture. `--real/--ai` chỉ ghi nhận verdict/score. `X-Request-ID` phải là UUID (theo `app/logging.py`) và khác nhau giữa các request. `--delay 0.15` nghỉ giữa hai request, bắt buộc khi chạy qua Nginx (10 r/s, burst 10), nếu không các ca cuối nhận 429; gọi thẳng API không cần. `--no-docs` bỏ `/docs`, `/openapi.json` (bảng ghi `bỏ qua`, không phải `đạt`; mặc định vẫn kiểm vì AC1 của KAN-29 cần `/docs`). Ca `Đúng 5.242.880 byte (cần xác nhận)` dùng JPEG đệm byte 0 sau EOI: D06 nói tối đa, bằng thì phải qua, nhưng API/gateway chặt hơn có thể từ chối; ca lỗi thì kiểm cách API tính dung lượng và overhead multipart trước khi kết luận API sai; `--skip-size-boundary` bỏ ca này. JSON bằng chứng ẩn `user:pass@` trong `base_url` Mẫu biên bản: `docs/qa/integration-report-template.md` |
 | `check_gateway.py` | Lực | `python -m scripts.check_gateway --base-url http://localhost --fixture <ảnh> --rate <r/s> --burst <n> --upstream prompt\|skip [--wait-seconds N] [--cooldown s] [--only under rate body boundary] [--poll-interval s] [--require-retry-after] [--out json]`: kiểm gateway chỉ bằng HTTP (KAN-54): dưới giới hạn 200, vượt giới hạn 429 (không 5xx, không đặt X-Forwarded-For), 413 body vượt 5.242.880 B, X-Request-ID, upstream tắt/chậm trả 502/503/504 envelope không lộ nội bộ rồi phục hồi (người chạy tự tắt/bật upstream, script chỉ hỏi/chờ). `--rate`, `--burst` bắt buộc (D13 chưa chốt, script không tự đặt). Ca biên đúng 5.242.880 B (AC-09) chỉ kiểm gateway không chặn 413/429/5xx. Quét rò rỉ ở 429, 413, 502/503/504 theo FR-N03 (chỉ cấm traceback và chi tiết nội bộ, không cấm tên phần mềm): body (cả bản đã giải mã JSON) chứa traceback, `File "`, tên upstream; header `Server` chỉ lỗi khi có SỐ PHIÊN BẢN (`nginx/1.25.3`; `Server: nginx` thì xanh); `X-Powered-By` có mặt là lỗi. Thêm ca biên +1 B (413). Không gắn `X-Forwarded-For`. Timeout hoặc ngắt kết nối sau khi đã có phản hồi là ca lỗi (thoát 1, vẫn in kết quả và ghi `--out`). Thoát 0 đạt, 1 có ca lỗi, 2 thiếu tham số/fixture, không tới được gateway hoặc stdin đóng khi `--upstream prompt` (kết quả đã có vẫn in). Mẫu biên bản: `docs/qa/gateway-report-template.md` `--junit artifacts/integration.xml` ghi JUnit cho gate G04 của `check_mvp_gates`: mỗi ca là một testcase, ca lỗi là `failure`; `--upstream skip` thêm testcase `skipped` và chạy dở thêm `error`, nên G04 chỉ đạt khi đã kiểm cả tắt/bật upstream. |
 | `baseline_filesize.py` | Loan | Dung lượng file theo nguồn, chỉ tham khảo độ chi tiết ảnh (không phải gate) |
 | `check_mixed_leakage.py` | Loan | ADV-09: `python -m scripts.check_mixed_leakage --selection <selection.jsonl> --protected data/labels.csv [--radius 4]`: so `raw_sha256` và dHash ảnh chuẩn hóa của từng cohort bộ mới với từng split của bộ chính (cần ảnh bộ chính trên máy, không cần ảnh bộ mới), và train với các cohort đánh giá của bộ mới. Thoát 0 sạch, 1 có trùng với val/test hoặc giữa cohort, 2 đầu vào lỗi |
 | `check_tiny_overlap.py` | Loan | ADV-09: `python -m scripts.check_tiny_overlap --protected data/labels.csv --candidates <labels.csv mới> [--verify-sha]`: tìm ảnh Tiny-GenImage của bộ mới trùng validation/test đã có, theo shard và số dòng trong tên file; `--verify-sha` so byte khi có cả hai file. Thoát 0 không trùng, 1 có trùng, 2 đầu vào lỗi |
-| `metadata_audit.py` | Loan | Đoán thật/AI chỉ từ metadata, raw và post (bản nháp T007). Chỉ **cảnh báo** khi post `A_eff > 0.55` (thoát 0, vẫn ghi `gate.passed=false` cho G02); thoát 1 khi lỗi dữ liệu: slice post không hợp lệ hoặc NaN, control dương/âm sai. Báo cáo JSON có thêm `n_features` |
+| `metadata_audit.py` | Loan | Đoán thật/AI chỉ từ metadata, raw và post (bản nháp T007). Post thêm 4 đặc trưng tầng pixel (D03 proposed): dung lượng JPEG trên mỗi pixel, dấu khối 8×8, năng lượng tần số cao, nhiễu dư, vì metadata post là hằng số theo thiết kế. Chỉ **cảnh báo** khi post `A_eff > 0.55` (thoát 0; G02 trong `check_mvp_gates` không đọc cờ `gate.passed` mà dùng `check_release_audit`); thoát 1 khi lỗi dữ liệu: slice post không hợp lệ hoặc NaN, control dương/âm sai. Báo cáo JSON có thêm `n_features` |
 | `check_release_audit.py` | Lực | `python scripts/check_release_audit.py [--fail-on-vacuous] [data/metadata_audit.json]`: release checker, đọc báo cáo của `metadata_audit.py` và **chặn** (thoát 1) khi post `A_eff > 0.55`, thiếu slice `all` hoặc slice thiếu một lớp, A_eff NaN, control dương (< 0.95) hoặc âm (> 0.55) không hợp lệ. Mọi đặc trưng post hằng số (A_eff = 0.5 là "rỗng", không chứng minh sạch) mặc định chỉ in `CẢNH BÁO MẠNH` và `"vacuous": true` (thoát 0); `--fail-on-vacuous` chuyển ca này thành chặn. Thoát 2 nếu thiếu hoặc sai cấu trúc đầu vào |
 | `evaluate.py` | Loan | `python -m scripts.evaluate --split val --output <file>`: báo cáo validation theo source, ngưỡng lấy từ model, không ghi đè output. GenImage test dùng `models.evaluate` với protocol đã duyệt và lịch sử holdout; `--split test` ở script này chỉ dùng cho CIFAKE smoke test. `--robustness`: chấm manifest robustness, xem mục Robustness bên dưới |
 | `robustness_manifest.py` | Loan | ADV-07/ADV-06: tạo biến thể từ ảnh test cha và liệt kê cohort điện thoại, AI mới, Zalo thành manifest JSONL; xem mục Robustness |
+| `shortcut_metrics.py` | Kiệt | Thư viện (không có CLI): độ không chắc chắn theo nhóm cho xác suất đã lưu của ADV-10, bootstrap phân tầng theo `group_id`, không suy luận lại; dùng bởi `shortcut_controls.py` |
 | `verify_ml.py` | Kiệt | Model thật: parity tensor train/serve, score từ raw so feature cache, ảnh lớn/mode ảnh/ảnh nhỏ; chỉ lấy mẫu validation |
 | `analyze_robustness.py` | Kiệt | ADV-08/#52: `--preflight` kiểm protocol/hash/lineage/history/ảnh, hoặc đọc predictions CSV để tính metrics, flip/degradation matched và CI bootstrap theo group. Không inference, không tạo biến thể; chờ runner #51. Exit0 hợp lệ/đủ cohort chờ QA, 1 partial, 2 input invalid; không ghi đè. [Contract và lệnh](../docs/robustness-adv08.md) |
 

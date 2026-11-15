@@ -37,7 +37,7 @@ from app.verdict import decide_verdict
 from models.clip_input import feature_contract
 from models.extract_features import load_features, sha256_file
 from models.normalize import NORMALIZATION_VERSION
-from models.run_info import run_info
+from models.run_info import environment, run_info
 from models.score import Scorer, load_bundle, load_scorer
 from models.train import metrics
 
@@ -223,14 +223,20 @@ def check_model_manifest(
 
 
 def check_protocol(
-    protocol: dict, hashes: dict[str, str], thresholds: dict, rows: list[dict]
+    protocol: dict,
+    hashes: dict[str, str],
+    thresholds: dict,
+    rows: list[dict],
+    env: dict,
 ) -> None:
     """Test-set gate: the locked ADV-08 protocol must name exactly these inputs.
 
     Checks status, review references, profile, thresholds, the SHA256 of model,
-    model manifest and manifest, and that every row's cohort is registered as
-    present with the same transform. Raises RobustnessInputError listing problems.
+    model manifest and manifest, the Python version and package hash of ``env``
+    (#117), and that every row's cohort is registered as present with the same
+    transform. Raises RobustnessInputError listing problems.
     """
+    pinned = {key: env[key] for key in ("python", "packages_sha256")}
     profile = {
         "clip_model_id": feature_contract()["clip_model_id"],
         "clip_revision": feature_contract()["clip_revision"],
@@ -246,6 +252,10 @@ def check_protocol(
         ),
         (protocol.get("profile") == profile, "profile differs from the model"),
         (protocol.get("thresholds") == thresholds, "thresholds differ from the model"),
+        (
+            protocol.get("environment") == pinned,
+            f"environment differs from this run: {json.dumps(pinned)}",
+        ),
     ]
     artifacts = protocol.get("artifacts")
     artifacts = artifacts if isinstance(artifacts, dict) else {}
@@ -318,6 +328,7 @@ def run_robustness(
     protocol: Path,
     output: Path,
     load: Callable[[], ImageScorer],
+    env: dict,
 ) -> Counter:
     """Check every input, then score each manifest image like the API.
 
@@ -326,7 +337,9 @@ def run_robustness(
     protocol scores once, like models.evaluate. Rows stream to ``<output>.partial``
     and are renamed only after all images and an unchanged-hash check pass; an
     interrupted run keeps the partial file and never invents outcomes. Expected
-    image errors become ``status=error`` rows. Returns counts per status.
+    image errors become ``status=error`` rows. ``env`` comes from
+    ``models.run_info.environment()`` and must match the protocol. Returns counts
+    per status.
     """
     partial, run_log, used = _side_files(output, protocol)
     for path in (output, partial, run_log):
@@ -349,7 +362,9 @@ def run_robustness(
     model_info = _read_json_object(model_manifest, "Model manifest")
     check_model_manifest(model_info, hashes["model"], thresholds)
     rows = read_robustness_manifest(manifest)
-    check_protocol(_read_json_object(protocol, "Protocol"), hashes, thresholds, rows)
+    check_protocol(
+        _read_json_object(protocol, "Protocol"), hashes, thresholds, rows, env
+    )
     check_image_bytes(manifest, rows)
     settings = Settings(
         threshold_low=thresholds["low"], threshold_high=thresholds["high"]
@@ -363,6 +378,8 @@ def run_robustness(
                 "output": output.name,
                 "protocol_sha256": protocol_sha,
                 **{f"{name}_sha256": digest for name, digest in hashes.items()},
+                "python": env["python"],
+                "packages_sha256": env["packages_sha256"],
             },
             handle,
             indent=2,
@@ -425,7 +442,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.robustness:
         if not (args.manifest and args.model_manifest and args.protocol):
             parser.error("--robustness needs --manifest, --model-manifest, --protocol")
-        provenance = run_info("scripts.evaluate")
+        provenance, env = run_info("scripts.evaluate"), environment()
         try:
             counts = run_robustness(
                 args.manifest,
@@ -434,6 +451,7 @@ def main(argv: list[str] | None = None) -> None:
                 args.protocol,
                 args.output,
                 lambda: load_scorer(args.model),
+                env,
             )
         except (RobustnessInputError, FileExistsError) as exc:
             parser.exit(2, f"{parser.prog}: error: {exc}\n")
@@ -442,7 +460,11 @@ def main(argv: list[str] | None = None) -> None:
         # Local run log for QA (commit, dirty flag, versions); keep it out of Git.
         _, run_log, _ = _side_files(args.output, args.protocol)
         with run_log.open("x", encoding="utf-8") as handle:
-            json.dump({**provenance, "counts": dict(counts)}, handle, indent=2)
+            json.dump(
+                {**provenance, "environment": env, "counts": dict(counts)},
+                handle,
+                indent=2,
+            )
         print(f"Đã ghi {args.output}: {dict(counts)}")
         return
     provenance = run_info("scripts.evaluate")

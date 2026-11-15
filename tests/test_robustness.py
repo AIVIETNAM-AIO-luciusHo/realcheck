@@ -17,6 +17,7 @@ from sklearn.linear_model import LogisticRegression
 from models.clip_input import FEATURE_DIM, feature_contract
 from models.extract_features import sha256_file
 from models.normalize import NORMALIZATION_VERSION, normalize_image
+from models.run_info import environment
 from scripts import evaluate as ev
 from scripts import robustness_manifest as rm
 
@@ -398,6 +399,9 @@ def write_model(tmp_path, thresholds):
     return model, model_manifest
 
 
+ENV = environment()
+
+
 def write_protocol(locked, **overrides):
     """A locked ADV-08 protocol naming exactly the fixture's inputs."""
     rows = read_jsonl(locked["manifest"])
@@ -412,6 +416,7 @@ def write_protocol(locked, **overrides):
             "normalization_version": NORMALIZATION_VERSION,
         },
         "thresholds": json.loads(locked["model_manifest"].read_text())["thresholds"],
+        "environment": {key: ENV[key] for key in ("python", "packages_sha256")},
         "artifacts": {
             name: {"path": locked[name].name, "sha256": sha256_file(locked[name])}
             for name in ("model", "model_manifest", "manifest")
@@ -477,6 +482,7 @@ def run(locked, output, scorer=None):
         locked["protocol"],
         output,
         lambda: scorer or FakeScorer(),
+        ENV,
     )
 
 
@@ -569,6 +575,7 @@ def test_unreadable_protocol_is_refused_before_loading_clip(
             locked["protocol"],
             tmp_path / "p.csv",
             lambda: loaded.append(1),
+            ENV,
         )
     assert loaded == []
 
@@ -582,6 +589,11 @@ def test_unreadable_protocol_is_refused_before_loading_clip(
         ({"thresholds": {"binary": 0.5, "low": 0.2, "high": 0.8}}, "thresholds differ"),
         ({"profile": {}}, "profile differs"),
         ({"cohorts": []}, "cohorts not registered"),
+        ({"environment": None}, "environment differs"),
+        (
+            {"environment": {"python": "0.0.0", "packages_sha256": "0" * 64}},
+            "environment differs",
+        ),
     ],
 )
 def test_protocol_must_be_locked_for_exactly_these_inputs(
@@ -634,6 +646,7 @@ def test_runner_refuses_a_changed_image_before_spending_the_protocol(locked, tmp
             locked["protocol"],
             output,
             lambda: loaded.append(1),
+            ENV,
         )
     assert loaded == []
     assert not output.exists()
@@ -706,6 +719,11 @@ def test_cli_end_to_end_and_exit_codes(locked, tmp_path, monkeypatch, capsys):
     assert len(read_predictions(output)[1]) == 18
     run_log = json.loads(output.with_name("predictions.csv.run.json").read_text())
     assert run_log["counts"] == {"ok": 16, "error": 2} and "git_commit" in run_log
+    assert run_log["environment"] == ENV
+    used = json.loads(
+        locked["protocol"].with_name("protocol.json.used.json").read_text()
+    )
+    assert used["packages_sha256"] == ENV["packages_sha256"]
     with pytest.raises(SystemExit) as exit_info:  # the protocol is now used
         ev.main([*argv[:-1], str(tmp_path / "again.csv")])
     assert exit_info.value.code == 2 and loads == [locked["model"]]

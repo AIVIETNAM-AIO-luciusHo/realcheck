@@ -51,7 +51,7 @@ Model phục vụ API e571 (SHA256 `e5718345…`, gói release #39, kiểm SHA25
 | `zalo` | cả hai | 35 | 51,4% | 42,9–62,9% | |
 | `ai_new` | AI | 32 | 87,5% | 75,0–96,9% | 26 AI, 2 chưa chắc, 4 thật (cả 4 là Gemini) |
 
-2 ảnh MPO (1 `phone`, 1 `zalo`) bị từ chối với `UNSUPPORTED_FORMAT`, không có điểm. CI tính bằng bootstrap 2.000 lần theo nhóm (ADV-08); dòng Zalo tách theo nhãn đếm trực tiếp từ predictions.
+2 ảnh MPO (1 `phone`, 1 `zalo`) bị từ chối với `UNSUPPORTED_FORMAT`, không có điểm (lượt chấm ở commit `1e77b60`, trước khi API nhận MPO). CI tính bằng bootstrap 2.000 lần theo nhóm (ADV-08); dòng Zalo tách theo nhãn đếm trực tiếp từ predictions.
 
 **Đọc kết quả:**
 - **Model e571 gọi gần như mọi ảnh thật chụp bằng iPhone là ảnh AI** (điểm AI trung vị 0,97). Ảnh thật qua Zalo cũng bị gọi là AI phần lớn. Đây là suy giảm lớn trên ảnh thật thực tế; AC-26 không đòi 90% nhưng không được giấu số này.
@@ -86,6 +86,6 @@ python -m scripts.analyze_robustness --protocol protocol.json --manifest manifes
 - **Ít thiết bị:** ảnh điện thoại gần như chỉ từ iPhone 11. 10 ảnh không có EXIF nên chưa xác nhận được là ảnh tự chụp bằng camera.
 - **12 ảnh AI lấy từ Google Images:** nhãn AI dựa trên nơi đăng tải, chưa xác minh được công cụ tạo; ảnh đã bị nén và thu nhỏ khi đăng.
 - **Zalo:** 14 ảnh AI qua Zalo không phải bản Zalo của ảnh trong `ai_new`, và chỉ 1 ảnh thật có ảnh gốc, nên chưa đo được tỷ lệ đổi kết luận do Zalo nén.
-- **Ảnh MPO** (ảnh chân dung iPhone) bị API từ chối vì API chỉ nhận JPEG và PNG; đây là định dạng iPhone hay gặp, nên là một phát hiện cho API.
+- **Ảnh MPO** (ảnh chân dung iPhone) bị API từ chối tại commit `1e77b60` vì API khi đó chỉ nhận JPEG và PNG; đây là định dạng iPhone hay gặp, nên là một phát hiện cho API. Từ PR #106 API đã nhận MPO (chấm khung đầu), nên một lượt chấm sau sẽ có điểm cho 2 ảnh này.
 - Không có ảnh từ máy Android, ảnh chụp đêm hay ảnh đã chỉnh sửa.
 - **QA không kiểm được nội dung và nhãn ảnh**, vì ảnh không được chia sẻ. QA kiểm được: hash trong predictions khớp manifest và protocol, kết quả phân tích tính lại được từ `cohorts-adv06-predictions.csv`. Nhãn và việc lọc thông tin riêng tư dựa trên xác nhận của Loan.

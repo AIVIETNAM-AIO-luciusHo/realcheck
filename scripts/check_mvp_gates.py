@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from scripts.check_performance import load_slo, run
+from scripts.check_release_audit import problems, vacuous
 
 DAT, CHUA, THIEU = "đạt", "chưa đạt", "thiếu bằng chứng"
 MIN_UNIT_TESTS = 15  # AC-27
@@ -85,6 +86,18 @@ def _accuracy(path: Path) -> str | None:
     return _json_is(path, "quality", "status", want="pass")
 
 
+def _audit(path: Path) -> str | None:
+    """G02 dùng chính logic của check_release_audit với --fail-on-vacuous: audit rỗng (mọi đặc
+    trưng post hằng số, A_eff = 0.5 không chứng minh dữ liệu sạch) là "chưa đạt"."""
+    report = json.loads(path.read_text(encoding="utf-8"))
+    found = problems(report)
+    if vacuous(report):
+        found.append(
+            "audit rỗng: mọi đặc trưng post là hằng số, không chứng minh dữ liệu sạch"
+        )
+    return "; ".join(found) or None
+
+
 def _perf(scope: str):
     def check(p: list[Path]) -> str | None:
         rss = p[2] if scope == "soak" else None
@@ -101,7 +114,7 @@ def gates(art: Path, slo: Path):
          [art / "unit.xml", art / "coverage.xml"], _unit),
         ("G02", "Post metadata audit A_eff <= 0.55", "SC-02, AC-13..17, T022",
          [art / "metadata-audit.json"],
-         lambda p: _json_is(p[0], "gate", "passed", want=True)),
+         lambda p: _audit(p[0])),
         ("G03", "Accuracy GenImage model-test >= 90%", "SC-04, AC-25",
          [art / "evaluation.json"],
          lambda p: _accuracy(p[0])),
@@ -134,7 +147,14 @@ def evaluate_gate(files: list[Path], check) -> tuple[str, str]:
         return THIEU, "thiếu/rỗng: " + ", ".join(missing)
     try:
         reason = check(files)
-    except (OSError, ValueError, KeyError, TypeError, ET.ParseError) as exc:
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        ET.ParseError,
+    ) as exc:
         return CHUA, f"không đọc được bằng chứng: {exc}"
     return (CHUA, reason) if reason else (DAT, "")
 

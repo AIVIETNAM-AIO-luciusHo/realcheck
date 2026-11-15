@@ -57,7 +57,7 @@ Lỗi do chính Nginx tạo (D05 lỗi gateway, approved 2026-11-12), cùng enve
 | 413 | `FILE_TOO_LARGE` | Body vượt 5184k |
 | 429 | `RATE_LIMITED` | Vượt rate limit; kèm `Retry-After: 1` |
 | 502 | `API_UNAVAILABLE` | API không chạy, đang khởi động hoặc từ chối kết nối |
-| 504 | `GATEWAY_TIMEOUT` | API không trả lời trong 15 giây |
+| 504 | `GATEWAY_TIMEOUT` | API không trả lời trong 15 giây, hoặc sau 5 giây ngay khi API vừa dừng (kết nối tới địa chỉ cũ) |
 
 Lỗi của API (kể cả 413 `FILE_TOO_LARGE`, 503 `SERVICE_BUSY`, 504 `MODEL_TIMEOUT`) đi qua nguyên vẹn.
 

@@ -66,7 +66,7 @@ def test_a_eff_cao_chi_canh_bao(tmp_path):
     assert "LỖI" not in r.stdout, r.stdout
     assert r.returncode == 0
     # đầu ra thật nối vào release checker: n_features đúng, không bị coi là rỗng
-    assert out["cifake"]["n_features"] == 13
+    assert out["cifake"]["n_features"] == 13 + 4  # metadata + pixel
     assert cra.vacuous(out) == []
     assert any("A_eff" in p for p in cra.problems(out))
 
@@ -116,6 +116,7 @@ def fake_run(tmp_path, monkeypatch, post_a_eff):
         a = 1.0 if "control" in x else (post_a_eff if x["post"].iloc[0] else 0.5)
         return {"valid": True, "test_counts": {0: 2, 1: 2}, "a_eff": a, "ci95": [a, a]}
 
+    monkeypatch.setattr(ma, "pixel_features", lambda p: {})
     monkeypatch.setattr(ma, "evaluate", evaluate)
     with pytest.raises(SystemExit) as e:
         ma.main()
@@ -130,3 +131,72 @@ def test_nguong_0_55_canh_bao(tmp_path, monkeypatch, capsys, a, warns):
     assert out["gate"]["passed"] is (not warns)
     # JSON thật nối vào checker: chặn đúng khi vượt ngưỡng
     assert (cra.problems(out) != []) == warns
+
+
+def test_pixel_features_do_dung_dau_vet(tmp_path):
+    """Ảnh phẳng: không dấu khối, không tần số cao; khối 8×8 có dấu khối; nhiễu có tần
+    số cao và nhiễu dư lớn hơn ảnh gradient mượt; PNG không nén mất dữ liệu."""
+    rng = np.random.default_rng(0)
+    images = {
+        "flat": np.full((64, 64), 128),
+        "blocks": np.kron(rng.integers(0, 256, (8, 8)), np.ones((8, 8))),
+        "noise": rng.integers(0, 256, (64, 64)),
+        "smooth": np.tile(np.linspace(0, 255, 64), (64, 1)),
+    }
+    f = {}
+    for name, a in images.items():
+        path = tmp_path / f"{name}.png"
+        Image.fromarray(a.astype(np.uint8)).save(path)
+        f[name] = ma.pixel_features(str(path))
+        assert set(f[name]) == set(ma.PIXEL_FEATURES)
+    assert f["flat"]["blockiness"] == pytest.approx(1.0)
+    assert f["flat"]["hf_energy"] == 0.0 and f["flat"]["noise_std"] == 0.0
+    assert f["blocks"]["blockiness"] > 100 * f["noise"]["blockiness"]
+    assert f["noise"]["hf_energy"] > 10 * f["smooth"]["hf_energy"]
+    assert f["noise"]["noise_std"] > 10 * f["smooth"]["noise_std"]
+    assert f["noise"]["bytes_per_px"] > f["flat"]["bytes_per_px"]
+
+
+def test_pixel_features_anh_nho_khong_loi(tmp_path):
+    path = tmp_path / "tiny.png"
+    Image.new("L", (2, 2)).save(path)
+    f = ma.pixel_features(str(path))
+    assert np.isnan(f["blockiness"]) and np.isnan(f["noise_std"])
+
+
+def test_probe_pixel_bat_duoc_khi_metadata_hang_so(tmp_path):
+    """Post: mọi ảnh cùng JPEG Q95 32×32 (13 đặc trưng metadata hằng số), chỉ khác nội dung
+    pixel theo nhãn. Probe cũ ra 0.5 "rỗng"; probe pixel phải bắt được và checker chặn."""
+    rng = np.random.default_rng(1)
+    rows = []
+    for label in (0, 1):
+        for i in range(200):
+            base = np.tile(np.linspace(0, 255, 32), (32, 1)) + rng.integers(0, 40)
+            if label:
+                base = base + rng.normal(0, 40, base.shape)
+            rgb = np.repeat(np.clip(base, 0, 255)[..., None], 3, axis=2).astype(
+                np.uint8
+            )
+            post = tmp_path / f"{label}_{i}.jpg"
+            Image.fromarray(rgb).save(post, quality=95)
+            raw = tmp_path / f"raw_{label}_{i}.jpg"  # raw biến thiên không theo nhãn
+            Image.new("RGB", (8, 8 + i % 3)).save(raw)
+            rows.append(
+                {
+                    "raw_path": str(raw),
+                    "filepath": str(post),
+                    "label": label,
+                    "source": "cifake_real" if label == 0 else "cifake_ai",
+                    "split": "test" if i < 150 else "train",
+                }
+            )
+    pd.DataFrame(rows).to_csv(tmp_path / "labels.csv", index=False)
+    r = run(tmp_path)
+    assert r.returncode == 0, r.stdout
+    out = json.loads((tmp_path / "data" / "metadata_audit.json").read_text())
+    c = out["cifake"]
+    assert set(ma.FEATURES) <= set(c["constant_features"]["post"])
+    assert not set(ma.PIXEL_FEATURES) & set(c["constant_features"]["post"])
+    assert c["slices"]["all"]["post"]["a_eff"] > 0.9
+    assert cra.vacuous(out) == []
+    assert any("A_eff" in p for p in cra.problems(out))

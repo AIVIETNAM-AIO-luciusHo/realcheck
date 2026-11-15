@@ -1,5 +1,6 @@
 """Run identity stays distinct even when the host clock has repeated values."""
 
+import hashlib
 from datetime import UTC, datetime
 from unittest.mock import Mock
 
@@ -37,3 +38,18 @@ def test_missing_git_is_recorded_as_unknown(monkeypatch):
     )
     result = run_info.run_info("models.train")
     assert result["git_commit"] is None and result["git_dirty"] is None
+
+
+def test_environment_hashes_a_sorted_pep503_package_list(monkeypatch):
+    dists = [
+        Mock(metadata={"Name": "Scikit_Learn"}, version="1.9.1"),
+        Mock(metadata={"Name": "numpy"}, version="2.4.6"),
+        Mock(metadata={"Name": "numpy"}, version="2.4.6"),  # same dist on two paths
+        Mock(metadata={"Name": None}, version="0"),
+    ]
+    monkeypatch.setattr(run_info.metadata, "distributions", Mock(return_value=dists))
+    env = run_info.environment()
+    assert env["packages"] == ["numpy==2.4.6", "scikit-learn==1.9.1"]
+    listing = b"numpy==2.4.6\nscikit-learn==1.9.1\n"
+    assert env["packages_sha256"] == hashlib.sha256(listing).hexdigest()
+    assert env["python"] == run_info.platform.python_version()

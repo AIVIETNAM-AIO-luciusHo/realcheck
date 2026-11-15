@@ -8,9 +8,9 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 
 | Mục | Trạng thái | Người quyết định | Reviewer | Ngày | Còn chờ |
 |---|---|---|---|---|---|
-| D01 Split, seed, group | proposed (Loan, 2026-11-13) | Loan | Lực | 2026-11-13 | Seed 42, split hiện có; `group_id` theo SHA256 ảnh gốc và dHash ≤ 4 (#99); xem [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
+| D01 Split, seed, group | approved (Lực, 2026-11-14); đề xuất Loan 2026-11-13 | Loan | Lực | 2026-11-14 | Seed 42, split hiện có; `group_id` theo SHA256 ảnh gốc và dHash ≤ 4 (#99); xem [mục D01–D04](#d01d04-dữ-liệu-và-audit) |
 | D02 Chuẩn hóa | Một phần đã chốt trong spec 001 | Kiệt | — | — | [Đã ghi hiện trạng alpha/ICC/subsampling](ml-api-handoff-39.md#d02-hành-vi-version-1-hiện-có); chờ review |
-| D03 Probe metadata | proposed (Loan, 2026-11-13), ghi sau khi đã xem kết quả audit | Loan | Kiệt, Lực | 2026-11-13 | Probe post rỗng do thiết kế chuẩn hóa; hướng probe tầng pixel làm sau 15/11 |
+| D03 Probe metadata | approved (Lực, 2026-11-14) chỉ để ghi nhận; đề xuất Loan 2026-11-13, ghi sau khi đã xem kết quả audit | Loan | Kiệt, Lực | 2026-11-14 | Probe post rỗng do thiết kế chuẩn hóa. Probe tầng pixel đã có code (Loan, 2026-11-14, proposed), chưa chạy trên dữ liệu thật; Lực duyệt bốn đặc trưng pixel (`bytes_per_px`, `blockiness`, `hf_energy`, `noise_std`) ngày 2026-11-15 để chạy; Kiệt chưa phản hồi; kết quả probe được ghi nguyên văn kể cả khi G02 chưa đạt |
 | D04 Protocol audit | Chưa làm (Loan, 2026-11-13) | Loan | Lực | — | Giá trị tạm trong mã: 100 ảnh mỗi lớp, 1.000 bootstrap; làm sau 15/11 |
 | D05 Enum và lỗi API | approved | Quang | Lực | 2026-11-04 | Loan xác nhận cho UI |
 | D05 Lỗi gateway | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | Loan đã xác nhận UI (2026-11-13): UI chọn thông báo theo mã HTTP, thêm 502; `app/schemas.py` đã thêm `RATE_LIMITED`, `API_UNAVAILABLE`, `GATEWAY_TIMEOUT` (2026-11-13), `tests/test_gateway_error_codes.py` khóa câu chữ khớp `nginx.conf` |
@@ -217,13 +217,13 @@ Quang kiểm ngày 2026-11-11 trên Windows 11, Python 3.11.9, torch 2.15.0+cpu,
 
 ## D01–D04. Dữ liệu và audit
 
-D01 và D03 là đề xuất của Loan (2026-11-13), **chưa duyệt**; D02 là hiện trạng trong mã; D04 chưa làm.
+D01 và D03 do Loan đề xuất (2026-11-13), Lực duyệt 2026-11-14 (D03 chỉ ghi nhận: audit post rỗng do thiết kế chuẩn hóa, probe tầng pixel làm sau 15/11); D02 là hiện trạng trong mã; D04 chưa làm.
 
 | Mục | Nội dung | Còn thiếu |
 |---|---|---|
 | D01 | **Split:** `scripts/prepare_data.py`, seed 42; GenImage 70/15/15; CIFAKE tách 15% train làm val, test giữ split gốc; `--split-from` giữ split cũ. **Group (#99):** `scripts/add_group_ids.py` gộp ảnh cùng group nếu ảnh gốc trùng byte (SHA256) hoặc ảnh chuẩn hóa gần trùng (dHash ≤ 4 bit, cùng hàm và ngưỡng của `check_data`, chỉ so trong cùng bộ dữ liệu), lấy bắc cầu; `group_id` = `g-` + 16 ký tự hex đầu SHA256 ảnh gốc nhỏ nhất trong group. Group vắt qua split hoặc lẫn nhãn thì dừng, không tự đổi split. **Lý do:** dùng lại đúng định nghĩa trùng/gần trùng mà `check_data` đã kiểm, để AC-18 và kiểm rò rỉ cùng một quy tắc; ID theo nội dung nên không phụ thuộc tên file hay thứ tự dòng. Trên bộ 9.708 ảnh: 0 trùng byte, 0 gần trùng (khoảng cách nhỏ nhất 5 bit), nên mỗi ảnh một group, không đổi ảnh, nhãn hay split | Lực kiểm độc lập; Kiệt xác nhận ngưỡng 4 bit (30 cặp CIFAKE, 19 cặp GenImage lệch ≤ 8 bit chưa xem bằng mắt). dHash không bắt được ảnh cùng nội dung nhưng khác bố cục (cùng cảnh, khác góc chụp) |
 | D02 | Spec 001 Clarifications: xoay EXIF → RGB → `ImageOps.fit` BICUBIC 256×256 → JPEG 95 một lần; ảnh cạnh ngắn < 256 bị loại; version `1` | [Đã ghi quan sát v1](ml-api-handoff-39.md#d02-hành-vi-version-1-hiện-có): bỏ alpha, không chuyển/nhúng ICC, default Pillow quan sát 4:2:0; chờ duyệt chung |
-| D03 | **Hiện có:** `scripts/metadata_audit.py` (T007), `HistGradientBoostingClassifier` trên 13 đặc trưng metadata (format, mode, kích thước, EXIF, ICC, progressive, subsampling, bảng lượng tử). **Ghi sau khi đã xem kết quả audit**, nên không phải đăng ký trước. Trên ảnh đã chuẩn hóa, 13/13 đặc trưng là hằng số do thiết kế (`normalize_image`: RGB, 256×256 hoặc 32×32 với CIFAKE, JPEG 95, không EXIF/ICC), nên A_eff post = 0,5 theo cấu tạo, không chứng minh dữ liệu sạch. Ảnh gốc GenImage có A_eff = 1,0 ở mọi slice: shortcut metadata có ở dữ liệu gốc. **Đề xuất (sau 15/11):** probe post đo trên ảnh đã chuẩn hóa ở tầng pixel (dung lượng JPEG sau chuẩn hóa, blockiness/nén kép, năng lượng tần số cao), giữ ngưỡng A_eff ≤ 0,55 | Kiệt, Lực thống nhất hướng probe (hiện probe cố ý không dùng dung lượng file); đăng ký trước khi chạy |
+| D03 | **Hiện có:** `scripts/metadata_audit.py` (T007), `HistGradientBoostingClassifier` trên 13 đặc trưng metadata (format, mode, kích thước, EXIF, ICC, progressive, subsampling, bảng lượng tử). **Ghi sau khi đã xem kết quả audit**, nên không phải đăng ký trước. Trên ảnh đã chuẩn hóa, 13/13 đặc trưng là hằng số do thiết kế (`normalize_image`: RGB, 256×256 hoặc 32×32 với CIFAKE, JPEG 95, không EXIF/ICC), nên A_eff post = 0,5 theo cấu tạo, không chứng minh dữ liệu sạch. Ảnh gốc GenImage có A_eff = 1,0 ở mọi slice: shortcut metadata có ở dữ liệu gốc. **Probe tầng pixel (Loan, 2026-11-14, proposed):** post thêm 4 đặc trưng trên kênh sáng của ảnh đã chuẩn hóa (`PIXEL_FEATURES`): dung lượng JPEG trên mỗi pixel, dấu khối 8×8 (chênh lệch qua biên khối chia trong khối), tỉ lệ năng lượng tần số trên 0,25 chu kỳ/pixel, độ lệch chuẩn Laplacian; cùng HGB, slice, control, ngưỡng A_eff ≤ 0,55. **Đăng ký trước khi chạy:** mới kiểm trên ảnh tổng hợp, chưa chạy trên dữ liệu thật. Dự kiến không đạt: baseline chỉ dùng dung lượng file đã đạt 66,75% GenImage post, 84,54% real–GLIDE ([ml-handoff](../ml-handoff.md)). G02 (`check_mvp_gates`, PR #136) đọc `check_release_audit`, báo cáo rỗng là chưa đạt | Kiệt, Lực duyệt bộ đặc trưng, rồi Loan chạy lại audit và ghi kết quả |
 | D04 | **Chưa làm.** Audit dùng cột `split` của manifest; control dương và control âm; giá trị tạm trong mã: `MIN_PER_CLASS = 100`, `N_BOOT = 1000` | Protocol riêng khỏi model-test, cỡ mẫu tối thiểu mỗi slice, số lần bootstrap |
 
 ## Manifest
@@ -296,3 +296,20 @@ Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và K
 | Giới hạn exif 64 ký tự mỗi giá trị (tối đa 129) | Không thuộc đợt này; giữ như đã ghi ở D05 làm rõ |
 
 Nguồn bằng chứng: `docs/qa/local-real-model-verification-20261111.md`, `docs/qa/kan-25-model-loading-review.md`, issue #44.
+
+## Quyết định của Lực ngày 14/11/2026
+
+| Mục | Quyết định |
+|---|---|
+| (a) D01, D03 | Chuyển từ `proposed` sang `approved` (Lực, 2026-11-14). D03 chỉ ghi nhận: audit post rỗng do thiết kế chuẩn hóa; probe tầng pixel làm sau 15/11 |
+| (b) Hướng bản nộp | Phương án A: giữ e571, hoãn mixed-v3 sau 15/11. Cohort ADV-06 đã được dùng để so sánh nên không còn độc lập |
+| (c) 503 `SERVICE_BUSY` khi đo SLO | Tính là lỗi (nằm trong `error_ratio_excl_429`). Đo với tải vừa phải và ghi rõ năng lực của hệ thống |
+| (d) D14 soak | 30 phút. Soak ngắn, không chứng minh không rò bộ nhớ dài hạn |
+| (e) RSS | Theo `docker stats` (cgroup), không phải VmRSS |
+| (f) G03 | Dùng `docs/reports/ml-final-experiment.json` làm `evaluation.json`; ghi rõ chưa QA độc lập, kèm tái lập của Kiệt khi có (#124) |
+| (g) Nơi đo | VPS của Quang chỉ kiểm chức năng (file ghi đè, #122), không đo tải hay SLO trên VPS. Đo hiệu năng ở máy Lực (WSL2, client cùng phần cứng vật lý nên số hơi lạc quan, không gọi là lab) |
+| (h) Giám sát (#45–#48) | Cắt khỏi đợt này |
+| (i) Python và môi trường chạy | Python 3.12.14 cho lượt ADV-08 trên máy Mac (theo Kiệt) và cho lượt QA độc lập G03 (#131); Pillow 13.0.0 bắt buộc. Protocol phải có `environment` (Python và `packages_sha256`, PR #135) và lượt chạy thật lưu `pip freeze` |
+| (j) Probe pixel (D03) | Lực duyệt (2026-11-15) bộ bốn đặc trưng tầng pixel của PR #140 để Loan chạy trên dữ liệu thật (Python 3.12.14, Pillow 13.0.0, lưu `pip freeze`). Không đổi đặc trưng sau khi xem kết quả. G02 ghi theo kết quả thật, kể cả "chưa đạt" vì shortcut dung lượng file đã biết |
+
+**Chưa duyệt:** D09, D10 và SLO vẫn chờ số đo và chữ ký; không ghi `approved`.
