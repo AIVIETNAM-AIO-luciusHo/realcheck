@@ -3,7 +3,6 @@
 import csv
 import json
 from argparse import Namespace
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -340,21 +339,3 @@ def test_score_dung_load_scorer_va_ghi_csv(tmp_path, monkeypatch):
         rows = list(csv.DictReader(f))
     assert len(rows) == 4 and {r["score"] for r in rows} == {"0.25"}
     assert list(rows[0]) == ["sample_id", "label", "score", "group_id", "source"]
-
-
-def test_score_that_voi_e571_neu_co(tmp_path):
-    import os
-
-    model = os.environ.get("ADV12_E571_MODEL")
-    image = os.environ.get("ADV12_REF_IMAGE")
-    if not (model and image):
-        pytest.skip("đặt ADV12_E571_MODEL và ADV12_REF_IMAGE (cần CLIP cache offline)")
-    from models.score import load_scorer
-
-    with Image.open(image) as im:
-        im.load()
-        got = load_scorer(Path(model))(im)
-    assert (
-        abs(got - float(os.environ.get("ADV12_REF_SCORE", "0.9993029832839966")))
-        <= 1e-6
-    )

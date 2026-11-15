@@ -24,11 +24,15 @@ mkdir -p artifacts
 
 ## 1. G01: unit test và coverage
 
+Môi trường (Tester T-19): Python 3.12.14, cài đủ bốn file requirements khoảng 3 phút (torch khoảng 3 GB), `pytest` đầy đủ khoảng 9 phút.
+
 ```bash
 pip install -r requirements.txt -r models/requirements-ml.txt -r streamlit/requirements.txt -r locust/requirements.txt   # thiếu streamlit thì tests/test_ui.py lỗi thu thập: No module named streamlit.testing
 python -m ruff check . && python -m ruff format --check .
 python -m pytest --junitxml=artifacts/unit.xml --cov=app --cov-report=xml:artifacts/coverage.xml --cov-fail-under=70 -q -ra
 ```
+**G01 phải 0 skip:** test nào bị skip (thường do thiếu `torch`, `locust` hoặc `streamlit`) làm cổng trượt dù pytest xanh. Cài đủ bốn file trên, chạy `-ra` và kiểm không có dòng `SKIPPED`. Không có test nào phụ thuộc model thật hay biến môi trường; kiểm điểm e571 thật làm tay bằng `python -m scripts.verify_adv12_score` (xem `scripts/README.md`).
+
 Cổng đòi ≥ 15 testcase, không fail, không error, không skip (xfail không tính là skip) và `line-rate` ≥ 0,70. Một số test tự bỏ qua khi máy thiếu `locust`; cài `pip install -r locust/requirements.txt` rồi chạy lại, và xem `-ra` để biết test nào còn skip. Còn skip thì G01 vẫn là "chưa đạt".
 
 ## 2. G02: audit metadata
@@ -59,13 +63,17 @@ G02 dùng cùng logic với `check_release_audit.py --fail-on-vacuous` (không �
 
 ## 4. G04: gateway và phục hồi (cần Compose + model thật)
 
+Điều kiện trước khi chạy:
+- Model: `models/clip_probe_e571.joblib` và `models/clip_probe_e571.joblib.sha256`, cache CLIP `.cache/huggingface` (khoảng 579 MB; compose mount `./models` và `./.cache/huggingface` chỉ đọc). Thiếu thì `/health` không bao giờ `model_ready: true`.
+- `.env` cạnh `docker-compose.yml`: `cp .env.example .env`, rồi xem `REALCHECK_TAG` (tag image, mặc định `latest`), `REALCHECK_MODEL_FILE` (mặc định `clip_probe_e571.joblib`) và `REALCHECK_HTTP_PORT` (mặc định 80, nên URL mặc định là `http://localhost`).
+
 ```bash
 docker compose up -d --build            # cổng 80 bận thì đặt REALCHECK_HTTP_PORT trong .env (xem nginx/README.md)
 curl -s http://localhost/health         # đợi model_ready: true
 python -m scripts.check_gateway --base-url http://localhost --fixture <ảnh hợp lệ> --rate 10 --burst 10 \
     --upstream prompt --junit artifacts/integration.xml --out artifacts/gateway-evidence.json
 ```
-`--upstream prompt` dừng để bạn tắt/bật API tay (hoặc `--wait-seconds N`) cho các ca 502/504/phục hồi; `--upstream skip` bỏ các ca này nên không đủ cho G04. Cổng đòi JUnit không fail và không skip.
+`--upstream prompt` dừng để bạn tắt/bật API tay (hoặc `--wait-seconds N`) cho các ca 502/504/phục hồi; cần terminal thật, không có stdin (CI, pipe, chạy nền) thì thoát mã 2: dùng terminal hoặc `--wait-seconds N`; `--upstream skip` bỏ các ca này nên không đủ cho G04. Cổng đòi JUnit không fail và không skip.
 
 ## 5. G05: UI qua gateway
 
