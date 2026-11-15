@@ -1,0 +1,345 @@
+{
+  "scope": "functional follow-up only; no performance or release acceptance",
+  "server_preflight": {
+    "timestamp": "2026-11-15T14:36:27.659302+00:00",
+    "commit": "9c8162f6e9150ff0edbd6ff1c56033c9dacaa799",
+    "git_status": "",
+    "cpu": "2",
+    "os": {
+      "PRETTY_NAME": "\"Ubuntu 24.04.3 LTS\"",
+      "NAME": "\"Ubuntu\"",
+      "VERSION_ID": "\"24.04\"",
+      "VERSION": "\"24.04.3 LTS (Noble Numbat)\"",
+      "VERSION_CODENAME": "noble",
+      "ID": "ubuntu",
+      "ID_LIKE": "debian",
+      "HOME_URL": "\"https://www.ubuntu.com/\"",
+      "SUPPORT_URL": "\"https://help.ubuntu.com/\"",
+      "BUG_REPORT_URL": "\"https://bugs.launchpad.net/ubuntu/\"",
+      "PRIVACY_POLICY_URL": "\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"",
+      "UBUNTU_CODENAME": "noble",
+      "LOGO": "ubuntu-logo"
+    },
+    "memory": "total        used        free      shared  buff/cache   available\nMem:            1967        1468          85          36         618         498\nSwap:              0           0           0",
+    "docker": "29.9.2",
+    "compose": "Docker Compose version v5.6.1",
+    "containers": [
+      {
+        "name": "/realcheck-api-1",
+        "image": "realcheck-api:9c8162f",
+        "image_id": "sha256:b8ef2be12e29a7e16e511b1e9e604aa32e4dee0e9cbdce3cd3a2bd4e30977758",
+        "status": "running",
+        "health": "healthy",
+        "oom_killed": false,
+        "restart_count": 0,
+        "memory_limit_bytes": 943718400,
+        "nanocpus": 1500000000,
+        "ports": {
+          "8000/tcp": null
+        }
+      },
+      {
+        "name": "/realcheck-ui-1",
+        "image": "realcheck-ui:9c8162f",
+        "image_id": "sha256:40aa968c34c05f9cd19bcdc41f051df43e6ca751e358c51c18d4a040daf409d5",
+        "status": "running",
+        "health": "healthy",
+        "oom_killed": false,
+        "restart_count": 2,
+        "memory_limit_bytes": 268435456,
+        "nanocpus": 500000000,
+        "ports": {
+          "8501/tcp": null
+        }
+      },
+      {
+        "name": "/realcheck-nginx-1",
+        "image": "nginx:1.28.0-alpine",
+        "image_id": "sha256:30f1c0d78e0ad60901648be663a710bdadf19e4c10ac6782c235200619158284",
+        "status": "running",
+        "health": null,
+        "oom_killed": false,
+        "restart_count": 0,
+        "memory_limit_bytes": 67108864,
+        "nanocpus": 250000000,
+        "ports": {
+          "80/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "8090"
+            }
+          ]
+        }
+      }
+    ],
+    "hashes": {
+      "docker-compose.yml": "7c71792bdc290ae9f1df1befd8016ca465ae8a18d25ea9284723e3e0151c9501",
+      "nginx/nginx.conf": "2122c11fa1f0883b233a700c81d3f9c86c36442b42781e6805b24009fb2c2a71",
+      "models/clip_probe_e571.joblib": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494"
+    },
+    "evaluation_report_present": false
+  },
+  "server_postflight": {
+    "at": "2026-11-15T15:01:53.172136+00:00",
+    "memory_samples": 600,
+    "min_available_mib": 490.40234375,
+    "last_sample_available_mib": 498.11328125,
+    "low_memory_marker": false,
+    "free_m": "               total        used        free      shared  buff/cache   available\nMem:            1967        1456         104          36         612         511\nSwap:              0           0           0\n",
+    "containers": [
+      {
+        "name": "/realcheck-api-1",
+        "image": "realcheck-api:9c8162f",
+        "health": "healthy",
+        "running": true,
+        "restart_count": 0,
+        "oom_killed": false
+      },
+      {
+        "name": "/realcheck-ui-1",
+        "image": "realcheck-ui:9c8162f",
+        "health": "healthy",
+        "running": true,
+        "restart_count": 2,
+        "oom_killed": false
+      },
+      {
+        "name": "/realcheck-nginx-1",
+        "image": "nginx:1.28.0-alpine",
+        "health": null,
+        "running": true,
+        "restart_count": 0,
+        "oom_killed": false
+      }
+    ],
+    "git_status": ""
+  },
+  "functional_small": {
+    "scope": "13 sequential small functional requests; not full smoke, browser UI, ML QA or performance evidence",
+    "runner": "Kiet with Codex assistance, external Windows client via SSH tunnel",
+    "client_source_commit": "a70e4b60c9c628b0e2a0826d0b1e9bc79dfb2870",
+    "server_commit": "9c8162f6e9150ff0edbd6ff1c56033c9dacaa799",
+    "started_at_utc": "2026-11-15T14:39:15.167684+00:00",
+    "finished_at_utc": "2026-11-15T14:39:37.739158+00:00",
+    "passed": 13,
+    "total": 13,
+    "results": [
+      {
+        "case": "health",
+        "status_code": 200,
+        "expected_status": 200,
+        "problems": [],
+        "passed": true,
+        "request_id": "a629019e-0328-534d-6fbc-3d63aabaafbc"
+      },
+      {
+        "case": "docs",
+        "status_code": 200,
+        "expected_status": 200,
+        "problems": [],
+        "passed": true,
+        "request_id": "94666021-6b6f-815b-c76c-4360ffcbecac"
+      },
+      {
+        "case": "ui_html",
+        "status_code": 200,
+        "expected_status": 200,
+        "problems": [],
+        "passed": true,
+        "request_id": null
+      },
+      {
+        "case": "ui_health",
+        "status_code": 200,
+        "expected_status": 200,
+        "problems": [],
+        "passed": true,
+        "request_id": null
+      },
+      {
+        "case": "png",
+        "status_code": 200,
+        "expected_status": 200,
+        "problems": [],
+        "passed": true,
+        "request_id": "b6d744a3-fb46-06c6-bdb0-5a8aa18aad16",
+        "file": "ok_valid.png",
+        "image_sha256": "ab768bf4cdba10285c023e724cb01a812b82f2e87b1e38096ab68b731c163bd6",
+        "bytes": 4604,
+        "response": {
+          "verdict": "likely_ai",
+          "score": 0.9994385838508606,
+          "exif": "Không có thông tin máy chụp",
+          "reason": "Điểm mô hình nằm trong vùng Ảnh AI. Ảnh không có thông tin máy chụp; đây chỉ là bằng chứng phụ."
+        }
+      },
+      {
+        "case": "real_jpeg",
+        "status_code": 200,
+        "expected_status": 200,
+        "problems": [],
+        "passed": true,
+        "request_id": "ba4e2c07-6931-9958-ce5f-4836e0942ca6",
+        "file": "genimage_real-004ea5d5dd8f435ee8d8ed9c9362f89a9f6af91e15119be81e4f09e8afc029b6.jpg",
+        "image_sha256": "004ea5d5dd8f435ee8d8ed9c9362f89a9f6af91e15119be81e4f09e8afc029b6",
+        "bytes": 152585,
+        "response": {
+          "verdict": "likely_real",
+          "score": 0.06706305593252182,
+          "exif": "Không có thông tin máy chụp",
+          "reason": "Điểm mô hình nằm trong vùng Ảnh thật. Ảnh không có thông tin máy chụp; đây chỉ là bằng chứng phụ."
+        }
+      },
+      {
+        "case": "ai_png",
+        "status_code": 200,
+        "expected_status": 200,
+        "problems": [],
+        "passed": true,
+        "request_id": "97742147-f87c-6f9f-78e6-986db35cbcb7",
+        "file": "genimage_glide-02e2f6adfe1b82011caeda6014f129dee3246c3437f6e60d903ee49049482afc.png",
+        "image_sha256": "02e2f6adfe1b82011caeda6014f129dee3246c3437f6e60d903ee49049482afc",
+        "bytes": 78553,
+        "response": {
+          "verdict": "likely_ai",
+          "score": 0.9545270204544067,
+          "exif": "Không có thông tin máy chụp",
+          "reason": "Điểm mô hình nằm trong vùng Ảnh AI. Ảnh không có thông tin máy chụp; đây chỉ là bằng chứng phụ."
+        }
+      },
+      {
+        "case": "empty",
+        "status_code": 400,
+        "expected_status": 400,
+        "problems": [],
+        "passed": true,
+        "request_id": "bbe8076c-b214-6ac3-fbc1-ee63dbbb7cff",
+        "file": "empty.jpg",
+        "image_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "case": "fake_jpeg",
+        "status_code": 400,
+        "expected_status": 400,
+        "problems": [],
+        "passed": true,
+        "request_id": "cd3fb389-2441-bb49-ee11-c95a3248341f",
+        "file": "fake_text.jpg",
+        "image_sha256": "4aae1783cd7b167d77ad71965e2dd16d76823fee6a17bf2669722274065748ba",
+        "bytes": 27
+      },
+      {
+        "case": "small",
+        "status_code": 422,
+        "expected_status": 422,
+        "problems": [],
+        "passed": true,
+        "request_id": "b6a52105-9d89-8831-84cf-eb55d320f8f3",
+        "file": "small_200x200.jpg",
+        "image_sha256": "57438b4a9d83c2473d8f11b60d4a2d0f429721b756da8c19bcd5568952f75bc1",
+        "bytes": 3619
+      },
+      {
+        "case": "missing_file",
+        "status_code": 422,
+        "expected_status": 422,
+        "problems": [],
+        "passed": true,
+        "request_id": "9e7733a8-7d94-0c32-07da-548d6c398c6b"
+      },
+      {
+        "case": "wrong_method",
+        "status_code": 405,
+        "expected_status": 405,
+        "problems": [],
+        "passed": true,
+        "request_id": "50d6b297-7d1c-cbc9-7928-3920f43c9f9c"
+      },
+      {
+        "case": "unknown_route",
+        "status_code": 404,
+        "expected_status": 404,
+        "problems": [],
+        "passed": true,
+        "request_id": "75f7e31b-5ab2-aaa4-b53b-686195973549"
+      }
+    ],
+    "large_images_rate_stress_soak_and_restart_tested": false,
+    "independent_ml_qa_approved": false,
+    "release_approved": false
+  },
+  "gateway_limited": {
+    "exit_code": 1,
+    "upstream": "skip",
+    "selected": [
+      "under",
+      "body"
+    ],
+    "result": {
+      "time": "2026-11-15T14:40:41.800319+00:00",
+      "base_url": "http://127.0.0.1:18090",
+      "rate": 10.0,
+      "burst": 10,
+      "results": [
+        {
+          "case": "Dưới giới hạn vẫn 200 + X-Request-ID",
+          "expected": "3 request, nửa 10 r/s → 200",
+          "actual": "3/3 là 200",
+          "status": "đạt"
+        },
+        {
+          "case": "Body 6291456 B bị chặn",
+          "expected": "413 FILE_TOO_LARGE + envelope",
+          "actual": "không nhận được 413 (WriteTimeout: timed out): gateway đóng kết nối khi gửi body",
+          "status": "lỗi"
+        }
+      ]
+    }
+  },
+  "curl_oversize_diagnostic": {
+    "http_status": 413,
+    "request_id": "a38c6f10-461e-2516-1083-d198b986818a",
+    "response": {
+      "error": {
+        "code": "FILE_TOO_LARGE",
+        "message": "File ảnh vượt quá dung lượng cho phép.",
+        "request_id": "a38c6f10-461e-2516-1083-d198b986818a"
+      }
+    },
+    "upload_bytes": 0,
+    "client": "curl 8.22.0 HTTP/1.1 Expect: 100-continue",
+    "is_replacement_for_failed_checker": false
+  },
+  "memory_sampling": {
+    "samples": 600,
+    "first_sample": {
+      "at": "2026-11-15T14:38:08.706478+00:00",
+      "available_mib": 517.12890625
+    },
+    "last_sample": {
+      "at": "2026-11-15T14:48:08.062085+00:00",
+      "available_mib": 498.11328125
+    },
+    "min_available_mib": 490.40234375,
+    "raw_jsonl_sha256": "2310045af2db7abf907ed8e7b42897542ad55e9b62780bf4697dd87d7bca6696",
+    "is_soak_or_api_rss_measurement": false
+  },
+  "client_hardware_snapshot": {
+    "os": "Windows 11 Home",
+    "cpu": "Intel Core i7-14650HX",
+    "cores": 16,
+    "logical_processors": 24,
+    "total_ram_gib": 15.612,
+    "available_ram_gib": 1.043,
+    "disk_free_gib": 185.267,
+    "docker_cli_at_path_or_standard_desktop_location": false,
+    "wsl_default": "Ubuntu, WSL2",
+    "docker_in_wsl_checked": false,
+    "same_lan_peer_checked": false
+  },
+  "browser_recheck": "app approval timed out; not performed",
+  "performance_tests_run": false,
+  "independent_ml_qa_approved": false,
+  "release_approved": false
+}
