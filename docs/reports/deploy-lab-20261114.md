@@ -2,7 +2,7 @@
 
 Người deploy: Quang. Người kiểm độc lập: **chưa có** (cần một người khác chạy lại mục "Kiểm từ máy khác"). Lệnh lấy thông tin: [`deploy.md` mục 10](../deploy.md#10-thông-tin-cho-biên-bản). Giờ ghi theo máy lab (UTC+7).
 
-**Kết luận:** Compose core (API, UI, Nginx) chạy được trên một server Linux thật, với model e571. Smoke (26/26 ca), gateway (8/8 ca), rollback mã và rollback model đều đạt. **Máy này thấp hơn yêu cầu của `deploy.md`** (2 nhân, 1,9 GiB RAM) và chạy chung với dịch vụ của người khác, nên phải hạ giới hạn tài nguyên (bảng "Lệch so với cấu hình đã ghi"). Biên bản này **không** dùng làm số đo hiệu năng và chưa có Locust hay soak (D09, D10, D14, G06–G09 vẫn chưa làm).
+**Kết luận:** Compose core (API, UI, Nginx) chạy được trên một server Linux thật, với model e571. Smoke (26/26 ca), gateway (8/8 ca), rollback mã, rollback model và kiểm giao diện bằng trình duyệt (15/11) đều đạt. **Máy này thấp hơn yêu cầu của `deploy.md`** (2 nhân, 1,9 GiB RAM) và chạy chung với dịch vụ của người khác, nên phải hạ giới hạn tài nguyên (bảng "Lệch so với cấu hình đã ghi"). Biên bản này **không** dùng làm số đo hiệu năng và chưa có Locust hay soak (D09, D10, D14, G06–G09 vẫn chưa làm).
 
 ## Máy và truy cập
 
@@ -73,9 +73,26 @@ Máy kiểm: máy Quang (Windows 11), qua SSH tunnel tới `127.0.0.1:8090` củ
 | `GET /docs` | 200 |
 | `scripts.smoke_api` với model thật (`--delay 0.15`) | **26/26 ca đạt**, 0 lỗi, 0 cảnh báo ([JSON](deploy-lab-20261114-smoke.json)); ảnh thật GenImage `likely_real` 0,026, ảnh Midjourney `likely_ai` 0,985. Chạy lần hai khi đo RAM: 26/26 |
 | `scripts.check_gateway --upstream prompt --require-retry-after` | **8/8 ca đạt** ([JSON](deploy-lab-20261114-gateway.json)): 27/50 request vượt giới hạn trả 429; body 6 MiB 413; biên 5.242.880 B 200, 5.242.881 B 413; dừng API trả 504; bật lại 200 sau 14,1 s |
-| UI: ảnh JPEG điện thoại, ảnh PNG, file lỗi, WebSocket | **Chưa kiểm bằng trình duyệt.** Qua tunnel `GET /` trả 200 |
+| UI: ảnh JPEG, ảnh PNG, file lỗi, WebSocket | Đạt, kiểm ngày 15/11 (mục "Kiểm giao diện bằng trình duyệt" bên dưới) |
 
 Ghi chú về `check_gateway`: người chạy không bấm Enter bằng tay mà dùng một script nhỏ truyền `ask` vào `check_gateway.main`; mỗi lần script nhắc, nó chạy `docker compose stop api` (2,8 s) hoặc `docker compose start api` (0,8 s) trên máy lab rồi mới trả lời, đúng thứ tự như `deploy.md` mục 4. Khi dừng API, gateway trả 504 thay vì 502: Nginx còn giữ IP cũ của `api` trong cache DNS 10 giây (đã ghi ở D05).
+
+## Kiểm giao diện bằng trình duyệt (2026-11-15)
+
+Microsoft Edge 157.0.4341.60 trên máy Quang, chạy headless và do Playwright điều khiển (tải file, bấm "Kiểm tra ảnh", đọc nội dung trang, chụp màn hình), qua SSH tunnel tới cùng bản `9c8162f`. Streamlit kết nối WebSocket `/_stcore/stream` qua Nginx bình thường. Kết quả máy đọc được: [JSON](deploy-lab-20261115-ui.json). Ảnh chụp màn hình đính kèm ở #42, không commit vào repo.
+
+| Ảnh | Giao diện hiện | Thời gian tới kết quả |
+|---|---|---|
+| JPEG 4000×3000 có EXIF (ảnh tổng hợp từ `make_fixtures`) | Ảnh AI, 100%, kèm lý do và EXIF | 2,4 s |
+| PNG 512×384 (ảnh tổng hợp) | Ảnh AI, 100% | 0,9 s |
+| Ảnh thật GenImage (`real_train-00002_1238.jpg`) | Ảnh thật, 3% | 0,9 s |
+| Ảnh Midjourney GenImage | Ảnh AI, 98%, "Không có thông tin máy chụp" | 0,9 s |
+| File text đổi đuôi `.jpg` | Hộp lỗi "Không đọc được ảnh hoặc ảnh bị hỏng." | 0,4 s |
+| File 5.242.881 byte | Ô tải ảnh của Streamlit chặn ngay, không gửi tới API: "Error: File must be 5.0MB or smaller." | — |
+
+Hai ảnh tổng hợp là ảnh do script vẽ, không phải ảnh chụp, nên điểm AI cao không nói gì về độ đúng của model. Hai điểm cần báo Loan, không chặn #42:
+- Thông báo file quá lớn là chữ tiếng Anh do Streamlit sinh ra, không theo quy ước chữ trên UI viết tiếng Việt. Chặn ở ô tải ảnh thì giới hạn 413 của Nginx không được thử qua giao diện (đã thử bằng `check_gateway` và `smoke_api`).
+- Trang "Kết quả đánh giá", tab "Mô hình" hiện "Chưa có số đo: mô hình chưa được đánh giá." vì `artifacts/evaluation.json` không có trên máy lab (thư mục `artifacts/` được mount vào UI nhưng trống). `docs/deploy.md` chưa nói phải chép file này. Tab "Dữ liệu" hiện bình thường.
 
 ## Rollback
 
@@ -93,7 +110,8 @@ Dò `/health` trên máy lab mỗi 0,5 giây. "Gián đoạn" là từ request l
 
 ## Chưa làm
 
-- Kiểm UI bằng trình duyệt qua Nginx (tải ảnh, xem kết quả, giới hạn 5 MiB).
+- Kiểm UI do người bấm tay (lần kiểm 15/11 dùng Edge do script điều khiển).
+- Báo cáo đánh giá `artifacts/evaluation.json` trên máy lab.
 - Người kiểm độc lập chạy lại mục "Kiểm từ máy khác".
 - Locust baseline, soak 30 phút (RSS sau warmup và cuối), recovery: chờ Lực/QA. Lưu ý: qua SSH tunnel mọi client dùng chung 10 r/s (D13); máy 2 nhân và giới hạn đã hạ nên số đo không đại diện cho cấu hình 4 CPU / 2 GiB.
 - Thời hạn mượn máy: chưa xác nhận.
