@@ -2,7 +2,7 @@
 
 Phụ trách: Quang. Áp dụng cho Compose core (API, UI Streamlit, gateway Nginx) trong `docker-compose.yml`.
 
-**Trạng thái (2026-11-11):** chưa có máy lab. Hướng dẫn này đã được diễn tập trên máy local, gồm cả rollback và phục hồi ([biên bản diễn tập](reports/deploy-rollback-rehearsal-20261111.md)); chưa có bằng chứng trên server. Khi có máy, điền [mẫu biên bản](deploy-record-template.md).
+**Trạng thái (2026-11-14):** đã deploy `9c8162f` lên một server Linux mượn, truy cập qua SSH tunnel; smoke, gateway, rollback mã và rollback model đạt ([biên bản máy lab](reports/deploy-lab-20261114.md)). Máy đó chỉ có 2 nhân và 1,9 GiB RAM, thấp hơn yêu cầu ở mục 1, nên đã hạ giới hạn tài nguyên bằng file override ngoài repo; chưa đo tải. Diễn tập local trước đó: [biên bản 11/11](reports/deploy-rollback-rehearsal-20261111.md). Lần deploy sau điền [mẫu biên bản](deploy-record-template.md).
 
 ## 1. Máy lab
 

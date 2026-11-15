@@ -166,7 +166,7 @@ Cột "Kết quả khi thử" điền sau khi thử trên máy demo; chưa có k
 | Model có nhận ảnh AI đời mới không? | Phần lớn có: 26/32 ảnh AI đời mới (Gemini, ChatGPT, ảnh Google Images) đúng, 2 chưa chắc, 4 nhầm là thật (đều là Gemini). Cohort nhỏ, khoảng tin cậy 75,0–96,9% |
 | Có học đường tắt (dung lượng file, định dạng) không? | Đã đo: baseline chỉ dùng dung lượng file đạt 84,54% ở cặp thật với GLIDE, nên nguy cơ còn, chưa loại trừ |
 | Chịu tải được bao nhiêu? | **Chưa có số đã duyệt.** Công cụ Locust đã có; baseline sơ bộ trên máy phát triển ở [biên bản 11/11](local-real-model-verification-20261111.md), không phải năng lực của máy lab |
-| Có chạy trên server chưa? | Chưa; M1 chạy localhost. Compose và Nginx có hướng dẫn trong `docs/deploy.md`, chưa có bằng chứng trên máy lab |
+| Có chạy trên server chưa? | M1 chạy localhost. Ngày 14/11 Compose và Nginx đã chạy trên một server Linux mượn, truy cập qua SSH tunnel: smoke, gateway, rollback đạt ([biên bản](../reports/deploy-lab-20261114.md)). Máy thấp hơn yêu cầu (2 nhân, 1,9 GiB RAM), chưa đo tải nên không nói về hiệu năng |
 | Sao không nhận ảnh chân dung iPhone? | Có nhận: từ PR #106 API chấm ảnh MPO theo khung đầu. Chưa thử file MPO thật của iPhone (mới thử MPO do Pillow tạo), nên chưa nói là đã kiểm với ảnh thật |
 
 ## 9. Rủi ro đã biết khi demo

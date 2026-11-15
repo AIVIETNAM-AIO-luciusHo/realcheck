@@ -1,0 +1,203 @@
+{
+  "browser": "Microsoft Edge 157.0.4341.60 (headless, Playwright)",
+  "base_url": "http://127.0.0.1:18090",
+  "time": "2026-11-15 14:03:49 +0700",
+  "websocket_urls": [
+    "ws://127.0.0.1:18090/_stcore/stream"
+  ],
+  "cases": [
+    {
+      "file": "1_jpeg_4000x3000.jpg",
+      "expected": "kết luận",
+      "outcome": "ok",
+      "seconds_to_result": 2.4,
+      "error_box": [],
+      "page_text": [
+        "Xem một bức ảnh có giống ảnh do AI tạo hay không.",
+        "Chọn ảnh JPEG hoặc PNG, tối đa 5 MB, cạnh ngắn từ 256 px",
+        "0.6MB",
+        "JPEG · 4000 × 3000 px · 0.59 MB",
+        "Ảnh AI",
+        "Ảnh có nhiều đặc điểm giống ảnh do AI tạo.",
+        "100%",
+        "Điểm AI",
+        "Dự đoán AI",
+        "AI",
+        "0%",
+        "30%",
+        "50%",
+        "70%",
+        "100%",
+        "Càng gần 100% càng giống ảnh AI. Đây không phải xác suất chắc chắn ảnh là giả.",
+        "lightbulb Lý do",
+        "Điểm mô hình nằm trong vùng Ảnh AI. Ảnh có thông tin máy chụp; đây chỉ là bằng chứng phụ.",
+        "photo_camera Thông tin máy chụp (EXIF)",
+        "EXIF chỉ là thông tin phụ, thiếu EXIF không chứng minh ảnh là AI.",
+        "Kết quả chỉ để tham khảo. Mô hình có thể sai, nhất là với ảnh đã bị nén hoặc ảnh từ công cụ AI mới, và không phát hiện ảnh thật bị chỉnh sửa.",
+        "Thời gian xử lý: 0.8 giây · Mã yêu cầu: 58057fb4-2ab4-a9ef-2039-09fcd19a4eea"
+      ],
+      "screenshot": "1_jpeg_4000x3000.png"
+    },
+    {
+      "file": "2_png_hop_le.png",
+      "expected": "kết luận",
+      "outcome": "ok",
+      "seconds_to_result": 0.9,
+      "error_box": [],
+      "page_text": [
+        "Xem một bức ảnh có giống ảnh do AI tạo hay không.",
+        "Chọn ảnh JPEG hoặc PNG, tối đa 5 MB, cạnh ngắn từ 256 px",
+        "4.5KB",
+        "PNG · 512 × 384 px · 4.6 KB",
+        "Ảnh AI",
+        "Ảnh có nhiều đặc điểm giống ảnh do AI tạo.",
+        "100%",
+        "Điểm AI",
+        "Dự đoán AI",
+        "AI",
+        "0%",
+        "30%",
+        "50%",
+        "70%",
+        "100%",
+        "Càng gần 100% càng giống ảnh AI. Đây không phải xác suất chắc chắn ảnh là giả.",
+        "lightbulb Lý do",
+        "Điểm mô hình nằm trong vùng Ảnh AI. Ảnh không có thông tin máy chụp; đây chỉ là bằng chứng phụ.",
+        "photo_camera Thông tin máy chụp (EXIF)",
+        "Không có thông tin máy chụp",
+        "EXIF chỉ là thông tin phụ, thiếu EXIF không chứng minh ảnh là AI.",
+        "Kết quả chỉ để tham khảo. Mô hình có thể sai, nhất là với ảnh đã bị nén hoặc ảnh từ công cụ AI mới, và không phát hiện ảnh thật bị chỉnh sửa.",
+        "Thời gian xử lý: 0.2 giây · Mã yêu cầu: 53a1acf0-6112-ae08-0148-e59258aca6ce"
+      ],
+      "screenshot": "2_png_hop_le.png"
+    },
+    {
+      "file": "5_anh_that_genimage.jpg",
+      "expected": "kết luận",
+      "outcome": "ok",
+      "seconds_to_result": 0.9,
+      "error_box": [],
+      "page_text": [
+        "Xem một bức ảnh có giống ảnh do AI tạo hay không.",
+        "Chọn ảnh JPEG hoặc PNG, tối đa 5 MB, cạnh ngắn từ 256 px",
+        "50.8KB",
+        "JPEG · 360 × 285 px · 52.0 KB",
+        "Ảnh thật",
+        "Ảnh có nhiều đặc điểm giống ảnh chụp thật.",
+        "3%",
+        "Điểm AI",
+        "Dự đoán AI",
+        "AI",
+        "0%",
+        "30%",
+        "50%",
+        "70%",
+        "100%",
+        "Càng gần 100% càng giống ảnh AI. Đây không phải xác suất chắc chắn ảnh là giả.",
+        "lightbulb Lý do",
+        "Điểm mô hình nằm trong vùng Ảnh thật. Ảnh có thông tin máy chụp; đây chỉ là bằng chứng phụ.",
+        "photo_camera Thông tin máy chụp (EXIF)",
+        "EXIF chỉ là thông tin phụ, thiếu EXIF không chứng minh ảnh là AI.",
+        "Kết quả chỉ để tham khảo. Mô hình có thể sai, nhất là với ảnh đã bị nén hoặc ảnh từ công cụ AI mới, và không phát hiện ảnh thật bị chỉnh sửa.",
+        "Thời gian xử lý: 0.3 giây · Mã yêu cầu: 41d56c04-8043-b6ab-e58a-92b0c5d7cb41"
+      ],
+      "screenshot": "5_anh_that_genimage.png"
+    },
+    {
+      "file": "6_anh_ai_midjourney.png",
+      "expected": "kết luận",
+      "outcome": "ok",
+      "seconds_to_result": 0.9,
+      "error_box": [],
+      "page_text": [
+        "Xem một bức ảnh có giống ảnh do AI tạo hay không.",
+        "Chọn ảnh JPEG hoặc PNG, tối đa 5 MB, cạnh ngắn từ 256 px",
+        "1.1MB",
+        "PNG · 1024 × 1024 px · 1.17 MB",
+        "Ảnh AI",
+        "Ảnh có nhiều đặc điểm giống ảnh do AI tạo.",
+        "98%",
+        "Điểm AI",
+        "Dự đoán AI",
+        "AI",
+        "0%",
+        "30%",
+        "50%",
+        "70%",
+        "100%",
+        "Càng gần 100% càng giống ảnh AI. Đây không phải xác suất chắc chắn ảnh là giả.",
+        "lightbulb Lý do",
+        "Điểm mô hình nằm trong vùng Ảnh AI. Ảnh không có thông tin máy chụp; đây chỉ là bằng chứng phụ.",
+        "photo_camera Thông tin máy chụp (EXIF)",
+        "Không có thông tin máy chụp",
+        "EXIF chỉ là thông tin phụ, thiếu EXIF không chứng minh ảnh là AI.",
+        "Kết quả chỉ để tham khảo. Mô hình có thể sai, nhất là với ảnh đã bị nén hoặc ảnh từ công cụ AI mới, và không phát hiện ảnh thật bị chỉnh sửa.",
+        "Thời gian xử lý: 0.3 giây · Mã yêu cầu: 6c9428c9-db2f-3258-945d-19fce3febaa0"
+      ],
+      "screenshot": "6_anh_ai_midjourney.png"
+    },
+    {
+      "file": "3_file_loi_text.jpg",
+      "expected": "lỗi ảnh không hợp lệ",
+      "outcome": "ok",
+      "seconds_to_result": 0.4,
+      "error_box": [
+        "error\n\nKhông đọc được ảnh hoặc ảnh bị hỏng."
+      ],
+      "page_text": [
+        "Xem một bức ảnh có giống ảnh do AI tạo hay không.",
+        "Chọn ảnh JPEG hoặc PNG, tối đa 5 MB, cạnh ngắn từ 256 px",
+        "0.0 KB",
+        "Mã yêu cầu khi báo lỗi: 0cefde20-50bb-1897-1de2-811aac2d8384"
+      ],
+      "screenshot": "3_file_loi_text.png"
+    },
+    {
+      "file": "4_qua_5MiB.jpg",
+      "expected": "lỗi file quá lớn",
+      "outcome": "uploader_rejected: Error: File must be 5.0MB or smaller.",
+      "seconds_to_result": 0.0,
+      "error_box": [],
+      "page_text": [
+        "Xem một bức ảnh có giống ảnh do AI tạo hay không.",
+        "Chọn ảnh JPEG hoặc PNG, tối đa 5 MB, cạnh ngắn từ 256 px",
+        "5.0MB",
+        "Error: File must be 5.0MB or smaller.",
+        "Ảnh thật",
+        "Dự đoán AI",
+        "Ảnh AI",
+        "0%",
+        "30%",
+        "50%",
+        "70%",
+        "100%",
+        "JPEG hoặc PNG, tối đa 5 MB, cạnh ngắn từ 256 px.",
+        "CLIP đọc đặc trưng ảnh, Logistic Regression cho điểm từ 0% đến 100%.",
+        "Xem kết luận, điểm AI, lý do và thông tin máy chụp."
+      ],
+      "screenshot": "4_qua_5MiB.png"
+    }
+  ],
+  "evaluation_page": [
+    {
+      "tab": "model_training Mô hình",
+      "headings": [
+        "RealCheck",
+        "Bộ dữ liệu",
+        "Kiểm tra rò rỉ metadata"
+      ],
+      "error_box": [],
+      "screenshot": "7_ket_qua_danh_gia_tab1.png"
+    },
+    {
+      "tab": "dataset Dữ liệu",
+      "headings": [
+        "RealCheck",
+        "Bộ dữ liệu",
+        "Kiểm tra rò rỉ metadata"
+      ],
+      "error_box": [],
+      "screenshot": "7_ket_qua_danh_gia_tab2.png"
+    }
+  ]
+}
