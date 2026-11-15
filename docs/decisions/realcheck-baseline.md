@@ -19,12 +19,12 @@ Trạng thái: `proposed` (đề xuất, chờ review), `approved` (nhóm đã d
 | D06 Body dư multipart | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | 64 KiB (`client_max_body_size 5184k`) |
 | D07 Số pixel | approved | Quang | Lực | 2026-11-04 | — |
 | D08 Ngưỡng | approved cho MVP (Lực, 2026-11-12): 0.3/0.5/0.7 | Kiệt | Lực/Loan | 2026-11-12 | Không phải duyệt release: 94,53% chỉ trên 384 ảnh test đã lọc, chưa duyệt độc lập, chưa loại trừ shortcut |
-| D09 p95 | Hoãn (Lực, 2026-11-12) | Lực | — | — | Chốt sau khi đo trên máy lab; baseline sơ bộ trên máy cá nhân không đủ |
-| D10 RPS, error budget, RSS | Hoãn (Lực, 2026-11-12) | Lực | — | — | Chốt sau khi đo trên máy lab |
+| D09 p95 | Chốt cho MVP theo SLO 14/11: approved cho MVP (Lực, 2026-11-15), **chờ Lực xác nhận ghi sổ** | Lực | — | 2026-11-15 | p95 của 200 đúng schema ≤ 400 ms, đo trên máy cùng phần cứng với client (Windows host + WSL2); xem [Quyết định 15/11](#quyết-định-của-lực-ngày-15112026). Số trên máy đạt cấu hình thuộc #132. Đã thay mục "Hoãn" ngày 12/11 |
+| D10 RPS, error budget, RSS | Chốt cho MVP theo SLO 14/11: approved cho MVP (Lực, 2026-11-15), **chờ Lực xác nhận ghi sổ** | Lực | — | 2026-11-15 | RPS 200 ≥ 0,6; lỗi ≤ 8% (không tính 429, tính 503 `SERVICE_BUSY`); RSS tăng ≤ 20% sau warmup (theo `docker stats`). Cùng điều kiện máy đo như D09 |
 | D11 Timeout | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
 | D12 Cơ chế suy luận | approved tạm, xem lại sau benchmark | Quang | Lực | 2026-11-04 | Xem lại sau benchmark MVP-09 |
 | D13 Truy cập, rate limit | approved (Lực, 2026-11-12), sửa quyết định 10/11 | Quang | Lực | 2026-11-12 | Mạng lab nội bộ dùng HTTP; truy cập từ ngoài bắt buộc SSH tunnel; ngoài Internet cần TLS và quyết định mới |
-| D14 Profile tải | Hoãn (Lực, 2026-11-12) | Lực | — | — | Chốt cùng D09, D10 sau khi đo trên lab; `locust/baseline.conf` (5 người dùng) chỉ là đề xuất |
+| D14 Profile tải | Chốt cho MVP theo SLO 14/11: approved cho MVP (Lực, 2026-11-15), **chờ Lực xác nhận ghi sổ** | Lực | — | 2026-11-15 | Tải 2 user, spawn 1/s, 5 phút, warmup 30 s; soak 30 phút, 2 user. `locust/baseline.conf` và `soak.conf` trong repo đặt 5 user nên phải chạy với `-u 2`; chưa đổi file conf |
 | Hợp đồng `score` | approved (Lực, 2026-11-12) | Quang | Lực | 2026-11-12 | [Xác nhận ML](ml-api-handoff-39.md#hợp-đồng-score-xác-nhận-kỹ-thuật-ml), [kiểm trên máy API](#kiểm-trên-máy-api-issue-39); đã duyệt chung ngày 12/11 |
 | Model phục vụ API (local/lab) | Kiệt chọn reference e571; Quang đã nhận và kiểm trên máy API | Kiệt | Quang (nhận), chờ Lực | 2026-11-11 | Không phải phê duyệt QA hay release; **bắt buộc đặt `REALCHECK_MODEL_PATH`** (mặc định trong mã vẫn là model cũ `69810fd6`, không đổi); xem [mục Kiểm trên máy API](#kiểm-trên-máy-api-issue-39) |
 | Manifest phục vụ model | approved (Lực, 2026-11-12): bộ 9.708 ảnh giữ split, `data/labels.csv` (PR #83) | Loan | Kiệt, Lực | 2026-11-12 | Loan xác nhận; SHA256 sau khi đổi tiền tố đường dẫn và kiểu xuống dòng khớp manifest e571 (`4bf8e490…`), QA đã kiểm; xem [mục Manifest](#manifest) |
@@ -274,7 +274,7 @@ Trạng thái: approved (Lực, 2026-11-12); đề xuất 2026-11-09. Loan và K
 
 | Người | Việc |
 |---|---|
-| Lực | Đã duyệt 12/11: mã lỗi gateway, body dư 64 KiB, D13, hợp đồng `score`, D08 (MVP), M1/M2. Còn: cùng Loan chốt chính sách audit; chốt D09, D10, D14 sau khi đo trên lab. Đã duyệt 13/11: mục D05 làm rõ (issue #43) |
+| Lực | Đã duyệt 12/11: mã lỗi gateway, body dư 64 KiB, D13, hợp đồng `score`, D08 (MVP), M1/M2. Còn: cùng Loan chốt chính sách audit. D09, D10, D14 đã chốt cho MVP ngày 15/11 (chờ Lực xác nhận ghi sổ). Đã duyệt 13/11: mục D05 làm rõ (issue #43) |
 | Loan | Xác nhận D05 và mã gateway cho UI; chốt D01, D03, D04 và manifest; cùng Lực chốt chính sách audit |
 | Kiệt | Đã ghi [lựa chọn model, contract, thread/timing và D02](../ml-api-model-handoff.md); Quang đã xác nhận checksum/CLI (#39), còn review chung |
 | Quang | Đăng kết quả kiểm vào issue #39; tổng hợp các mục còn chờ |
@@ -312,4 +312,16 @@ Nguồn bằng chứng: `docs/qa/local-real-model-verification-20261111.md`, `do
 | (i) Python và môi trường chạy | Python 3.12.14 cho lượt ADV-08 trên máy Mac (theo Kiệt) và cho lượt QA độc lập G03 (#131); Pillow 13.0.0 bắt buộc. Protocol phải có `environment` (Python và `packages_sha256`, PR #135) và lượt chạy thật lưu `pip freeze` |
 | (j) Probe pixel (D03) | Lực duyệt (2026-11-15) bộ bốn đặc trưng tầng pixel của PR #140 để Loan chạy trên dữ liệu thật (Python 3.12.14, Pillow 13.0.0, lưu `pip freeze`). Không đổi đặc trưng sau khi xem kết quả. G02 ghi theo kết quả thật, kể cả "chưa đạt" vì shortcut dung lượng file đã biết |
 
-**Chưa duyệt:** D09, D10 và SLO vẫn chờ số đo và chữ ký; không ghi `approved`.
+## Quyết định của Lực ngày 15/11/2026
+
+Đã được Lực chọn ở phiên làm việc 15/11; **chờ Lực xác nhận ghi sổ** (chưa có chữ ký của Lực trong sổ này). Số lấy từ `slo.json` ngoài Git (ghi `approved: true`, `approved_by` Lực, `approved_date` 2026-11-14), không phải từ tài liệu trong repo.
+
+| Mục | Quyết định cho MVP |
+|---|---|
+| D09 p95 | ≤ 400 ms (`p95_ms_max`) |
+| D10 | RPS 200 ≥ 0,6 (`rps200_min`); lỗi ≤ 8% không tính 429 và tính 503 (`error_ratio_max`, xem 14/11 (c)); RSS tăng ≤ 20% sau warmup (`rss_growth_pct_max`, xem 14/11 (e)) |
+| D14 | Tải: 2 user, spawn 1/s, 5 phút, warmup 30 s. Soak: 30 phút, 2 user (14/11 (d)) |
+| Phục hồi | Sau khi API khởi động lại, p95 và tỉ lệ lỗi về trong ngưỡng tải; không đặt thời gian phục hồi bằng số |
+| Nơi đo | Máy cùng phần cứng với client (Windows host + WSL2; i5-12450HX 12 luồng, 11 GiB, 1 tiến trình API, `inference_slots=1`), chung phần cứng nên chưa biết hướng sai lệch; không phải lab. Số trên máy đạt cấu hình thuộc #132 |
+
+**Chưa duyệt:** SLO cho máy lab/máy đạt cấu hình (#132) và việc Lực xác nhận ghi các dòng D09, D10, D14 vào sổ.
