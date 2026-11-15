@@ -2,7 +2,19 @@
 
 Phụ trách: Quang. Áp dụng cho Compose core (API, UI Streamlit, gateway Nginx) trong `docker-compose.yml`.
 
-**Trạng thái (2026-11-14):** đã deploy `9c8162f` lên một server Linux mượn, truy cập qua SSH tunnel; smoke, gateway, rollback mã và rollback model đạt ([biên bản máy lab](reports/deploy-lab-20261114.md)). Máy đó chỉ có 2 nhân và 1,9 GiB RAM, thấp hơn yêu cầu ở mục 1, nên đã hạ giới hạn tài nguyên bằng file override ngoài repo; chưa đo tải. Diễn tập local trước đó: [biên bản 11/11](reports/deploy-rollback-rehearsal-20261111.md). Lần deploy sau điền [mẫu biên bản](deploy-record-template.md).
+**Trạng thái (2026-11-15):** đã deploy `9c8162f` lên một server Linux mượn, truy cập qua SSH tunnel; smoke, gateway, rollback mã và rollback model có kết quả trong [biên bản máy lab](reports/deploy-lab-20261114.md). Lực đã chấp nhận ngoại lệ máy này cho kiểm chức năng và rollback ở [#42](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/42#issuecomment-6883484187); #42 đã đóng. Máy chỉ có 2 nhân và 1,9 GiB RAM, chạy chung dịch vụ khác, nên giới hạn đã hạ bằng file override ngoài repo. **Không chạy Locust, stress, soak hoặc ký SLO trên VPS này**; yêu cầu máy đạt cấu hình và đo hiệu năng còn ở [#132](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/132), hạn cập nhật hết ngày 17/11/2026. [Kiểm bổ sung từ máy Kiệt ngày 15/11](reports/vps-functional-followup-20261115.md): 13 request nhỏ đạt; kiểm gateway giới hạn còn lỗi client khi gửi body lớn, chưa đạt toàn bộ. Diễn tập local trước đó: [biên bản 11/11](reports/deploy-rollback-rehearsal-20261111.md). Lần deploy sau điền [mẫu biên bản](deploy-record-template.md).
+
+### Truy cập bản VPS đang chạy
+
+Gateway của VPS đang mượn chỉ bind `127.0.0.1:8090`; API/UI hiện dùng tag `9c8162f`. Từ máy được cấp SSH, mở tunnel và giữ terminal này chạy:
+
+```bash
+ssh -N -o ExitOnForwardFailure=yes -L 127.0.0.1:18090:127.0.0.1:8090 <user>@<vps>
+```
+
+Mở `http://127.0.0.1:18090/` trong trình duyệt. Kiểm nhanh bằng `curl http://127.0.0.1:18090/health`. Dừng tunnel bằng Ctrl+C. Địa chỉ, tài khoản và mật khẩu SSH trao đổi riêng.
+
+Máy đã có deploy thì kiểm container và tài nguyên trước khi thay đổi; không cần clone/build/up lần nữa chỉ để truy cập. Bản VPS dùng `COMPOSE_FILE` và `compose.lab.yml` ngoài repo như [biên bản](reports/deploy-lab-20261114.md#lệch-so-với-cấu-hình-đã-ghi), khác cổng 8081 của file mẫu `docker-compose.vps-smoke.yml`. Giữ file override, cổng loopback và dịch vụ khác hiện có.
 
 ## 1. Máy lab
 
@@ -59,6 +71,8 @@ cp /tmp/e571/model/clip_probe.joblib.sha256 models/clip_probe_e571.joblib.sha256
 ```
 
 **Trọng số CLIP:** container chạy offline (`HF_HUB_OFFLINE=1`), nên cache phải có sẵn. Chép nguyên thư mục `.cache/huggingface` từ một máy đã tải (giữ cấu trúc `hub/…/blobs`, `snapshots`), ví dụ `rsync -a may-co-cache:/duong-dan/realcheck/.cache/huggingface/ .cache/huggingface/`. Máy có Python và `models/requirements-ml.txt` thì tải được bằng `HF_HOME=.cache/huggingface python -c "from models.clip_input import load_encoder; load_encoder()"`. Container chạy bằng uid 10001, nên file trong `models/` và cache phải cho phép đọc.
+
+**Báo cáo cho trang Kết quả đánh giá (tùy chọn):** UI đọc `/reports/evaluation.json` từ file `artifacts/evaluation.json` trên host qua mount chỉ đọc đã có trong Compose. Nếu chưa có báo cáo được chọn để hiển thị, để thư mục trống: thông báo "Chưa có số đo" là trạng thái đúng, không phải lỗi nạp model. Khi người phụ trách chốt một báo cáo, kiểm SHA256, model hash và nguồn/protocol của chính file đó, rồi chép nguyên byte vào `artifacts/evaluation.json` với quyền đọc cho uid 10001; mở lại trang để đọc file mới. Định dạng ở [README UI](../streamlit/README.md#báo-cáo-đánh-giá). Không đổi tên một JSON khác schema, sửa số hoặc dùng báo cáo thí nghiệm của người train để ghi đã có QA độc lập. Kết quả G03 của Loan vẫn phải được Lực review theo #131. Lượt kiểm VPS ngày 15/11 không chép báo cáo cũ vào vị trí này.
 
 **Cấu hình và khởi động:**
 ```bash
