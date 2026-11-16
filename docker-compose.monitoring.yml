@@ -25,8 +25,14 @@ services:
   grafana:
     profiles: [monitoring]
     image: grafana/grafana:12.1.0
+    # Mật khẩu rỗng thì Grafana dùng admin/admin: từ chối chạy. Không dùng `:?` vì nó làm hỏng
+    # `docker compose config` và `down` khi chưa đặt biến (kể cả không bật profile).
+    entrypoint:
+      - /bin/sh
+      - -c
+      - '[ -n "$$GF_SECURITY_ADMIN_PASSWORD" ] || { echo "đặt REALCHECK_GRAFANA_PASSWORD" >&2; exit 1; }; exec /run.sh'
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${REALCHECK_GRAFANA_PASSWORD:?đặt REALCHECK_GRAFANA_PASSWORD}
+      GF_SECURITY_ADMIN_PASSWORD: ${REALCHECK_GRAFANA_PASSWORD:-}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"

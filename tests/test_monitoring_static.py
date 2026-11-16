@@ -41,3 +41,15 @@ def test_prometheus_cao_api_metrics():
     job = cfg["scrape_configs"][0]
     assert job["metrics_path"] == "/metrics"
     assert job["static_configs"][0]["targets"] == ["api:8000"]
+
+
+def test_thieu_mat_khau_grafana_khong_lam_hong_compose_config():
+    text = (ROOT / "docker-compose.monitoring.yml").read_text(encoding="utf-8")
+    assert (
+        "REALCHECK_GRAFANA_PASSWORD:?" not in text
+    )  # `:?` làm `config`/`down` lỗi khi chưa đặt biến
+    assert "${REALCHECK_GRAFANA_PASSWORD:-}" in text
+    entry = " ".join(MON["services"]["grafana"]["entrypoint"])
+    assert (
+        "-n" in entry and "exit 1" in entry
+    )  # mật khẩu rỗng thì Grafana từ chối chạy (tránh admin/admin)
