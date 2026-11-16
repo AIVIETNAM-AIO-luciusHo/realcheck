@@ -34,6 +34,8 @@ Một thí nghiệm Ex được ghi **"cải thiện"** chỉ khi đủ cả ba,
 
 **Sức mạnh thống kê ở miền ảnh điện thoại (C2):** #116 chỉ có 38 ảnh thật (Wilson 95% của tỉ lệ gọi AI ở E0: 60,8% đến 87,0%). Hiệu hai model trên cùng 38 ảnh được kiểm bằng **kiểm định dấu chính xác trên các ảnh đổi nhãn** (ảnh E0 gọi AI mà Ex không gọi, và ngược lại): 6/6 cùng hướng cho p = 0,031, 7/8 cho p = 0,070 (không đủ), 9/10 cho p = 0,0215. Mức 6/38 (khoảng 16 điểm) chỉ là cận dưới lạc quan, đòi mọi ảnh đổi nhãn cùng một hướng. Mỗi báo cáo ghi số ảnh đổi nhãn theo hai hướng và p; **"không đủ sức để kết luận" là kết cục hợp lệ** cho mọi Ex ở miền điện thoại, không bị coi là thất bại của thí nghiệm.
 
+Model không thắng chỉ có số trên #116 nên chỉ được ghi "cải thiện" theo tiêu chí 1 trên validation và #116; không có "cải thiện" ở tập cuối GenImage cho model đó.
+
 Không đủ ba điều thì ghi "chưa phân biệt được" hoặc "không cải thiện" kèm số. Không dựa vào ADV-06 để tuyên bố cải thiện. Không ghi "đạt 90%" cho ảnh điện thoại. Cải thiện trên mẫu nhỏ chỉ là gợi ý, không đổi model phục vụ API (đổi model là PR riêng kèm QA độc lập, #59).
 
 **Chọn "model tốt nhất của E0..E3" cho E4 và E5 (Lực chốt 16/11):** model thỏa tiêu chí 2 và 3 trên validation có tỉ lệ ảnh thật bị gọi AI thấp nhất; hòa trong CI thì chọn model có số đặc trưng nhỏ hơn. 
