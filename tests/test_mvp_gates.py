@@ -342,3 +342,34 @@ def test_g02_ban_sao_audit_that_la_chua_dat(tmp_path, capsys):
     code, out = _run(art, slo, capsys)
     assert code == 1
     assert any("G02" in ln and "[chưa đạt]" in ln for ln in out.splitlines())
+
+
+def test_only_va_require_g01_chan_g02_chi_in(tmp_path, capsys):
+    art, slo = _full(tmp_path)
+    shutil.copy(ROOT / "data" / "metadata_audit.json", art / "metadata-audit.json")
+    args = [
+        "--artifacts",
+        str(art),
+        "--slo",
+        str(slo),
+        "--only",
+        "G01,G02",
+        "--require",
+        "G01",
+    ]
+    assert check_mvp_gates.main(args) == 0  # vượt: G01 đạt, G02 chưa đạt nhưng chỉ in
+    out = capsys.readouterr().out
+    assert "G02 [chưa đạt]" in out and "G03" not in out
+    assert "TẤT CẢ GATE ĐẠT" not in out  # không được nhầm với nghiệm thu core
+    (art / "unit.xml").unlink()
+    assert check_mvp_gates.main(args) == 1  # trượt: thiếu bằng chứng G01
+
+
+def test_only_khong_hop_le_thoat_2(tmp_path, capsys):
+    art, slo = _full(tmp_path)
+    assert (
+        check_mvp_gates.main(
+            ["--artifacts", str(art), "--slo", str(slo), "--only", "G99"]
+        )
+        == 2
+    )
