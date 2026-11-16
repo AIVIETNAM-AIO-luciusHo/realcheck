@@ -11,14 +11,46 @@ API FastAPI phát hiện ảnh do AI tạo: trả **Ảnh thật / Ảnh AI / Ch
 | Loan | [@AIVIETNAM-AIO-ThanhLoan](https://github.com/AIVIETNAM-AIO-ThanhLoan) | Data & Evaluation |
 | Kiệt | [@AIVIETNAM-AIO-tuankietdzvl1](https://github.com/AIVIETNAM-AIO-tuankietdzvl1) | ML Engineer |
 
-## Trạng thái (13/11/2026)
+## Trạng thái (15/11/2026, `main` `d018679`)
 
-- **Chạy được:** `POST /v1/analyze` và `GET /health` qua `uvicorn` hoặc Docker Compose + Nginx; model phục vụ là **reference e571** (CLIP ViT-B/32 + Logistic Regression, SHA256 `e5718345…9494`); giao diện Streamlit; bộ kiểm thử và công cụ đánh giá.
-- **Demo một máy (M1):** đạt, xem [runbook](docs/qa/m1-runbook-and-demo.md).
-- **Nghiệm thu core trên server lab (M2):** chưa đạt. Đã deploy Compose lên một server Linux mượn ngày 14/11 (smoke, gateway, rollback đạt; [biên bản](docs/reports/deploy-lab-20261114.md)), nhưng máy thấp hơn yêu cầu (2 nhân, 1,9 GiB RAM) và chưa đo tải, soak. Các cổng nghiệm thu: `python -m scripts.check_mvp_gates`.
-- **Độ chính xác:** 94,53% (384 ảnh test GenImage đã lọc) **chưa được duyệt độc lập**, đừng trích là "đạt 90%". Trên cohort ảnh thật ngoài GenImage ([ADV-06](docs/cohorts-adv06.md)), 64/76 ảnh thật chụp điện thoại hoặc gửi qua Zalo bị gọi "Ảnh AI". Đây là giới hạn đã biết của model hiện tại.
-- **Ảnh MPO (iPhone chân dung):** đã nhận, chỉ chấm khung đầu (PR #106); chưa thử file MPO thật của iPhone.
-- **Giám sát (`/metrics`, Prometheus, Grafana):** chưa triển khai; dùng báo cáo HTML của Locust.
+Đây là trạng thái tiến độ, **chưa phải biên bản nghiệm thu**: lượt nghiệm thu core ([#133](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/133)) hạn hết ngày 17/11/2026. Báo cáo đầy đủ: [`docs/technical-report/progress_report_v3.tex`](docs/technical-report/progress_report_v3.tex) (bản PDF nháp `RealCheck_Technical_Report_V3_DRAFT.pdf`).
+
+- **Chạy được:** `POST /v1/analyze` và `GET /health` qua `uvicorn` hoặc Docker Compose + Nginx; model phục vụ là **e571** (CLIP ViT-B/32 đóng băng + Logistic Regression). Nhãn real = 0, ai = 1; kết luận ba mức với ngưỡng 0,3 và 0,7 (D08, duyệt cho MVP).
+- **Hệ thống:** Streamlit → Nginx → FastAPI (1 chỗ suy luận, quá tải trả 503 `SERVICE_BUSY` theo D12) → model. Mã lỗi gateway 413, 429, 502, 504; truy cập từ ngoài mạng lab qua SSH tunnel (D13).
+- **Độ chính xác:** 94,53% (363/384 ảnh test GenImage đã lọc, Wilson 91,78% đến 96,40%), **chưa được kiểm độc lập**; đừng trích là "đạt 90%". Trên ảnh thật ngoài GenImage, model gọi **64/76 ảnh điện thoại và Zalo là "Ảnh AI"** ([ADV-06](docs/cohorts-adv06.md), mẫu nhỏ, chủ yếu iPhone 11).
+- **Quy trình:** mọi thay đổi vào `main` qua Pull Request, `ci-ok` và một approval (vai Admin có quyền bypass Ruleset).
+- **Ảnh MPO (iPhone chân dung):** nhận và chỉ chấm khung đầu (PR #106); hai ảnh MPO thật đã qua API, chưa qua Nginx.
+
+### Chín cổng nghiệm thu (`scripts/check_mvp_gates.py`)
+
+| Cổng | Kết quả tại 15/11 | Ghi chú |
+|---|---|---|
+| G01 Unit test, coverage `app/` | Đạt | 1.167 test, 0 skip, coverage 99,43% (Tester, nhánh PR #155); CI báo 5 skip do thiếu gói Locust |
+| G02 Audit shortcut | **Chưa đạt** | Probe pixel: A_eff 0,72 đến 0,97 > 0,55; không đổi tiêu chí ([#147](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/147)) |
+| G03 Accuracy GenImage | Đạt cơ học, **chưa độc lập** | 94,53%; kiểm độc lập chưa làm |
+| G04 Gateway, G05 UI | Đạt | `check_gateway` 8/8; kiểm UI trình duyệt 6/6 trên VPS ngày 15/11 |
+| G06 SLO | Đạt | Ký 14/11, p95 ≤ 400 ms, RPS ≥ 0,6, lỗi ≤ 8%, 2 user |
+| G07 Load, G08 Soak | Đạt **trên máy của Lực** | p95 223,6 và 241,7 ms; client cùng phần cứng với server |
+| G09 Recovery | Lượt 1 không đạt, lượt sau đạt | Giữ cả hai kết quả |
+
+`check_mvp_gates` sẽ thoát mã 1 vì G02, nên kết luận hiện tại là **"core chưa đạt G02"**, không phải 9/9. Hướng dẫn thu bằng chứng từng cổng: [`docs/qa/gate-evidence.md`](docs/qa/gate-evidence.md).
+
+### Giới hạn đã biết
+
+- Ảnh thật chụp bằng điện thoại thường bị gọi "Ảnh AI"; 94,53% chỉ áp dụng cho ảnh kiểu GenImage.
+- Tín hiệu tầng pixel còn sót sau chuẩn hóa (G02), chưa rõ do nén hay bản chất ảnh.
+- Số đo tải lấy trên máy của Lực, chưa trên máy đạt cấu hình ([#132](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/132)); VPS mượn (2 nhân, 1,9 GiB, dùng chung) chỉ kiểm chức năng và rollback, không đo tải.
+- Giám sát (`/metrics`, Prometheus, Grafana) chưa triển khai; dùng báo cáo HTML của Locust.
+
+### Việc tiếp theo
+
+| Việc | Issue |
+|---|---|
+| Nghiệm thu core 17/11 | [#133](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/133), [#134](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/134), [#147](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/147) |
+| Cải thiện nhận diện ảnh thật ngoài GenImage (ADV-12, E0 đến E5) | [#144](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/144), #157 đến #161 |
+| Giám sát và `/metrics` (ADV-01 đến ADV-04) | #162 đến #165 |
+| Robustness, bộ ảnh điện thoại mới | [#52](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/52), #166 |
+| Tối ưu hiệu năng, TLS, kiểm chức năng trên VPS | #167, #168, #169 |
 
 ## Chạy nhanh
 
