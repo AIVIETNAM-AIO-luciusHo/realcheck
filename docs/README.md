@@ -42,6 +42,7 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 - [SLO hiệu năng](performance/README.md): mẫu SLO (`slo.template.json`), cách điền từ số đo thật và ký; `slo.json` cố ý không có trong repo.
 - [Deploy core lên máy lab](deploy.md): cài, kiểm, cập nhật mã và model, rollback (MVP-08); [mẫu biên bản deploy](deploy-record-template.md).
 - [Kiểm chức năng VPS từ máy Kiệt (15/11)](reports/vps-functional-followup-20261115.md): cấu hình server/client, 13 request nhỏ, lỗi WriteTimeout với body lớn qua tunnel và giới hạn trước #132; [JSON](reports/vps-functional-followup-20261115.json).
+- [Thăm dò tải VPS từ máy Kiệt (16/11)](reports/vps-load-probe-20261116.md): 2 user/60 s theo yêu cầu riêng, 4 ảnh tổng hợp; 51 request, 7 lỗi 503, giữ nguyên deploy. Chưa phải G07–G09; [JSON](reports/vps-load-probe-20261116.json) và [sidecar](reports/vps-load-probe-20261116.jsonl).
 - [Diễn tập deploy, rollback, phục hồi (11/11)](reports/deploy-rollback-rehearsal-20261111.md): chạy local, chưa phải bằng chứng trên server.
 
 ## Biên bản QA
