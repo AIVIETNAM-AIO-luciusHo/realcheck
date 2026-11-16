@@ -34,6 +34,7 @@ uvicorn app.main:app --port 8000        # /health trả 200 khi đã nạp xong 
 - Từng bước, kiểm checksum, xử lý lỗi thường gặp, smoke test và kịch bản demo: [`docs/qa/m1-runbook-and-demo.md`](docs/qa/m1-runbook-and-demo.md).
 - Triển khai Compose lên máy lab, cập nhật và rollback: [`docs/deploy.md`](docs/deploy.md); biến môi trường mẫu: [`.env.example`](.env.example).
 - Kiểm thử: `ruff check .`, `ruff format --check .`, `pytest --cov=app --cov-fail-under=70`.
+- Kiểm lint trước mỗi commit: `pip install pre-commit && pre-commit install` (cấu hình `.pre-commit-config.yaml`, ruff 0.17.3).
 
 ## Cấu trúc
 
