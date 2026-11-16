@@ -34,6 +34,13 @@
 
 Mỗi thí nghiệm so với E0 bằng `python -m scripts.compare_models --a <điểm E0> --b <điểm Ex> --output <json>`, cùng ID, cùng seed (42), 2000 replicate.
 
+**Cách chạy an toàn (#157):** `score` và `fit` mặc định chỉ chấm validation; `fit`
+không gọi `predict_proba` trên train/test nếu không chọn. Chỉ thêm `--split test`
+khi protocol đã khóa cho phép model thắng mở đúng holdout; không dùng toàn bộ các
+dòng `split=test` để thay holdout lịch sử đã lọc. `extract`, `fit`, `score` từ chối
+ghi đè artifact cũ. Các bảo vệ này không thay khóa protocol/used marker hay QA độc lập;
+CLI chưa tự thực thi protocol JSON. Quyết định mới nhất ở [`adv12-protocol.md`](adv12-protocol.md).
+
 ### Lưu ý về hiệu chuẩn và ngưỡng (E4)
 - Platt và temperature scaling **đơn điệu tăng** nên KHÔNG đổi AUROC hay thứ tự điểm: không tự "sửa" ảnh thật bị gọi AI nếu ngưỡng không đổi. Cải thiện chỉ đến từ đặc trưng/dữ liệu (E1..E3, E5) hoặc từ việc đổi ngưỡng.
 - Ngưỡng chọn trên validation GenImage **chưa chắc chuyển sang miền ảnh điện thoại** (điểm trung vị ảnh điện thoại 0,97); kiểm trên tập phát triển ADV-06 và ghi như giới hạn.

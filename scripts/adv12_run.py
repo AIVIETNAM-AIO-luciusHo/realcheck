@@ -19,8 +19,9 @@ ghi CSV điểm theo từng ID để làm E0. Ảnh nên là ảnh gốc (--imag
 ảnh đã chuẩn hóa (filepath) kết quả vẫn đúng hợp đồng của extract_features.
 
 `fit`: LogisticRegression(C, max_iter=2000, random_state=seed) chỉ trên split train; ghi `<name>.joblib` + `.sha256`,
-điểm validation/test dạng `sample_id,label,score,group_id,source` (đọc được bởi scripts.compare_models và
-scripts.calibrate_scores) và `<name>.fit.json`. Từ chối group_id xuất hiện ở hai split.
+điểm validation mặc định dạng `sample_id,label,score,group_id,source` (đọc được bởi scripts.compare_models và
+scripts.calibrate_scores) và `<name>.fit.json`. `score` cũng mặc định chỉ validation; test phải được yêu cầu
+tường minh bằng --split test theo protocol đã khóa. Từ chối group_id xuất hiện ở hai split và output đã có.
 """
 
 import argparse
@@ -76,6 +77,9 @@ def read_rows(labels: Path) -> list[dict]:
         not (r.get("group_id") or "").strip() for r in rows
     ):
         raise ValueError("labels.csv cần cột group_id không rỗng (PR #113)")
+    check_no_group_leak(
+        np.array([r["group_id"] for r in rows]), np.array([r["split"] for r in rows])
+    )
     return rows
 
 
@@ -147,10 +151,14 @@ def make_embed(args):
 
 
 def cmd_extract(args, embed=None) -> int:
+    for path in (
+        args.output,
+        args.output.with_suffix(".json"),
+        args.output.with_suffix(".augment.jsonl"),
+    ):
+        if path.exists():
+            raise FileExistsError(f"output đã tồn tại: {path}")
     rows = read_rows(args.labels)
-    check_no_group_leak(
-        np.array([r["group_id"] for r in rows]), np.array([r["split"] for r in rows])
-    )
     labels_hash = sha256_file(args.labels)
     embed = embed or make_embed(args)
     features, records = extract_rows(
@@ -236,12 +244,12 @@ def write_scores(path: Path, data: dict, mask: np.ndarray, scores: np.ndarray) -
     with path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.writer(stream)
         writer.writerow(["sample_id", "label", "score", "group_id", "source"])
-        for i in np.flatnonzero(mask):
+        for i, score in zip(np.flatnonzero(mask), scores, strict=True):
             writer.writerow(
                 [
                     data["ids"][i],
                     int(data["labels"][i]),
-                    repr(float(scores[i])),
+                    repr(float(score)),
                     data["groups"][i],
                     data["sources"][i],
                 ]
@@ -252,7 +260,7 @@ NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
 def check_name(name: str, out_dir: Path) -> None:
-    """`--name` chỉ là basename an toàn; đường ghi cuối cùng phải nằm trong `out_dir` và ngoài models/."""
+    """Tên an toàn, output mới nằm trong `out_dir` và ngoài models/."""
     if not NAME_RE.fullmatch(name) or ".." in name:
         raise ValueError(
             "--name chỉ nhận [A-Za-z0-9._-], không bắt đầu bằng '.', không chứa '/', '\\', '..'"
@@ -270,6 +278,8 @@ def check_name(name: str, out_dir: Path) -> None:
             raise ValueError("đường ghi nằm ngoài --output-dir")
         if target.parent == models_dir or models_dir in target.parents:
             raise ValueError("không ghi vào thư mục models/")
+        if target.exists():
+            raise FileExistsError(f"output đã tồn tại: {target}")
 
 
 def cmd_fit(args) -> int:
@@ -291,9 +301,6 @@ def cmd_fit(args) -> int:
     with warnings.catch_warnings():
         warnings.simplefilter("error", ConvergenceWarning)
         probe.fit(data["features"][train], y[train])
-    scores = probe.predict_proba(data["features"])[
-        :, int(np.flatnonzero(probe.classes_ == 1)[0])
-    ]
     out_dir.mkdir(parents=True, exist_ok=True)
     counts = {s: int((data["splits"] == s).sum()) for s in SPLITS}
     metadata = {
@@ -313,11 +320,15 @@ def cmd_fit(args) -> int:
         model_hash + "\n", encoding="ascii"
     )
     written = []
-    for split, label in (("val", "val_scores.csv"), ("test", "test_scores.csv")):
+    for split in dict.fromkeys(args.split or ["val"]):
         mask = data["splits"] == split
         if mask.any():
-            write_scores(out_dir / f"{name}.{label}", data, mask, scores)
-            written.append(f"{name}.{label}")
+            scores = probe.predict_proba(data["features"][mask])[
+                :, int(np.flatnonzero(probe.classes_ == 1)[0])
+            ]
+            filename = f"{name}.{split}_scores.csv"
+            write_scores(out_dir / filename, data, mask, scores)
+            written.append(filename)
     (out_dir / f"{name}.fit.json").write_text(
         json.dumps(
             {
@@ -349,9 +360,10 @@ def cmd_score(args) -> int:
     )
     if model is None:
         raise ValueError("cần --model hoặc biến REALCHECK_MODEL_PATH")
+    if args.output.exists():
+        raise FileExistsError(f"output đã tồn tại: {args.output}")
     rows = read_rows(args.labels)
-    if args.split:
-        rows = [r for r in rows if r["split"] in args.split]
+    rows = [r for r in rows if r["split"] in (args.split or ["val"])]
     if not rows:
         raise ValueError("không có ảnh nào để chấm")
     scorer = load_scorer(model)  # kiểm checksum, hợp đồng đặc trưng, rồi nạp CLIP
@@ -396,12 +408,18 @@ def main(argv: list[str] | None = None) -> int:
     fit.add_argument("--name", default="adv12_probe")
     fit.add_argument("--C", type=float, default=10.0)
     fit.add_argument("--seed", type=int, default=42)
+    fit.add_argument(
+        "--split",
+        action="append",
+        choices=("val", "test"),
+        help="split được chấm, lặp được; mặc định chỉ val; test cần protocol đã khóa",
+    )
     sc = sub.add_parser("score", help="chấm bằng model e571 thật (E0)")
     sc.add_argument("--labels", type=Path, default=Path("data/labels.csv"))
     sc.add_argument("--model", type=Path, help="mặc định biến REALCHECK_MODEL_PATH")
     sc.add_argument("--output", type=Path, required=True, help="CSV điểm")
     sc.add_argument(
-        "--split", action="append", choices=SPLITS, help="lặp được; mặc định mọi split"
+        "--split", action="append", choices=SPLITS, help="lặp được; mặc định chỉ val"
     )
     sc.add_argument(
         "--image-column", default="filepath", choices=("filepath", "raw_path")
