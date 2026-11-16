@@ -54,6 +54,44 @@ Baseline thật do QA chạy từ máy đo riêng, trên máy chủ đủ cấu 
 dùng chung chỉ dành cho kiểm chức năng theo quyết định ở issue #42. Chưa có SLO được duyệt
 thì kết quả chỉ là baseline. Kết quả gói/loader bằng test tổng hợp không phải số đo tải.
 
+## Ghép payload điện thoại cho #132
+
+Theo [bàn giao của Loan ngày 15/11](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/132#issuecomment-6898074933),
+gói `payloads-phone-132-v2.zip` có **31 JPEG ảnh thật**. Gói giữ trên máy Loan,
+chuyển trực tiếp cho người đo khi Lực chốt server; repo không chứa ảnh hoặc ZIP này.
+
+1. Nhận ZIP, file `.zip.sha256` và manifest qua kênh nhóm. Kiểm trước khi giải nén
+   bằng `shasum -a 256 -c payloads-phone-132-v2.zip.sha256` (Linux có thể dùng
+   `sha256sum -c`). Hash ZIP phải là
+   `69c1344f9dc9a882dd42f851606dbc98474158f15aad4bf0b8fa69ae400079b0`.
+2. Giải nén vào thư mục riêng. SHA256 **byte gốc** của `payload-manifest.csv` phải là
+   `b40fc46faf7a25b5d4156cca5cf6bc1294f812aa4a99bc0308d39a8f2471b128`.
+   Không sửa CSV để ghép với manifest #123: giữ riêng cả hai manifest và giấy phép/ghi công.
+3. Đối chiếu từng ảnh với manifest: SHA256, kích thước, đọc được ảnh; kiểm không thừa/thiếu.
+   Hash ZIP/CSV đúng chưa thay cho bước này. Giữ nguyên 31 ảnh; không resize/nén lại.
+4. Tạo thư mục payload mới có trực tiếp `jpeg/`, `png/` từ #123 và `phone/` từ gói Loan.
+   Chỉ sao chép các nhóm ảnh vào đây; giữ manifest/README của mỗi gói ở thư mục nhận riêng,
+   tránh ghi đè hai file cùng tên. Pool dự kiến: 100 JPEG + 100 PNG + 31 phone.
+5. Đặt `RC_PAYLOAD_DIR` tới thư mục mới. `RC_MIX=jpeg=40,png=30,phone=30` chỉ là **ví dụ**;
+   Lực chốt mix trước lượt đo, giữ cùng mix qua load/stress/recovery/soak.
+   Trọng số là theo **nhóm**, không theo số ảnh; không đặt `RC_PAYLOAD_DIR` vào thư mục `phone/`.
+
+Giữ giới hạn Loan đã nêu: 10 ảnh iPhone là bản Photos xuất 768×1024, nhẹ hơn ảnh gốc;
+21 ảnh Commons cần giữ thông tin nguồn/tác giả/giấy phép trong manifest.
+JPEG của GenImage đều thật, PNG đều AI nên định dạng còn lẫn với nhãn. Gói ghép
+chỉ dùng đo tải; không dùng kết quả để kết luận accuracy hoặc đã hết shortcut định dạng.
+
+Sidecar mới giữ `payload` (tên file cũ) và thêm `payload_path` tương đối với
+`RC_PAYLOAD_DIR`, dùng dấu `/` (ví dụ `phone/same.jpg`), `payload_bytes`, `payload_sha256`.
+Đối chiếu theo **đường dẫn nhóm + hash + kích thước** với manifest tương ứng, kể cả khi
+hai nhóm trùng tên file. Hash được tính từ đúng byte gửi trong từng request, trước mốc
+đo latency; chi phí đọc/hash vẫn nằm ở phía client và có thể ảnh hưởng RPS.
+Đây là dấu vết truy xuất, không tự xác nhận giấy phép hoặc QA gói. Parser/gate vẫn đọc được
+sidecar cũ. Chạy lại trong cùng tiến trình sẽ thay pool/trọng số bằng `RC_MIX` mới.
+
+Chỉ chạy khi máy đủ điều kiện và được chốt theo
+[chuẩn bị G06–G09](../docs/performance/README.md#chuẩn-bị-lượt-đo-lại-g06g09-132).
+
 ## Tham số
 
 | Biến | Mặc định | Ý nghĩa |
@@ -71,14 +109,14 @@ Users/spawn/thời lượng: `baseline.conf` mặc định **2 user, spawn 1/s, 
 
 ## Input / Output
 - Input: URL gateway, payload thật, biến môi trường trên.
-- Output: sidecar JSONL. Dòng `meta` đầu, sau đó mỗi request một dòng: `t` (epoch bắt đầu), `outcome` (`200`, `invalid200`, `429`, `503`, `504`, `5xx`, `other`), `status`, `error_code` (envelope), `latency_ms`, `payload`. CSV tổng của Locust không dùng để tính p95 riêng 200.
+- Output: sidecar JSONL. Dòng `meta` đầu, sau đó mỗi request một dòng: `t` (epoch bắt đầu), `outcome` (`200`, `invalid200`, `429`, `503`, `504`, `5xx`, `other`), `status`, `error_code` (envelope), `latency_ms`, `payload`, `payload_path`, `payload_bytes`, `payload_sha256`. CSV tổng của Locust không dùng để tính p95 riêng 200.
 
 ## Lưu ý và giới hạn
 - Chạy từ máy khác, không trên chính server; không giả `X-Forwarded-For` để né limiter.
 - Response 200 sai schema hoặc score ngoài [0,1]/không hữu hạn là failure (`invalid200`).
 - 429/503/504 không bao giờ tính vào RPS thành công.
-- Số đo chỉ là baseline cho tới khi nhóm ký SLO sau MVP-10.
-- Chưa chạy thật với `/v1/analyze` (chưa có server); chỉ kiểm bằng mock HTTP tạm, mock không phải số đo.
+- Lượt đo không có SLO được duyệt chỉ là baseline; SLO 14/11 đã được duyệt cho MVP, file ký giữ ngoài repo.
+- QA đã đo `/v1/analyze` ngày 14–15/11 trên máy chung phần cứng với client (xem #132); lượt trên server đủ cấu hình, có stress và client riêng vẫn chưa làm. Test mock không thay số đo thật.
 - Quy trình recovery (thời lượng, giờ dừng/bật API, cửa sổ đo, `--warmup-seconds`, tiêu chí hợp lệ): xem [`docs/performance/README.md`](../docs/performance/README.md#quy-trình-recovery-g09-130).
 - Schema SLO và cách điền: xem [`docs/performance/README.md`](../docs/performance/README.md). Sidecar phải có meta `scenario` khớp scope (load=baseline, soak, recovery), nếu không `check_performance` thoát 2. Chưa có percentile toàn traffic.
 - Sidecar có latency âm hoặc `--warmup-*` âm bị từ chối (thoát 2).

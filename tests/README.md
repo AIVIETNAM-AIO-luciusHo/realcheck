@@ -78,6 +78,11 @@ Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan
 
 `test_performance_reporting.py` (KAN-56): parser `scripts/perf_report.py` và `scripts/check_performance.py` trên sidecar tổng hợp. Kiểm percentile chỉ trên 200, 429 không vào RPS thành công, ca chỉ 429, loại warmup (giây, số request, từ meta), sidecar rỗng/hỏng, thiếu SLO hoặc thiếu trường thì thoát khác 0. Không cần locust hay mạng; chưa thay thế lần đo thật qua `/v1/analyze`.
 
+Hai ca bổ sung #132 dùng Locust thật trong subprocess: lượt chạy mới thay pool/trọng số
+cũ theo mix; ảnh trùng tên giữa `jpeg/` và `phone/` có đường dẫn tương đối, hash/kích thước
+đúng byte gửi và vẫn tương thích parser. HTTP được giả, không có số đo tải. Cài
+`locust/requirements.txt` để chạy các ca này; dùng cùng fixture `need_locust` hiện có.
+
 `test_model_loading.py` kiểm nạp model lúc khởi động bằng `models.score` giả và loader giả: đối số `load_scorer`, `REALCHECK_MODEL_PATH`, log `model_loaded`/`model_load_failed`, 503 không lộ chi tiết, scorer tiêm thắng loader, import `app.main` không kéo torch/numpy, biến `app` mức module (chạy trong subprocess). Không cần torch hay model thật.
 
 `test_docker_static.py` kiểm tĩnh `Dockerfile` và `.dockerignore` bằng thư viện chuẩn (không chạy docker): base image khớp CI, user không root, healthcheck, cổng, biến môi trường, torch ghim bản CPU, danh sách `COPY`, và mọi module `models/` mà `models.score` import đều nằm trong `models/*.py`. Chưa thay thế lần build và chạy container thật.

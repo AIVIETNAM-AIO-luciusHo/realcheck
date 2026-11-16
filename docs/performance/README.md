@@ -23,6 +23,45 @@ Phụ trách: Lực
 
 Scope `soak` đòi `--rss` dạng `{"rss_after_warmup_mb": <số>, "rss_end_mb": <số>}` (định dạng này là giả định, chờ Quang xác nhận). Scope `recovery` chỉ xét p95 và tỉ lệ lỗi.
 
+## Chuẩn bị lượt đo lại G06–G09 (#132)
+
+[Issue #132](https://github.com/AIVIETNAM-AIO-luciusHo/realcheck/issues/132)
+vẫn cần lượt đo chính thức trên server riêng, client **khác phần cứng vật lý**.
+Hạn Lực cập nhật là **hết ngày 17/11/2026**, thay mốc dự kiến 20/11 trong mô tả issue.
+Payload điện thoại Loan đã chuẩn bị không có nghĩa lượt đo đã chạy.
+
+Trước lượt đo, ghi vào biên bản:
+
+- Server Linux x86_64, ≥ 4 nhân, **≥ 3 GiB RAM trống tại lúc chuẩn bị**, Docker hoạt động;
+  CPU/RAM tổng và khả dụng, đĩa trống, Engine/Compose, giới hạn container thực tế.
+  VPS 2 nhân/1,9 GiB ở #42 có phạm vi nhóm duyệt là chức năng/rollback, không dùng
+  cho lượt load/SLO/stress/soak/recovery nghiệm thu này.
+- Máy client, cách kết nối gateway, xác nhận khác máy vật lý; nếu qua SSH tunnel,
+  ghi overhead và việc limiter nhìn thấy cùng một IP. Không giả `X-Forwarded-For`.
+- Commit/image/model/config hash, SLO đã duyệt và hash file trước khi chạy.
+  SLO cũ: 2 user, p95 ≤ 400 ms, RPS 200 ≥ 0,6, lỗi không tính 429 ≤ 8%, RSS tăng ≤ 20%.
+  Nếu cần SLO mới theo phần cứng, chờ duyệt **trước** lượt đo; không sửa theo kết quả.
+- Đủ hai gói ZIP và checksum, hai manifest gốc và kết quả kiểm từng ảnh theo
+  [hướng dẫn ghép payload](../../locust/README.md#ghép-payload-điện-thoại-cho-132).
+  Ghi hash, số ảnh/byte mỗi nhóm và mix Lực chốt; `40/30/30` chưa là quyết định.
+
+Trình tự: baseline/load → stress (ghi từng bậc) → recovery **sau stress trên cùng server**
+theo [quy trình G09](#quy-trình-recovery-g09-130) → soak 2 user, 30 phút kèm
+`scripts.soak_rss`. Mỗi lượt/bậc có sidecar, HTML/CSV Locust và mốc thời gian riêng;
+không ghi đè lượt không đạt. Thu RSS từ server trong cửa sổ soak, không lấy RAM trống
+của máy làm RSS container. Chạy `check_performance` từng scope `load`, `recovery`,
+`soak` (kèm `--rss`); stress không có scope chấm SLO. Lưu exit code và output nguyên văn.
+
+Báo cáo cần so với bản 14/11 (48 ảnh tổng hợp, cùng máy vật lý, không stress), và bản
+GenImage 15/11 (200 ảnh gốc, gồm thật và AI, vẫn cùng máy và chưa stress). Ghi cả lượt không đạt,
+ảnh hưởng đường truyền, giới hạn ảnh Photos xuất và định dạng lẫn nhãn. Chạy lại
+`check_mvp_gates` trên bộ bằng chứng G06–G09 đầy đủ; nếu chưa có server hoặc chưa nhận
+gói, ghi rõ **chưa làm / lý do / khi nào có thể tiếp tục**, giữ #132 mở.
+
+[Lượt thăm dò riêng 16/11](../reports/vps-load-probe-20261116.md) chạy 2 user/60 s
+trên VPS theo yêu cầu trực tiếp trong phiên làm việc, với ảnh tổng hợp và guard tài nguyên.
+Ghi tách khỏi bằng chứng nghiệm thu; không thay phạm vi nhóm đã duyệt hoặc điều kiện #132.
+
 ## Quy trình recovery (G09, #130)
 
 Mục đích: lượt recovery lặp lại được, và báo riêng phần gián đoạn. Không sửa ngưỡng SLO. Lượt 1 (không đạt, 23 mẫu sau warmup 70 s) và lượt 2 (đạt, 131 mẫu) ngày 14/11 giữ nguyên trong báo cáo; lượt theo quy trình này là **lượt 3**. Chạy từ máy đo, Compose ở gốc repo, cổng gateway `<gw>` (ví dụ `http://localhost`).

@@ -493,6 +493,91 @@ print(json.dumps({
     assert set(check_performance.SCOPE_SCENARIO.values()) <= set(got["scenarios"])
 
 
+def test_locust_restart_replaces_payload_pool(need_locust):
+    got = _run_lf("""
+import tempfile
+from pathlib import Path
+with tempfile.TemporaryDirectory() as directory:
+    m.PAYLOAD_DIR = Path(directory)
+    for group in ("jpeg", "png", "phone"):
+        folder = m.PAYLOAD_DIR / group
+        folder.mkdir()
+        (folder / "same.jpg").write_bytes(group.encode())
+    m.MIX = "jpeg=40,png=30,phone=30"
+    m._load_payloads()
+    first = len(m._pool)
+    m.MIX = "phone=100"
+    m._load_payloads()
+    print(json.dumps({
+        "first": first,
+        "paths": [p.relative_to(m.PAYLOAD_DIR).as_posix() for p, _ in m._pool],
+        "weights": m._weights,
+    }))
+""")
+    assert got == {"first": 3, "paths": ["phone/same.jpg"], "weights": [100]}
+
+
+def test_locust_sidecar_identifies_uploaded_bytes(need_locust, tmp_path):
+    import hashlib
+
+    got = _run_lf("""
+import io, tempfile, types
+from pathlib import Path
+class Response:
+    status_code = 200
+    def __enter__(self): return self
+    def __exit__(self, *_): pass
+    def json(self):
+        return {"verdict": "likely_real", "score": 0.1, "exif": "none", "reason": "ok"}
+    def success(self): pass
+    def failure(self, message): raise AssertionError(message)
+sent = []
+class Client:
+    def post(self, url, **kwargs):
+        name, data, mime = kwargs["files"]["file"]
+        sent.append({"url": url, "name": name, "hex": data.hex(), "mime": mime})
+        return Response()
+with tempfile.TemporaryDirectory() as directory:
+    m.PAYLOAD_DIR = Path(directory)
+    for group in ("jpeg", "phone"):
+        folder = m.PAYLOAD_DIR / group
+        folder.mkdir()
+        (folder / "same.jpg").write_bytes(group.encode())
+    m.MIX = "jpeg=50,phone=50"
+    m._load_payloads()
+    # The record must describe the bytes sent, even if a file changed after loading.
+    (m.PAYLOAD_DIR / "phone/same.jpg").write_bytes(b"updated phone")
+    chosen = iter(m._pool)
+    m.random.choices = lambda *_: [next(chosen)]
+    m._fh = io.StringIO()
+    user = types.SimpleNamespace(client=Client())
+    m.AnalyzeUser.analyze(user)
+    m.AnalyzeUser.analyze(user)
+    print(json.dumps({"sent": sent, "rows": [json.loads(s) for s in m._fh.getvalue().splitlines()]}))
+""")
+    assert [r["payload"] for r in got["rows"]] == ["same.jpg", "same.jpg"]
+    assert [r["payload_path"] for r in got["rows"]] == [
+        "jpeg/same.jpg",
+        "phone/same.jpg",
+    ]
+    for record, sent, data in zip(
+        got["rows"], got["sent"], (b"jpeg", b"updated phone"), strict=True
+    ):
+        assert sent == {
+            "url": "/v1/analyze",
+            "name": "same.jpg",
+            "hex": data.hex(),
+            "mime": "image/jpeg",
+        }
+        assert record["payload_bytes"] == len(data)
+        assert record["payload_sha256"] == hashlib.sha256(data).hexdigest()
+    # Extra provenance must remain compatible with the existing report/gate reader.
+    _, records = perf_report.load_sidecar(
+        _write(tmp_path / "sidecar.jsonl", got["rows"])
+    )
+    assert perf_report.summarize({}, records)["counts"]["200"] == 2
+
+
 def test_slo_khong_phai_object(tmp_path):
     (tmp_path / "slo.json").write_text("[1, 2]", encoding="utf-8")
     side = _write(tmp_path / "s.jsonl", _mixed())
