@@ -88,19 +88,35 @@ def _final_image(lines: list[str]) -> str:
     return _expand_args(lines, image)
 
 
-def test_base_image_khop_phien_ban_python_cua_ci(dockerfile):
-    ci_versions = set(
-        re.findall(
-            r'python-version:\s*"?([\d.]+)"?',
-            (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"),
-        )
+def _ci_python_versions():
+    import yaml
+
+    wf = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    return {
+        name: {
+            str(step["with"]["python-version"])
+            for step in job.get("steps", [])
+            if "python-version" in step.get("with", {})
+        }
+        for name, job in wf["jobs"].items()
+    }
+
+
+def test_base_image_khop_phien_ban_python_cua_job_test(dockerfile):
+    # Image phải khớp job `test` (môi trường chạy test của app); job khác (vd. test-full) được dùng bản khác.
+    versions = _ci_python_versions()["test"]
+    assert len(versions) == 1, (
+        f"job test cần đúng một phiên bản Python, thấy {versions}"
     )
-    assert len(ci_versions) == 1, (
-        f"ci.yml cần đúng một phiên bản Python, thấy {ci_versions}"
+    assert _final_image(dockerfile) == f"python:{next(iter(versions))}-slim", (
+        "base image phải là python:<phiên bản của job test trong ci.yml>-slim"
     )
-    assert _final_image(dockerfile) == f"python:{ci_versions.pop()}-slim", (
-        "base image phải là python:<phiên bản trong ci.yml>-slim"
-    )
+
+
+def test_job_test_full_duoc_phep_dung_phien_ban_python_khac():
+    versions = _ci_python_versions()
+    if "test-full" in versions:  # nhánh chưa có test-full thì không có gì để khóa
+        assert len(versions["test-full"]) == 1
 
 
 def test_user_khong_phai_root_va_dat_truoc_cmd(dockerfile):
