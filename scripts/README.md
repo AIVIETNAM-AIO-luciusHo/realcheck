@@ -74,7 +74,7 @@ kiểm checksum và đọc được gói. Cách dùng: [locust/README.md](../loc
 | `compare_models.py` | Lực | ADV-12 (#144): `python -m scripts.compare_models --a <điểm A.csv> --b <điểm B.csv> [--low 0.3 --binary 0.5 --high 0.7 --replicates 2000 --seed 42 --output f.json]`. CSV `sample_id,label,score[,group_id,source]`; so hai model trên cùng ID (từ chối ID lệch/trùng, NaN, nhãn sai): AUROC, tỉ lệ ảnh thật bị gọi AI ở ngưỡng nhị phân và ngưỡng cao, recall, số ảnh "Chưa chắc", theo từng `source`, hiệu A − B có khoảng tin cậy bootstrap theo nhóm. Công cụ phát triển, không thay đánh giá độc lập |
 
 | `calibrate_scores.py` | Lực | ADV-12 (#144): `python -m scripts.calibrate_scores --scores <validation.csv> --target-fpr <X> [--bins 15 --output f.json]`. CSV `sample_id,label,score`; hiệu chuẩn Platt và temperature scaling, in ECE (15 bin), Brier, NLL trước và sau, rồi chọn ngưỡng nhỏ nhất để tỉ lệ ảnh thật bị gọi AI <= X, báo FPR và recall đạt được. Từ chối Platt có hệ số ≤ 0 (đảo thứ tự) và điểm không đổi; điểm suy biến ghi vào `warnings`. **Chọn trên validation, không dùng cho đánh giá cuối** |
-| `adv12_run.py` | Lực | ADV-12 (#144), THỬ NGHIỆM: `python -m scripts.adv12_run extract --labels data/labels.csv --output run/f.npz --encoder last\|layers [--layers 6,9,12] [--augment p --augment-seed 42]` trích đặc trưng (`last` đúng đường e571; `layers` dùng `models.clip_layers`; tăng cường `models.augment` **chỉ cho split train**, ghi `.augment.jsonl`) kèm manifest hash/phiên bản; `python -m scripts.adv12_run score --model <joblib> --labels data/labels.csv --split val --split test --output run/e0.csv` (E0: điểm e571 qua `models.score.load_scorer`, checksum bắt buộc, ghi `sample_id,label,score,group_id,source`); `python -m scripts.adv12_run fit --features run/f.npz --output-dir run/fit [--C 10 --seed 42]` fit LR chỉ trên train, ghi model `.joblib` (không vào `models/`, không tên `clip_probe*`) và điểm validation/test `sample_id,label,score,group_id,source` cho `compare_models`/`calibrate_scores`; từ chối `group_id` ở hai split. Không sửa `models.train`/`extract_features`/`normalize_image` |
+| `adv12_run.py` | Lực; Kiệt bổ sung bảo vệ #157 | ADV-12 (#144), THỬ NGHIỆM: `python -m scripts.adv12_run extract --labels data/labels.csv --output run/f.npz --encoder last\|layers [--layers 6,9,12] [--augment p --augment-seed 42]` trích đặc trưng, tăng cường **chỉ train**, ghi `.augment.jsonl`. E0: `python -m scripts.adv12_run score --model <joblib> --labels <csv> --split val --output run/e0.csv` dùng model thật/checksum. `python -m scripts.adv12_run fit --features run/f.npz --output-dir run/fit [--C 10 --seed 42]` fit LR chỉ train, ghi model ngoài `models/` và CSV điểm. **Cả score và fit mặc định chỉ chấm val**; `fit --split val --split test` hoặc `score --split test` chỉ dùng khi được protocol cho phép (GenImage test chỉ model thắng). Không gọi predict cho các split không chọn. Mọi lệnh từ chối ghi đè artifact; `score` kiểm group trước khi lọc split/nạp model. CLI chưa kiểm/tiêu thụ protocol JSON: người chạy vẫn phải có khóa Lực và giữ used marker ngoài repo. Không sửa `models.train`/`extract_features`/`normalize_image` |
 | `verify_adv12_score.py` | Lực | Kiểm tay (không chạy trong pytest, G01 cấm skip): `HF_HUB_OFFLINE=1 python -m scripts.verify_adv12_score --model models/clip_probe_e571.joblib --image <ảnh> --expected 0.9993029832839966 [--tolerance 1e-6]`; thoát 0 khớp, 1 lệch, 2 lỗi đầu vào. Ảnh tham chiếu `syn_jpeg_00_400x300.jpg`; cần CLIP cache offline |
 | `shortcut_metrics.py` | Kiệt | Thư viện (không có CLI): độ không chắc chắn theo nhóm cho xác suất đã lưu của ADV-10, bootstrap phân tầng theo `group_id`, không suy luận lại; dùng bởi `shortcut_controls.py` |
 | `verify_ml.py` | Kiệt | Model thật: parity tensor train/serve, score từ raw so feature cache, ảnh lớn/mode ảnh/ảnh nhỏ; chỉ lấy mẫu validation |
@@ -129,6 +129,29 @@ Chỉ để đánh giá model đã khóa (#39); không chọn model hay ngưỡn
    Mỗi ảnh chấm qua đúng đường API (`app.uploads.analyze_image`, `app.verdict.decide_verdict`), một dòng `sample_id,group_id,parent_id,label,status,score,verdict,error_code,model_sha256,manifest_sha256,protocol_sha256`. Ảnh lỗi ghi `status=error` với mã lỗi API. Không ghi đè `<output>`, `<output>.partial` hay `<output>.run.json`. Dòng ghi dần vào `<output>.partial`, chỉ đổi tên khi chạy xong và hash đầu vào không đổi; ảnh đổi byte giữa chừng dừng lần chạy (thoát 1) và giữ file partial. Log chạy ở `<output>.run.json`. Metrics và flip rate do `scripts.analyze_robustness` (ADV-08) tính từ file này.
 
 ## Input / Output
+
+### E4 / E5: hiệu chuẩn và gộp điểm (#159)
+
+`python -m scripts.adv12_scores fit --mode platt|mean --labels <development.csv>
+--a <val-a.csv> --a-model-sha <sha256> --e0 <locked-e571-val.csv>
+--target-fpr <locked-fpr> --output-dir <new-dir>`.
+`mean` cần thêm `--b <val-b.csv> --b-model-sha <sha256>` và dùng đúng trọng số 50/50.
+Fit kiểm đủ ID/nhãn/group/source validation GenImage, từ chối manifest có test;
+kiểm target FPR bằng FPR E0 tại `score > 0,7`, luôn có so sánh cặp với E0 riêng;
+ghi tham số, CSV điểm, báo cáo theo nguồn và CI bootstrap nhóm (mặc định 2.000,
+seed 42). Số trên chính validation fit chỉ phục vụ phát triển. CI giữ tham số và
+ngưỡng cố định, không hiệu chỉnh thiên lệch chọn model/ngưỡng.
+
+`python -m scripts.adv12_scores apply --params <locked-params.json> --a <cohort-a.csv>
+--a-model-sha <sha256> [--b <cohort-b.csv> --b-model-sha <sha256>] --output-dir <new-dir>`
+chỉ áp tham số đã lưu; không fit/chọn ngưỡng/tính metrics, cho phép cohort một lớp.
+SHA model là khai báo của người tạo CSV, cần đối chiếu receipt chấm ảnh riêng.
+Không ghi đè, kiểm hash input trước/sau, giữ report lỗi; JSON protocol/used-marker
+vẫn do người chạy kiểm thủ công. Điểm đầu ra chưa phải xác suất đã xác nhận.
+`calibrate_scores` cũng từ chối output cũ và giữ ngưỡng thực, kể cả lớn hơn 1,
+để tái tạo đúng quyết định `score >= threshold`.
+Xem [bàn giao #159](../docs/reports/adv12-159-preparation-20261117.md) trước khi chạy thật.
+
 - Input: `data/labels.csv`, `models/clip_probe.joblib`.
 - Output: bảng số đo, `labels.csv`.
 

@@ -26,13 +26,20 @@
 | Mã | Mô tả | Dữ liệu và split | Cách chạy | Ghi chú / chưa có sẵn |
 |---|---|---|---|---|
 | **E0** | e571, lớp cuối ViT-B/32, LR (đối chứng) | Cùng bộ dữ liệu E1..E5; train/val/test theo `group_id` | `REALCHECK_MODEL_PATH=<e571.joblib> python -m scripts.adv12_run score --labels data/labels.csv --split val --output run/e0_val.csv` (model THẬT qua `models.score`, kiểm checksum; thêm `--split test` chỉ khi protocol cho phép). Điểm tham chiếu: ảnh `syn_jpeg_00_400x300.jpg` ra 0,9993029832839966 | Hash model `e5718345…9494`; cần CLIP cache offline (`HF_HUB_OFFLINE=1`) |
-| **E1** | E0 + tăng cường khi train | Như E0; `--augment p` chỉ áp lên ảnh **train** (val/test không đổi); phép đã áp ghi vào `.augment.jsonl` | `python -m scripts.adv12_run extract --labels data/labels.csv --output run/e1.npz --encoder last --augment 0.5 --augment-seed 42` rồi `python -m scripts.adv12_run fit --features run/e1.npz --output-dir run/e1 --C 10 --seed 42` | `scripts/adv12_run.py` (C-21) không sửa `models.train`/`extract_features`; `fit` ghi điểm val/test cho `compare_models` |
+| **E1** | E0 + tăng cường khi train | Như E0; `--augment p` chỉ áp lên ảnh **train** (val/test không đổi); phép đã áp ghi vào `.augment.jsonl` | `python -m scripts.adv12_run extract --labels data/labels.csv --output run/e1.npz --encoder last --augment 0.5 --augment-seed 42` rồi `python -m scripts.adv12_run fit --features run/e1.npz --output-dir run/e1 --C 10 --seed 42` | `scripts/adv12_run.py` (C-21) không sửa `models.train`/`extract_features`; `fit` mặc định chỉ ghi điểm val cho `compare_models`, test chỉ khi được yêu cầu theo khóa |
 | **E2** | Đặc trưng nhiều lớp (kiểu RINE) | Như E0 | `python -m scripts.adv12_run extract --labels data/labels.csv --output run/e2.npz --encoder layers --layers 6,9,12` rồi `fit` như E1 (thêm `--augment` nếu muốn kết hợp E1) | Đặc trưng nhiều lớp khác không gian e571 (không đưa vào `models.score`); `--model-id`/`--revision` chọn encoder (E3 dùng ViT-L/14) |
 | **E3** | Encoder lớn ViT-L/14 | Như E0 | `python -m scripts.adv12_run extract ... --encoder layers --layers <lớp, vd 24 hoặc 12,18,24> --model-id openai/clip-vit-large-patch14 --revision <commit>` rồi `fit` | **Cần tải trọng số** (mạng, dung lượng lớn, ghim revision, ghi hash); chạy CPU chậm hơn nhiều |
 | **E4** | Hiệu chuẩn điểm và chọn ngưỡng | Validation riêng (không dùng ADV-06 và test) | `python -m scripts.calibrate_scores --scores val.csv --target-fpr <X>` cho model tốt nhất của E0..E3 | Ngưỡng chọn trên validation; khóa trước khi chấm cuối |
 | **E5** | Ghép e571 và mixed-v3 (trung bình hoặc stacking) | Điểm của hai model trên cùng validation | Trung bình điểm hoặc LR trên điểm (fit chỉ trên validation) rồi `compare_models` | Chỉ làm sau khi E0..E4 có số; 86,45% GenImage val là số của mixed gốc `26b888…` (dirty=true), không phải bản fit sạch `7164ee…`; ghi đúng SHA khi trích (xem `docs/ml-data-expansion-20261110.md`) |
 
 Mỗi thí nghiệm so với E0 bằng `python -m scripts.compare_models --a <điểm E0> --b <điểm Ex> --output <json>`, cùng ID, cùng seed (42), 2000 replicate.
+
+**Cách chạy an toàn (#157):** `score` và `fit` mặc định chỉ chấm validation; `fit`
+không gọi `predict_proba` trên train/test nếu không chọn. Chỉ thêm `--split test`
+khi protocol đã khóa cho phép model thắng mở đúng holdout; không dùng toàn bộ các
+dòng `split=test` để thay holdout lịch sử đã lọc. `extract`, `fit`, `score` từ chối
+ghi đè artifact cũ. Các bảo vệ này không thay khóa protocol/used marker hay QA độc lập;
+CLI chưa tự thực thi protocol JSON. Quyết định mới nhất ở [`adv12-protocol.md`](adv12-protocol.md).
 
 ### Lưu ý về hiệu chuẩn và ngưỡng (E4)
 - Platt và temperature scaling **đơn điệu tăng** nên KHÔNG đổi AUROC hay thứ tự điểm: không tự "sửa" ảnh thật bị gọi AI nếu ngưỡng không đổi. Cải thiện chỉ đến từ đặc trưng/dữ liệu (E1..E3, E5) hoặc từ việc đổi ngưỡng.

@@ -4,8 +4,7 @@
 
 CSV: `sample_id,label,score` (label 0 = thật, 1 = AI; score trong [0, 1]). Hai cách hiệu chuẩn; temperature luôn đơn điệu tăng,
 Platt chỉ đơn điệu tăng khi hệ số `a > 0` (nếu điểm tương quan NGƯỢC với nhãn thì `a <= 0`, đảo thứ tự: bị TỪ CHỐI,
-thoát 2). Khi đơn điệu tăng thì thứ tự điểm và AUROC không đổi (hiệu chuẩn không tự "sửa" ảnh thật bị gọi AI nếu
-ngưỡng không đổi):
+thoát 2). Phép biến đổi giữ thứ tự trong toán học; clipping và bão hòa số thực có thể tạo ties, nên phải đo AUROC lại:
 - Platt: hồi quy logistic một chiều trên logit(score) (gần như không điều chuẩn, C = 1e10);
 - temperature scaling: `sigmoid(logit(score) / T)`, tìm T > 0 làm NLL nhỏ nhất.
 In ECE (15 bin cùng độ rộng), Brier và NLL trước và sau. Ngưỡng: nhỏ nhất `t` sao cho tỉ lệ ảnh thật có
@@ -26,6 +25,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.optimize import minimize_scalar
+from scipy.special import expit
 from sklearn.linear_model import LogisticRegression
 
 EPS = 1e-6  # chặn điểm 0 hoặc 1 khỏi logit vô hạn
@@ -76,7 +76,7 @@ def logit(p: np.ndarray) -> np.ndarray:
 
 
 def sigmoid(z: np.ndarray) -> np.ndarray:
-    return 1 / (1 + np.exp(-z))
+    return expit(z)
 
 
 def nll(y: np.ndarray, p: np.ndarray) -> float:
@@ -161,16 +161,20 @@ def calibrate(y: np.ndarray, p: np.ndarray, target_fpr: float, bins: int = 15) -
         )
     z = logit(p)
     platt_p, temp_p = sigmoid(a * z + b), sigmoid(z / temp)
-    chosen = pick_threshold(y, p, target_fpr)
+    points = {
+        name: pick_threshold(y, values, target_fpr)
+        for name, values in (("raw", p), ("platt", platt_p), ("temperature", temp_p))
+    }
+    chosen = points["raw"]
     raw = chosen["threshold"]
-    if raw > 1.0:
+    if raw > float(p.max()):
         warnings_out.append(
             "không ngưỡng nào đạt mục tiêu FPR trên điểm hiện có: ngưỡng thực nằm trên mọi điểm "
-            "(không ảnh nào được gọi AI); raw_score kẹp về 1.0 chỉ để hiển thị"
+            "(không ảnh nào được gọi AI); giữ nguyên ngưỡng để tái tạo quyết định"
         )
-    raw = min(max(raw, 0.0), 1.0)
-    at = float(logit(np.array([raw]))[0])
     return {
+        "metrics_scope": "fit_and_evaluate_on_same_validation",
+        "probability_verified": False,
         "n": len(y),
         "n_real": int((y == 0).sum()),
         "n_ai": int((y == 1).sum()),
@@ -178,11 +182,12 @@ def calibrate(y: np.ndarray, p: np.ndarray, target_fpr: float, bins: int = 15) -
         "before": metrics(y, p, bins),
         "platt": {"a": a, "b": b, "after": metrics(y, platt_p, bins)},
         "temperature": {"T": temp, "after": metrics(y, temp_p, bins)},
+        "operating_points": points,
         "threshold": {
             "target_fpr": target_fpr,
             "raw_score": raw,
-            "platt_score": float(sigmoid(a * at + b)),
-            "temperature_score": float(sigmoid(at / temp)),
+            "platt_score": points["platt"]["threshold"],
+            "temperature_score": points["temperature"]["threshold"],
             "fpr": chosen["fpr"],
             "recall": chosen["recall"],
             "rule": 'score >= t; kết luận "Ảnh AI" của sản phẩm dùng score > high',
@@ -213,6 +218,8 @@ def main(argv: list[str] | None = None) -> int:
         print("LỖI: --target-fpr phải trong [0, 1] và --bins >= 1", file=sys.stderr)
         return 2
     try:
+        if args.output and args.output.exists():
+            raise ValueError(f"output đã tồn tại: {args.output}")
         y, p = read_scores(args.scores)
         report = calibrate(y, p, args.target_fpr, args.bins)
     except ValueError as exc:
@@ -221,7 +228,8 @@ def main(argv: list[str] | None = None) -> int:
     text = json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False)
     if args.output:
         try:
-            args.output.write_text(text + "\n", encoding="utf-8")
+            with args.output.open("x", encoding="utf-8") as stream:
+                stream.write(text + "\n")
         except OSError as exc:
             print(f"LỖI: không ghi được {args.output}: {exc}", file=sys.stderr)
             return 2
