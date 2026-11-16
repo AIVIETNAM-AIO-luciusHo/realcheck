@@ -157,3 +157,46 @@ def test_nginx_khong_chuyen_metrics_cho_api():
     assert (
         "location ~ ^/(health|docs|openapi\\.json)$" in conf
     )  # /metrics rơi vào location / (UI)
+
+
+def _err(client, code):
+    return _get(_samples(client), "realcheck_api_errors_total", code=code.value)
+
+
+def test_loi_404_405_422_va_500_deu_duoc_dem(client):
+    client.get("/khong-co")
+    assert _err(client, ErrorCode.NOT_FOUND) == 1
+    client.get("/v1/analyze")  # GET vào route chỉ cho POST
+    assert _err(client, ErrorCode.METHOD_NOT_ALLOWED) == 1
+    client.post("/v1/analyze")  # thiếu file
+    assert _err(client, ErrorCode.MISSING_FILE) == 1
+    client.post("/v1/analyze", files={"other": ("a.jpg", b"x", "image/jpeg")})
+    assert _err(client, ErrorCode.MISSING_FILE) == 2
+
+
+def test_loi_422_khong_phai_thieu_file_va_500(monkeypatch):
+    def boom(image):
+        raise RuntimeError("hỏng")
+
+    app = create_app(scorer=boom)
+    client = TestClient(app, raise_server_exceptions=False)
+    client.post(
+        "/v1/analyze", content=b"x", headers={"content-type": "application/json"}
+    )
+    assert (
+        _err(client, ErrorCode.INVALID_REQUEST) + _err(client, ErrorCode.MISSING_FILE)
+        == 1
+    )
+
+    app.add_api_route("/boom", lambda: 1 / 0)
+    client.get("/boom")
+    assert _err(client, ErrorCode.INTERNAL_ERROR) == 1
+
+
+def test_loi_khong_lam_tang_series_theo_duong_dan(client):
+    client.get("/a")
+    _samples(client)  # làm nóng series của /metrics
+    n = len(_samples(client))
+    for i in range(50):
+        client.get(f"/lạ-{i}")
+    assert len(_samples(client)) == n
