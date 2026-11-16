@@ -1,0 +1,9 @@
+# Cài một lần: pip install pre-commit && pre-commit install
+# Chỉ kiểm lint và format, cùng phiên bản với CI (ruff==0.17.3 trong requirements.txt và ci.yml).
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.3
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+        args: [--check]
