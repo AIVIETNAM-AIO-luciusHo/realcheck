@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "status": "inputs_verified_no_experiment_run",
+  "source_code_base": "496a238038658277e44e0c59ff163f390c453712f",
+  "source_labels_sha256": "21553ec118de307461c3e21aa4e7b657a5ca9939a7463f0304f13e09500f2c73",
+  "source_labels_rows": 9708,
+  "experiment_labels": {
+    "file": "genimage-labels.csv",
+    "sha256": "a28f33435317a3a8fd322c8626d2d0115d222b233703421052c4fef662fa0006",
+    "n": 5708,
+    "has_group_id": true,
+    "datasets": [
+      "genimage"
+    ],
+    "cifake_excluded": true
+  },
+  "baseline_model": {
+    "sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+    "dataset": "genimage",
+    "C": 10.0,
+    "seed": 42,
+    "thresholds": {
+      "binary": 0.5,
+      "low": 0.3,
+      "high": 0.7
+    }
+  },
+  "splits": {
+    "train": {
+      "n": 3988,
+      "sha256": "59aaace6453d953ba4b142207e26ad6d432fc6a8fba74fed1e92779f00bbb994",
+      "inventory_file": "train-inventory.jsonl",
+      "by_source": {
+        "genimage_glide": 700,
+        "genimage_midjourney": 700,
+        "genimage_real": 1888,
+        "genimage_sd14": 700
+      },
+      "labels": {
+        "1": 2100,
+        "0": 1888
+      },
+      "group_count": 3988
+    },
+    "val": {
+      "n": 871,
+      "sha256": "bbda229da02e2cd1f47a0834c9dc896857ed4758b84d4cc4fe1bd00337798863",
+      "inventory_file": "val-inventory.jsonl",
+      "by_source": {
+        "genimage_glide": 150,
+        "genimage_midjourney": 150,
+        "genimage_real": 421,
+        "genimage_sd14": 150
+      },
+      "labels": {
+        "1": 450,
+        "0": 421
+      },
+      "group_count": 871
+    },
+    "test": {
+      "n": 849,
+      "sha256": "29b65569b419573d090a8a56e6a8ef0e6960324c8ecb73195c9f67aa8ff2eb40",
+      "inventory_file": "test-inventory.jsonl",
+      "by_source": {
+        "genimage_glide": 150,
+        "genimage_midjourney": 150,
+        "genimage_real": 399,
+        "genimage_sd14": 150
+      },
+      "labels": {
+        "1": 450,
+        "0": 399
+      },
+      "group_count": 849
+    }
+  },
+  "checks": {
+    "images_present": 5708,
+    "processed_decode_and_dimensions": 5708,
+    "raw_sha256_verified": 5708,
+    "preserved_split_metadata_matches": 5708,
+    "group_cross_split_conflicts": 0,
+    "exact_processed_pixel_cross_split_or_label_conflicts": 0,
+    "near_duplicate_dhash_review": "pending; group IDs inherited from main, not a new independent near-duplicate review"
+  },
+  "clip": {
+    "model_id": "sentence-transformers/clip-ViT-B-32",
+    "revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+    "cache_files": [
+      {
+        "file": "0_CLIPModel/config.json",
+        "size_bytes": 4025,
+        "sha256": "f77ab2f54a03090c5dcac397670c254c39cd7a311611cafb5a79de3b07cd13ff"
+      },
+      {
+        "file": "0_CLIPModel/merges.txt",
+        "size_bytes": 524619,
+        "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a"
+      },
+      {
+        "file": "0_CLIPModel/model.safetensors",
+        "size_bytes": 605157884,
+        "sha256": "99d28a652e6ec46629ab7047a0ac82c69b1fe11e0ce672c43af65d3a9a3fc05d"
+      },
+      {
+        "file": "0_CLIPModel/preprocessor_config.json",
+        "size_bytes": 316,
+        "sha256": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd"
+      },
+      {
+        "file": "0_CLIPModel/special_tokens_map.json",
+        "size_bytes": 389,
+        "sha256": "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf"
+      },
+      {
+        "file": "0_CLIPModel/tokenizer_config.json",
+        "size_bytes": 604,
+        "sha256": "3edc310a85caaac28f2bfbd70be572f8b52c1b8661a4f92c25d8810ef29a3224"
+      },
+      {
+        "file": "0_CLIPModel/vocab.json",
+        "size_bytes": 961143,
+        "sha256": "3f0c4f7d2086b61b38487075278ea9ed04edb53a03cbb045b86c27190fa8fb69"
+      },
+      {
+        "file": "config_sentence_transformers.json",
+        "size_bytes": 116,
+        "sha256": "7ce74d59a1f531a538d4daf3df7058d4a6ab724768da0929a38deabe90fabd3b"
+      },
+      {
+        "file": "modules.json",
+        "size_bytes": 122,
+        "sha256": "c05ee467d00d460b77a264597d9af76121e3e87300ae0777f3c8fdb9babaaa79"
+      },
+      {
+        "file": "README.md",
+        "size_bytes": 1911,
+        "sha256": "84dc32f9617815fef11181bd6dca41031b7832b7201706fcae6d1776e46a7756"
+      }
+    ],
+    "encoder_loaded": false
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "pillow": "13.0.0",
+    "environment": {
+      "python": "3.12.14",
+      "packages_sha256": "178e84d2841526f75522ae6eb4ede2d653f34dbf59e4fecba710323966987694"
+    },
+    "fresh_venv": true,
+    "platform": "Windows-11-10.0.26200-SP0",
+    "pip_freeze": {
+      "command": "uv pip freeze --python .venv/Scripts/python.exe",
+      "file": "pip-freeze.txt",
+      "sha256": "803f5cd3c71f659f37ad760974f741d936c51d6c780a0f45ae19e317f954d6b5"
+    },
+    "encoder_device": "cpu (existing runner path; GPU not enabled by this preparation)"
+  },
+  "executed": {
+    "predictions": 0,
+    "fits": 0,
+    "real_experiment_runs": 0,
+    "protocols_consumed": 0
+  },
+  "missing": [
+    "E0/E1 individual protocol locks by Luc",
+    "ADV-06/Samsung A25 execution on Loan machine",
+    "Independent reviewer and final-evaluation authorization"
+  ],
+  "preparation_id": "bfa58923-73bb-4653-b414-76bf8eea2438",
+  "runner_code_commit": "b928588bf622b6d9a630b0f3237febe00b5b5bff",
+  "development_labels": {
+    "file": "development-labels.csv",
+    "sha256": "7d489ad312ae428f8bcf755b2c810c063fb2409c63013dc3fb10222e2db1c434",
+    "n": 4859,
+    "splits": [
+      "train",
+      "val"
+    ],
+    "test_rows": 0
+  },
+  "protected_holdout": {
+    "n": 384,
+    "sha256": "38a7bccb213b67e478bef0be25a54b047f74373adbe0bd91e35fc08e707c1ff2",
+    "inventory_file": "protected-holdout-384.jsonl",
+    "historical_selection_sha256": "ee2cd345984779501b7f8773d6daaa445b5f547aae13b68ea62887b9f53a11af",
+    "candidate_test_rows": 849,
+    "excluded_from_historical_holdout": 465,
+    "selected_hashes_match_reference": 384,
+    "evaluation_authorized": false
+  },
+  "limitations": [
+    "No new independent dHash review; group IDs inherited from main.",
+    "Private phone images remain on Loan machine; no new scores available.",
+    "This is metadata/input preparation, not E0/E1 experiment evidence.",
+    "Generic ADV-12 policy is merged, but individual E0/E1 locks are absent.",
+    "Candidate test=849 is not the historical filtered holdout=384."
+  ],
+  "handoff": {
+    "zip": "adv12-157-preparation-20261116.zip",
+    "sha256": "7fce264215799ddf6dc46b476ba15895f0cfa11df8d7a4e545e31c50f91f87dc",
+    "size_bytes": 787513,
+    "checksummed_files": 14,
+    "includes_images": false,
+    "includes_clip_weights": false,
+    "sent_to_Luc_or_Loan": false
+  }
+}

@@ -109,3 +109,20 @@ def test_batch_size_va_anh_rong(tiny):
         clip_layers.extract_features(images(), model, processor, [1], batch_size=0)
     with pytest.raises(ValueError, match="không có ảnh"):
         clip_layers.extract_features([], model, processor, [1])
+
+
+def test_inputs_follow_model_device_without_gpu(tiny, monkeypatch):
+    from types import SimpleNamespace
+
+    _, processor = tiny
+    model = SimpleNamespace(parameters=lambda: iter([torch.empty(1, device="meta")]))
+
+    def capture(model, pixels, layers, **options):
+        assert pixels.device.type == "meta"
+        return np.zeros((pixels.shape[0], HIDDEN), dtype=np.float32)
+
+    monkeypatch.setattr(clip_layers, "cls_by_layer", capture)
+    assert clip_layers.extract_features(images(2), model, processor, [1]).shape == (
+        2,
+        HIDDEN,
+    )

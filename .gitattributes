@@ -1,0 +1,2 @@
+# Keep the protocol-pinned benchmark IDs byte-identical across Windows/Linux.
+docs/reports/adv12-158-cost-sample-ids.json text eol=lf

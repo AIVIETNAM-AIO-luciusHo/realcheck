@@ -64,6 +64,18 @@ def environment() -> dict:
     }
 
 
+def peak_rss_mib() -> float:
+    """OS process high-water RSS, including startup; run each experiment in a fresh process."""
+    if sys.platform == "win32":
+        import psutil
+
+        return psutil.Process().memory_info().peak_wset / 2**20
+    import resource
+
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return peak / (2**20 if sys.platform == "darwin" else 1024)
+
+
 if __name__ == "__main__":
     # Values for a protocol's "environment" field: python -m models.run_info
     env = environment()

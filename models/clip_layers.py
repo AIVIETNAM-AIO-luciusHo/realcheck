@@ -21,7 +21,11 @@ def load_vision_model(
 
     Ví dụ ViT-L/14: `load_vision_model("openai/clip-vit-large-patch14", revision=<commit>)`. Hãy ghim `revision`.
     """
+    import torch
     from transformers import CLIPImageProcessor, CLIPVisionModel
+
+    if device == "cpu":
+        torch.set_num_threads(4)  # Same CPU thread budget as the e571 encoder.
 
     model = (
         CLIPVisionModel.from_pretrained(model_id, revision=revision).to(device).eval()
@@ -99,7 +103,10 @@ def extract_features(
             images=[im.convert("RGB") for im in images[start : start + batch_size]],
             return_tensors="pt",
         )
-        batches.append(cls_by_layer(model, pixels["pixel_values"], layers, **options))
+        device = next(model.parameters()).device
+        batches.append(
+            cls_by_layer(model, pixels["pixel_values"].to(device), layers, **options)
+        )
     if not batches:
         raise ValueError("không có ảnh")
     return np.concatenate(batches, axis=0)

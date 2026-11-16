@@ -50,6 +50,8 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 - [Mẫu biên bản kiểm gateway](qa/gateway-report-template.md) (KAN-54).
 - [Cách tạo bằng chứng G01 đến G09](qa/gate-evidence.md) (#133): lệnh chính xác cho từng cổng, SHA256, chạy `check_mvp_gates`; bằng chứng nằm ngoài Git.
 - [ADV-12: kế hoạch thí nghiệm giảm ảnh thật bị gọi AI](adv12-experiment-plan.md) (#144): bảng E0 đến E5, tiêu chí báo cáo, mẫu protocol JSON; bản nháp cho Kiệt.
+- [Chuẩn bị E0/E1 (#157), 16/11](reports/adv12-157-preparation-20261116.md): kiểm 5.708 ảnh/model/cache, tách train/val khỏi holdout 384, hai protocol proposed; chưa chạy thí nghiệm, chờ Lực khóa riêng và Loan chấm cohort.
+- [Quy trình E2/E3 và đo chi phí (#158)](adv12-e2-e3-runbook.md): revision/hash cache B/32 và L/14 đã tải, protocol proposed, 100 ID validation batch 1, RAM/thời gian và bàn giao; chưa có số thí nghiệm thật.
 - [G02 H4: control dương và âm cho probe pixel](g02-h4-protocol.md) và [G02 H1: nén lại](g02-h1-protocol.md): nháp chờ Lực khóa, không đổi G02 của lượt 17/11, chưa chạy.
 - [Kiểm với model thật trên Linux (11/11)](qa/local-real-model-verification-20261111.md): smoke, gateway, Docker, Compose, baseline Locust sơ bộ; ảnh tổng hợp, chưa phải nghiệm thu.
 - [Review KAN-25: nạp model](qa/kan-25-model-loading-review.md): đối chiếu tiêu chí, vấn đề cần sửa trước bàn giao.

@@ -1,0 +1,46 @@
+{
+  "status": "proposed",
+  "experiment": "E0",
+  "phase": "offline_cost_only",
+  "code_commit": "2c1a651feee77f2b0149ff4f6d5e06e54fdc0837",
+  "run_id": null,
+  "locked_by": null,
+  "model_sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+  "labels_sha256": "7d489ad312ae428f8bcf755b2c810c063fb2409c63013dc3fb10222e2db1c434",
+  "cost_profile": {
+    "path": ".cache/adv12-158-preparation/cost-sample-ids.json",
+    "sha256": "ab9e61d51289ab66563524f70f1f503fd1456c34d46003de8852d2f4b6328599",
+    "n": 100,
+    "selection": "25 per GenImage validation source; order by SHA256(adv12-cost-42|filepath); fixed before any results",
+    "by_source": {
+      "genimage_real": 25,
+      "genimage_sd14": 25,
+      "genimage_midjourney": 25,
+      "genimage_glide": 25
+    },
+    "warmup": 3,
+    "batch_size": 1,
+    "metric": "nearest-rank p50/p95/p99; raw read/decode + normalize + encoder + LR; offline, not HTTP SLO",
+    "memory": "OS process peak RSS from a fresh process; no GPU VRAM claim"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "pillow": "13.0.0",
+    "environment": {
+      "python": "3.12.14",
+      "packages_sha256": "178e84d2841526f75522ae6eb4ede2d653f34dbf59e4fecba710323966987694"
+    },
+    "pip_freeze_sha256": "8d250fc96a2ae49e7a33361c125564eccf415b24834b1923840f4013f38d3975",
+    "device": "cpu",
+    "torch_num_threads": 4,
+    "thread_env": {
+      "OMP_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4"
+    },
+    "HF_HUB_OFFLINE": "1"
+  },
+  "HF_HUB_CACHE": ".cache/adv12-158-e571-hub",
+  "command_after_lock": "python -m scripts.benchmark_adv12 --model .cache/adv12-158-preparation/model/e571.joblib --labels .cache/adv12-158-preparation/development-labels.csv --sample-ids .cache/adv12-158-preparation/cost-sample-ids.json --warmup 3 --device cpu --output .cache/adv12-e0-cost-run01/cost.json",
+  "notes": "Cost only, not a new E0 quality result; requires its own locked timing phase and used marker."
+}

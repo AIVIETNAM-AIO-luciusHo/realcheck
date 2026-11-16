@@ -1,0 +1,344 @@
+{
+    "schema_version":  1,
+    "status":  "preparation_only_no_E2_E3_run",
+    "preparation_id":  "48a6cfe3-bdb6-44cf-9642-cc9bfcd426ca",
+    "code_commit":  "2c1a651feee77f2b0149ff4f6d5e06e54fdc0837",
+    "parent_pr":  192,
+    "input_preflight_reused":  "docs/reports/adv12-157-preflight-20261116.json",
+    "development_inputs":  {
+                               "n":  4859,
+                               "train":  3988,
+                               "val":  871,
+                               "test":  0,
+                               "sha256":  "7d489ad312ae428f8bcf755b2c810c063fb2409c63013dc3fb10222e2db1c434",
+                               "raw_and_processed_hashes_rechecked":  4859,
+                               "new_dhash_independent_review":  false
+                           },
+    "cost_profile":  {
+                         "path":  ".cache/adv12-158-preparation/cost-sample-ids.json",
+                         "sha256":  "ab9e61d51289ab66563524f70f1f503fd1456c34d46003de8852d2f4b6328599",
+                         "n":  100,
+                         "selection":  "25 per GenImage validation source; order by SHA256(adv12-cost-42|filepath); fixed before any results",
+                         "by_source":  {
+                                           "genimage_real":  25,
+                                           "genimage_sd14":  25,
+                                           "genimage_midjourney":  25,
+                                           "genimage_glide":  25
+                                       },
+                         "warmup":  3,
+                         "batch_size":  1,
+                         "metric":  "nearest-rank p50/p95/p99; raw read/decode + normalize + encoder + LR; offline, not HTTP SLO",
+                         "memory":  "OS process peak RSS from a fresh process; no GPU VRAM claim"
+                     },
+    "encoders":  [
+                     {
+                         "model_id":  "openai/clip-vit-base-patch32",
+                         "revision":  "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                         "api_source":  "https://huggingface.co/api/models/openai/clip-vit-base-patch32?blobs=true",
+                         "config_url":  "https://huggingface.co/openai/clip-vit-base-patch32/resolve/3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268/config.json",
+                         "config_sha256":  "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770",
+                         "vision_config":  {
+                                               "_name_or_path":  "",
+                                               "add_cross_attention":  false,
+                                               "architectures":  null,
+                                               "attention_dropout":  0.0,
+                                               "bad_words_ids":  null,
+                                               "bos_token_id":  null,
+                                               "chunk_size_feed_forward":  0,
+                                               "cross_attention_hidden_size":  null,
+                                               "decoder_start_token_id":  null,
+                                               "diversity_penalty":  0.0,
+                                               "do_sample":  false,
+                                               "dropout":  0.0,
+                                               "early_stopping":  false,
+                                               "encoder_no_repeat_ngram_size":  0,
+                                               "eos_token_id":  null,
+                                               "finetuning_task":  null,
+                                               "forced_bos_token_id":  null,
+                                               "forced_eos_token_id":  null,
+                                               "hidden_act":  "quick_gelu",
+                                               "hidden_size":  768,
+                                               "id2label":  {
+                                                                "0":  "LABEL_0",
+                                                                "1":  "LABEL_1"
+                                                            },
+                                               "image_size":  224,
+                                               "initializer_factor":  1.0,
+                                               "initializer_range":  0.02,
+                                               "intermediate_size":  3072,
+                                               "is_decoder":  false,
+                                               "is_encoder_decoder":  false,
+                                               "label2id":  {
+                                                                "LABEL_0":  0,
+                                                                "LABEL_1":  1
+                                                            },
+                                               "layer_norm_eps":  1E-05,
+                                               "length_penalty":  1.0,
+                                               "max_length":  20,
+                                               "min_length":  0,
+                                               "model_type":  "clip_vision_model",
+                                               "no_repeat_ngram_size":  0,
+                                               "num_attention_heads":  12,
+                                               "num_beam_groups":  1,
+                                               "num_beams":  1,
+                                               "num_hidden_layers":  12,
+                                               "num_return_sequences":  1,
+                                               "output_attentions":  false,
+                                               "output_hidden_states":  false,
+                                               "output_scores":  false,
+                                               "pad_token_id":  null,
+                                               "patch_size":  32,
+                                               "prefix":  null,
+                                               "projection_dim":  512,
+                                               "problem_type":  null,
+                                               "pruned_heads":  {
+
+                                                                },
+                                               "remove_invalid_values":  false,
+                                               "repetition_penalty":  1.0,
+                                               "return_dict":  true,
+                                               "return_dict_in_generate":  false,
+                                               "sep_token_id":  null,
+                                               "task_specific_params":  null,
+                                               "temperature":  1.0,
+                                               "tie_encoder_decoder":  false,
+                                               "tie_word_embeddings":  true,
+                                               "tokenizer_class":  null,
+                                               "top_k":  50,
+                                               "top_p":  1.0,
+                                               "torch_dtype":  null,
+                                               "torchscript":  false,
+                                               "transformers_version":  "4.16.0.dev0",
+                                               "use_bfloat16":  false
+                                           },
+                         "weights_remote_metadata":  [
+                                                         {
+                                                             "file":  "pytorch_model.bin",
+                                                             "size_bytes":  605247071,
+                                                             "lfs":  {
+                                                                         "sha256":  "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f",
+                                                                         "size":  605247071,
+                                                                         "pointerSize":  134
+                                                                     }
+                                                         }
+                                                     ],
+                         "weights_downloaded":  true,
+                         "cache_verified_files":  [
+                                                      {
+                                                          "file":  "config.json",
+                                                          "size_bytes":  4186,
+                                                          "sha256":  "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770"
+                                                      },
+                                                      {
+                                                          "file":  "preprocessor_config.json",
+                                                          "size_bytes":  316,
+                                                          "sha256":  "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd"
+                                                      },
+                                                      {
+                                                          "file":  "pytorch_model.bin",
+                                                          "size_bytes":  605247071,
+                                                          "sha256":  "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f"
+                                                      }
+                                                  ],
+                         "offline_resolution_verified":  true,
+                         "config_loaded_without_weights":  true,
+                         "processor_class":  "CLIPImageProcessorPil",
+                         "model_weights_loaded":  false,
+                         "cache_scope":  "config.json, preprocessor_config.json and one chosen PyTorch weights file; not every framework variant"
+                     },
+                     {
+                         "model_id":  "openai/clip-vit-large-patch14",
+                         "revision":  "32bd64288804d66eefd0ccbe215aa642df71cc41",
+                         "api_source":  "https://huggingface.co/api/models/openai/clip-vit-large-patch14?blobs=true",
+                         "config_url":  "https://huggingface.co/openai/clip-vit-large-patch14/resolve/32bd64288804d66eefd0ccbe215aa642df71cc41/config.json",
+                         "config_sha256":  "8a09b467700c58138c29d53c605b34ebc69beaadd13274a8a2af8ad2c2f4032a",
+                         "vision_config":  {
+                                               "_name_or_path":  "",
+                                               "add_cross_attention":  false,
+                                               "architectures":  null,
+                                               "attention_dropout":  0.0,
+                                               "bad_words_ids":  null,
+                                               "bos_token_id":  null,
+                                               "chunk_size_feed_forward":  0,
+                                               "cross_attention_hidden_size":  null,
+                                               "decoder_start_token_id":  null,
+                                               "diversity_penalty":  0.0,
+                                               "do_sample":  false,
+                                               "dropout":  0.0,
+                                               "early_stopping":  false,
+                                               "encoder_no_repeat_ngram_size":  0,
+                                               "eos_token_id":  null,
+                                               "finetuning_task":  null,
+                                               "forced_bos_token_id":  null,
+                                               "forced_eos_token_id":  null,
+                                               "hidden_act":  "quick_gelu",
+                                               "hidden_size":  1024,
+                                               "id2label":  {
+                                                                "0":  "LABEL_0",
+                                                                "1":  "LABEL_1"
+                                                            },
+                                               "image_size":  224,
+                                               "initializer_factor":  1.0,
+                                               "initializer_range":  0.02,
+                                               "intermediate_size":  4096,
+                                               "is_decoder":  false,
+                                               "is_encoder_decoder":  false,
+                                               "label2id":  {
+                                                                "LABEL_0":  0,
+                                                                "LABEL_1":  1
+                                                            },
+                                               "layer_norm_eps":  1E-05,
+                                               "length_penalty":  1.0,
+                                               "max_length":  20,
+                                               "min_length":  0,
+                                               "model_type":  "clip_vision_model",
+                                               "no_repeat_ngram_size":  0,
+                                               "num_attention_heads":  16,
+                                               "num_beam_groups":  1,
+                                               "num_beams":  1,
+                                               "num_hidden_layers":  24,
+                                               "num_return_sequences":  1,
+                                               "output_attentions":  false,
+                                               "output_hidden_states":  false,
+                                               "output_scores":  false,
+                                               "pad_token_id":  null,
+                                               "patch_size":  14,
+                                               "prefix":  null,
+                                               "problem_type":  null,
+                                               "projection_dim":  768,
+                                               "pruned_heads":  {
+
+                                                                },
+                                               "remove_invalid_values":  false,
+                                               "repetition_penalty":  1.0,
+                                               "return_dict":  true,
+                                               "return_dict_in_generate":  false,
+                                               "sep_token_id":  null,
+                                               "task_specific_params":  null,
+                                               "temperature":  1.0,
+                                               "tie_encoder_decoder":  false,
+                                               "tie_word_embeddings":  true,
+                                               "tokenizer_class":  null,
+                                               "top_k":  50,
+                                               "top_p":  1.0,
+                                               "torch_dtype":  null,
+                                               "torchscript":  false,
+                                               "transformers_version":  "4.16.0.dev0",
+                                               "use_bfloat16":  false
+                                           },
+                         "weights_remote_metadata":  [
+                                                         {
+                                                             "file":  "model.safetensors",
+                                                             "size_bytes":  1710540580,
+                                                             "lfs":  {
+                                                                         "sha256":  "a2bf730a0c7debf160f7a6b50b3aaf3703e7e88ac73de7a314903141db026dcb",
+                                                                         "size":  1710540580,
+                                                                         "pointerSize":  135
+                                                                     }
+                                                         },
+                                                         {
+                                                             "file":  "pytorch_model.bin",
+                                                             "size_bytes":  1710671599,
+                                                             "lfs":  {
+                                                                         "sha256":  "f1a17cdbe0f36fec524f5cafb1c261ea3bbbc13e346e0f74fc9eb0460dedd0d3",
+                                                                         "size":  1710671599,
+                                                                         "pointerSize":  135
+                                                                     }
+                                                         }
+                                                     ],
+                         "weights_downloaded":  true,
+                         "cache_verified_files":  [
+                                                      {
+                                                          "file":  "config.json",
+                                                          "size_bytes":  4519,
+                                                          "sha256":  "8a09b467700c58138c29d53c605b34ebc69beaadd13274a8a2af8ad2c2f4032a"
+                                                      },
+                                                      {
+                                                          "file":  "preprocessor_config.json",
+                                                          "size_bytes":  316,
+                                                          "sha256":  "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd"
+                                                      },
+                                                      {
+                                                          "file":  "model.safetensors",
+                                                          "size_bytes":  1710540580,
+                                                          "sha256":  "a2bf730a0c7debf160f7a6b50b3aaf3703e7e88ac73de7a314903141db026dcb"
+                                                      }
+                                                  ],
+                         "offline_resolution_verified":  true,
+                         "config_loaded_without_weights":  true,
+                         "processor_class":  "CLIPImageProcessorPil",
+                         "model_weights_loaded":  false,
+                         "cache_scope":  "config.json, preprocessor_config.json and one chosen PyTorch weights file; not every framework variant"
+                     }
+                 ],
+    "runtime":  {
+                    "python":  "3.12.14",
+                    "pillow":  "13.0.0",
+                    "environment":  {
+                                        "python":  "3.12.14",
+                                        "packages_sha256":  "178e84d2841526f75522ae6eb4ede2d653f34dbf59e4fecba710323966987694"
+                                    },
+                    "pip_freeze_sha256":  "8d250fc96a2ae49e7a33361c125564eccf415b24834b1923840f4013f38d3975",
+                    "device":  "cpu",
+                    "torch_num_threads":  4,
+                    "thread_env":  {
+                                       "OMP_NUM_THREADS":  "4",
+                                       "MKL_NUM_THREADS":  "4",
+                                       "OPENBLAS_NUM_THREADS":  "4"
+                                   },
+                    "HF_HUB_OFFLINE":  "1"
+                },
+    "torch_device":  {
+                         "torch":  "2.15.0+cpu",
+                         "cuda_available":  false,
+                         "cuda_build":  null
+                     },
+    "hardware_snapshot":  {
+                              "mem_total_gib":  15.611991882324219,
+                              "mem_available_gib":  1.3069953918457031,
+                              "gpu":  "NVIDIA GeForce RTX 5060 Laptop GPU, 8151 MiB, 7114 MiB",
+                              "snapshot_not_model_memory":  true
+                          },
+    "results":  {
+                    "E2":  {
+                               "run_id":  null,
+                               "validation_quality":  null,
+                               "latency_ms":  null,
+                               "peak_rss_mib":  null,
+                               "extraction_seconds":  null
+                           },
+                    "E3":  {
+                               "run_id":  null,
+                               "validation_quality":  null,
+                               "latency_ms":  null,
+                               "peak_rss_mib":  null,
+                               "extraction_seconds":  null
+                           }
+                },
+    "can_replace_e571":  "not eligible: no measured quality/cost/HTTP SLO; 2304/3072-dimensional CLS is incompatible with current 512-dimensional serving contract",
+    "missing":  [
+                    "Individual E2/E3 and E0-cost locks from Luc",
+                    "#157 E0 validation/FPR",
+                    "Independent reviewer and Loan cohort execution path",
+                    "Formal RAM budget and enough free RAM before loading E3",
+                    "Only winner may open protected holdout384 once"
+                ],
+    "handoff":  {
+                    "zip":  "adv12-158-preparation-20261116.zip",
+                    "sha256":  "d2ba058248dc199defb7e35ee2341c4807e48119c25c0344f943f3aa624fa134",
+                    "size_bytes":  565955,
+                    "checksummed_files":  14,
+                    "verifier_positive_and_changed_artifact_checks":  true,
+                    "contains_images":  false,
+                    "contains_encoder_weights":  false,
+                    "sent_to_Luc_or_Loan":  false
+                },
+    "cost_sample_input_check":  {
+                                    "n":  100,
+                                    "all_raw_files_within_API_format_size_dimension_limits":  true,
+                                    "raw_bytes_min":  45107,
+                                    "raw_bytes_max":  1833510,
+                                    "raw_pixels_max":  1048576,
+                                    "inference_run":  false
+                                }
+}

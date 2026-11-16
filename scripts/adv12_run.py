@@ -19,8 +19,9 @@ ghi CSV điểm theo từng ID để làm E0. Ảnh nên là ảnh gốc (--imag
 ảnh đã chuẩn hóa (filepath) kết quả vẫn đúng hợp đồng của extract_features.
 
 `fit`: LogisticRegression(C, max_iter=2000, random_state=seed) chỉ trên split train; ghi `<name>.joblib` + `.sha256`,
-điểm validation/test dạng `sample_id,label,score,group_id,source` (đọc được bởi scripts.compare_models và
-scripts.calibrate_scores) và `<name>.fit.json`. Từ chối group_id xuất hiện ở hai split.
+điểm validation mặc định dạng `sample_id,label,score,group_id,source` (đọc được bởi scripts.compare_models và
+scripts.calibrate_scores) và `<name>.fit.json`. `score` cũng mặc định chỉ validation; test phải được yêu cầu
+tường minh bằng --split test theo protocol đã khóa. Từ chối group_id xuất hiện ở hai split và output đã có.
 """
 
 import argparse
@@ -30,6 +31,7 @@ import json
 import platform
 import re
 import sys
+import time
 import warnings
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -40,8 +42,10 @@ from PIL import Image
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 
+from models.clip_input import CLIP_MODEL_ID, CLIP_REVISION
 from models.extract_features import read_labels, sha256_file
 from models.normalize import normalize_image
+from models.run_info import peak_rss_mib
 
 SPLITS = ("train", "val", "test")
 PACKAGES = (
@@ -76,6 +80,9 @@ def read_rows(labels: Path) -> list[dict]:
         not (r.get("group_id") or "").strip() for r in rows
     ):
         raise ValueError("labels.csv cần cột group_id không rỗng (PR #113)")
+    check_no_group_leak(
+        np.array([r["group_id"] for r in rows]), np.array([r["split"] for r in rows])
+    )
     return rows
 
 
@@ -130,28 +137,42 @@ def extract_rows(
 
 
 def make_embed(args):
+    if args.device == "cuda":
+        import torch
+
+        if not torch.cuda.is_available():
+            raise ValueError("--device cuda requested but CUDA is not available")
     if args.encoder == "last":
         from models.clip_input import encode_images, load_encoder
 
-        encoder = load_encoder()
+        encoder = load_encoder(device=args.device)
         return lambda images: encode_images(images, encoder)
     if not args.layers:
         raise ValueError("--encoder layers cần --layers a,b,c")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", args.revision or ""):
+        raise ValueError("--encoder layers cần --revision SHA 40 ký tự đã ghim")
     from models import clip_layers
 
     layers = [int(v) for v in args.layers.split(",")]
-    model, processor = clip_layers.load_vision_model(args.model_id, args.revision)
+    model, processor = clip_layers.load_vision_model(
+        args.model_id, args.revision, device=args.device
+    )
     return lambda images: clip_layers.extract_features(
         images, model, processor, layers, batch_size=len(images)
     )
 
 
 def cmd_extract(args, embed=None) -> int:
+    for path in (
+        args.output,
+        args.output.with_suffix(".json"),
+        args.output.with_suffix(".augment.jsonl"),
+    ):
+        if path.exists():
+            raise FileExistsError(f"output đã tồn tại: {path}")
     rows = read_rows(args.labels)
-    check_no_group_leak(
-        np.array([r["group_id"] for r in rows]), np.array([r["split"] for r in rows])
-    )
     labels_hash = sha256_file(args.labels)
+    started = time.perf_counter()
     embed = embed or make_embed(args)
     features, records = extract_rows(
         rows,
@@ -161,6 +182,7 @@ def cmd_extract(args, embed=None) -> int:
         augment_seed=args.augment_seed,
         batch_size=args.batch_size,
     )
+    extraction_seconds = time.perf_counter() - started
     if sha256_file(args.labels) != labels_hash:
         raise ValueError("labels.csv đổi trong lúc trích; bỏ lượt này")
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -178,10 +200,13 @@ def cmd_extract(args, embed=None) -> int:
         "features_sha256": sha256_file(args.output),
         "encoder": args.encoder,
         "layers": args.layers,
-        "model_id": args.model_id
-        if args.encoder == "layers"
-        else "e571 path (models.clip_input)",
-        "revision": args.revision,
+        "model_id": args.model_id if args.encoder == "layers" else CLIP_MODEL_ID,
+        "revision": args.revision if args.encoder == "layers" else CLIP_REVISION,
+        "device": args.device,
+        "batch_size": args.batch_size,
+        "cpu_thread_policy": 4 if args.device == "cpu" else None,
+        "extraction_seconds_including_load": extraction_seconds,
+        "peak_rss_process_mib": peak_rss_mib(),
         "image_column": args.image_column,
         "augment": {
             "p": args.augment,
@@ -236,12 +261,12 @@ def write_scores(path: Path, data: dict, mask: np.ndarray, scores: np.ndarray) -
     with path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.writer(stream)
         writer.writerow(["sample_id", "label", "score", "group_id", "source"])
-        for i in np.flatnonzero(mask):
+        for i, score in zip(np.flatnonzero(mask), scores, strict=True):
             writer.writerow(
                 [
                     data["ids"][i],
                     int(data["labels"][i]),
-                    repr(float(scores[i])),
+                    repr(float(score)),
                     data["groups"][i],
                     data["sources"][i],
                 ]
@@ -252,7 +277,7 @@ NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
 def check_name(name: str, out_dir: Path) -> None:
-    """`--name` chỉ là basename an toàn; đường ghi cuối cùng phải nằm trong `out_dir` và ngoài models/."""
+    """Tên an toàn, output mới nằm trong `out_dir` và ngoài models/."""
     if not NAME_RE.fullmatch(name) or ".." in name:
         raise ValueError(
             "--name chỉ nhận [A-Za-z0-9._-], không bắt đầu bằng '.', không chứa '/', '\\', '..'"
@@ -270,6 +295,8 @@ def check_name(name: str, out_dir: Path) -> None:
             raise ValueError("đường ghi nằm ngoài --output-dir")
         if target.parent == models_dir or models_dir in target.parents:
             raise ValueError("không ghi vào thư mục models/")
+        if target.exists():
+            raise FileExistsError(f"output đã tồn tại: {target}")
 
 
 def cmd_fit(args) -> int:
@@ -291,9 +318,6 @@ def cmd_fit(args) -> int:
     with warnings.catch_warnings():
         warnings.simplefilter("error", ConvergenceWarning)
         probe.fit(data["features"][train], y[train])
-    scores = probe.predict_proba(data["features"])[
-        :, int(np.flatnonzero(probe.classes_ == 1)[0])
-    ]
     out_dir.mkdir(parents=True, exist_ok=True)
     counts = {s: int((data["splits"] == s).sum()) for s in SPLITS}
     metadata = {
@@ -313,11 +337,15 @@ def cmd_fit(args) -> int:
         model_hash + "\n", encoding="ascii"
     )
     written = []
-    for split, label in (("val", "val_scores.csv"), ("test", "test_scores.csv")):
+    for split in dict.fromkeys(args.split or ["val"]):
         mask = data["splits"] == split
         if mask.any():
-            write_scores(out_dir / f"{name}.{label}", data, mask, scores)
-            written.append(f"{name}.{label}")
+            scores = probe.predict_proba(data["features"][mask])[
+                :, int(np.flatnonzero(probe.classes_ == 1)[0])
+            ]
+            filename = f"{name}.{split}_scores.csv"
+            write_scores(out_dir / filename, data, mask, scores)
+            written.append(filename)
     (out_dir / f"{name}.fit.json").write_text(
         json.dumps(
             {
@@ -349,9 +377,10 @@ def cmd_score(args) -> int:
     )
     if model is None:
         raise ValueError("cần --model hoặc biến REALCHECK_MODEL_PATH")
+    if args.output.exists():
+        raise FileExistsError(f"output đã tồn tại: {args.output}")
     rows = read_rows(args.labels)
-    if args.split:
-        rows = [r for r in rows if r["split"] in args.split]
+    rows = [r for r in rows if r["split"] in (args.split or ["val"])]
     if not rows:
         raise ValueError("không có ảnh nào để chấm")
     scorer = load_scorer(model)  # kiểm checksum, hợp đồng đặc trưng, rồi nạp CLIP
@@ -390,18 +419,25 @@ def main(argv: list[str] | None = None) -> int:
     )
     ex.add_argument("--augment-seed", type=int, default=42)
     ex.add_argument("--batch-size", type=int, default=32)
+    ex.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     fit = sub.add_parser("fit")
     fit.add_argument("--features", type=Path, required=True)
     fit.add_argument("--output-dir", type=Path, required=True)
     fit.add_argument("--name", default="adv12_probe")
     fit.add_argument("--C", type=float, default=10.0)
     fit.add_argument("--seed", type=int, default=42)
+    fit.add_argument(
+        "--split",
+        action="append",
+        choices=("val", "test"),
+        help="split được chấm, lặp được; mặc định chỉ val; test cần protocol đã khóa",
+    )
     sc = sub.add_parser("score", help="chấm bằng model e571 thật (E0)")
     sc.add_argument("--labels", type=Path, default=Path("data/labels.csv"))
     sc.add_argument("--model", type=Path, help="mặc định biến REALCHECK_MODEL_PATH")
     sc.add_argument("--output", type=Path, required=True, help="CSV điểm")
     sc.add_argument(
-        "--split", action="append", choices=SPLITS, help="lặp được; mặc định mọi split"
+        "--split", action="append", choices=SPLITS, help="lặp được; mặc định chỉ val"
     )
     sc.add_argument(
         "--image-column", default="filepath", choices=("filepath", "raw_path")
