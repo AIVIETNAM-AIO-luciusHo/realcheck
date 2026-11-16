@@ -149,19 +149,52 @@ def test_diem_chi_0_va_1_canh_bao():
     assert 0 <= r["threshold"]["raw_score"] <= 1
 
 
-def test_nguong_tren_moi_diem_duoc_kep_va_canh_bao():
+def test_nguong_tren_moi_diem_tai_tao_dung_quyet_dinh():
     ai = np.linspace(0.55, 0.99, 20)
     real = np.r_[
         np.linspace(0.02, 0.45, 19), 1.0
     ]  # một ảnh thật có điểm cao nhất (1.0)
     y, p = np.r_[np.ones(20), np.zeros(20)].astype(int), np.r_[ai, real]
     r = cs.calibrate(y, p, 0.0)
-    assert (
-        r["threshold"]["raw_score"] <= 1
-        and r["threshold"]["fpr"] == 0
-        and r["threshold"]["recall"] == 0
-    )
+    t = r["threshold"]["raw_score"]
+    assert t > 1 and r["threshold"]["fpr"] == 0 and r["threshold"]["recall"] == 0
+    assert ((p >= t) & (y == 0)).sum() == 0
     assert any("nằm trên mọi điểm" in w for w in r["warnings"])
+
+
+def test_every_reported_cutoff_reproduces_its_own_rates():
+    y, p = synthetic(n=400)
+    p[:2] = [0.0, 1.0]
+    report = cs.calibrate(y, p, 0.0)
+    transformed = {
+        "raw": p,
+        "platt": cs.sigmoid(report["platt"]["a"] * cs.logit(p) + report["platt"]["b"]),
+        "temperature": cs.sigmoid(cs.logit(p) / report["temperature"]["T"]),
+    }
+    for name, values in transformed.items():
+        point = report["operating_points"][name]
+        decisions = values >= point["threshold"]
+        assert point["fpr"] == pytest.approx(decisions[y == 0].mean())
+        assert point["recall"] == pytest.approx(decisions[y == 1].mean())
+    assert report["probability_verified"] is False
+    assert report["metrics_scope"] == "fit_and_evaluate_on_same_validation"
+
+
+def test_calibration_preserves_existing_output_before_fit(tmp_path, monkeypatch):
+    output = tmp_path / "old.json"
+    output.write_text("keep")
+    scores = tmp_path / "valid.csv"
+    scores.write_text("sample_id,label,score\na,0,0.1\nb,1,0.9\n")
+    monkeypatch.setattr(
+        cs, "calibrate", lambda *a, **k: pytest.fail("must reject before fitting")
+    )
+    assert (
+        cs.main(
+            ["--scores", str(scores), "--target-fpr", "0.1", "--output", str(output)]
+        )
+        == 2
+    )
+    assert output.read_text() == "keep"
 
 
 def test_T_cham_can_canh_bao():

@@ -129,6 +129,29 @@ Chỉ để đánh giá model đã khóa (#39); không chọn model hay ngưỡn
    Mỗi ảnh chấm qua đúng đường API (`app.uploads.analyze_image`, `app.verdict.decide_verdict`), một dòng `sample_id,group_id,parent_id,label,status,score,verdict,error_code,model_sha256,manifest_sha256,protocol_sha256`. Ảnh lỗi ghi `status=error` với mã lỗi API. Không ghi đè `<output>`, `<output>.partial` hay `<output>.run.json`. Dòng ghi dần vào `<output>.partial`, chỉ đổi tên khi chạy xong và hash đầu vào không đổi; ảnh đổi byte giữa chừng dừng lần chạy (thoát 1) và giữ file partial. Log chạy ở `<output>.run.json`. Metrics và flip rate do `scripts.analyze_robustness` (ADV-08) tính từ file này.
 
 ## Input / Output
+
+### E4 / E5: hiệu chuẩn và gộp điểm (#159)
+
+`python -m scripts.adv12_scores fit --mode platt|mean --labels <development.csv>
+--a <val-a.csv> --a-model-sha <sha256> --e0 <locked-e571-val.csv>
+--target-fpr <locked-fpr> --output-dir <new-dir>`.
+`mean` cần thêm `--b <val-b.csv> --b-model-sha <sha256>` và dùng đúng trọng số 50/50.
+Fit kiểm đủ ID/nhãn/group/source validation GenImage, từ chối manifest có test;
+kiểm target FPR bằng FPR E0 tại `score > 0,7`, luôn có so sánh cặp với E0 riêng;
+ghi tham số, CSV điểm, báo cáo theo nguồn và CI bootstrap nhóm (mặc định 2.000,
+seed 42). Số trên chính validation fit chỉ phục vụ phát triển. CI giữ tham số và
+ngưỡng cố định, không hiệu chỉnh thiên lệch chọn model/ngưỡng.
+
+`python -m scripts.adv12_scores apply --params <locked-params.json> --a <cohort-a.csv>
+--a-model-sha <sha256> [--b <cohort-b.csv> --b-model-sha <sha256>] --output-dir <new-dir>`
+chỉ áp tham số đã lưu; không fit/chọn ngưỡng/tính metrics, cho phép cohort một lớp.
+SHA model là khai báo của người tạo CSV, cần đối chiếu receipt chấm ảnh riêng.
+Không ghi đè, kiểm hash input trước/sau, giữ report lỗi; JSON protocol/used-marker
+vẫn do người chạy kiểm thủ công. Điểm đầu ra chưa phải xác suất đã xác nhận.
+`calibrate_scores` cũng từ chối output cũ và giữ ngưỡng thực, kể cả lớn hơn 1,
+để tái tạo đúng quyết định `score >= threshold`.
+Xem [bàn giao #159](../docs/reports/adv12-159-preparation-20261117.md) trước khi chạy thật.
+
 - Input: `data/labels.csv`, `models/clip_probe.joblib`.
 - Output: bảng số đo, `labels.csv`.
 
