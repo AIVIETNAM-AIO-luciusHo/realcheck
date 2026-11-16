@@ -1,0 +1,47 @@
+# Giám sát tùy chọn (#163): Prometheus + Grafana, profile `monitoring`, KHÔNG bật mặc định và không sửa Compose core.
+# Chạy: REALCHECK_GRAFANA_PASSWORD=<mật khẩu> docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --profile monitoring up -d
+# Không có `ports:` (D13): chỉ truy cập trong mạng Compose. Xem docs/deploy.md mục "Giám sát".
+name: realcheck
+
+services:
+  prometheus:
+    profiles: [monitoring]
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=500MB
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    expose:
+      - "9090"
+    depends_on:
+      - api
+    cpus: 0.5
+    mem_limit: 256m
+    restart: unless-stopped
+
+  grafana:
+    profiles: [monitoring]
+    image: grafana/grafana:12.1.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${REALCHECK_GRAFANA_PASSWORD:?đặt REALCHECK_GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    expose:
+      - "3000"
+    depends_on:
+      - prometheus
+    cpus: 0.5
+    mem_limit: 256m
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:

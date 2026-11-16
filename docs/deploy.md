@@ -124,6 +124,19 @@ Mở `http://<lab>/` bằng trình duyệt, tải một ảnh JPEG điện tho�
 - Đã xác nhận trong diễn tập Linux 2026-11-12: chỉ cổng gateway lắng nghe (`ss -ltn`), cổng 8000 và 8501 không kết nối được từ địa chỉ IP của máy; gateway phục vụ HTTP thuần. Bước `ufw` chưa kiểm được (WSL2).
 - Không có secret trong repo hay `.env`; không commit `.env`.
 
+## Giám sát tùy chọn (Prometheus, Grafana; #163)
+
+Không bật mặc định và không nằm trong Compose core: file `docker-compose.monitoring.yml` có profile `monitoring`. Cần API có `GET /metrics` (build lại image API vì thêm `prometheus-client`).
+
+```bash
+export REALCHECK_GRAFANA_PASSWORD=<đặt mật khẩu, không ghi vào Git>
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --profile monitoring up -d --build
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --profile monitoring down      # tắt giám sát; core chạy tiếp nếu chỉ `stop prometheus grafana`
+```
+- Prometheus (giữ 7 ngày hoặc 500 MB, 0,5 CPU, 256 MiB) cào `api:8000/metrics` mỗi 15 giây; Grafana (0,5 CPU, 256 MiB) tự nạp datasource và dashboard "RealCheck API" từ `monitoring/`.
+- **Không có `ports:`** cho Prometheus và Grafana (D13), và Nginx không chuyển `/metrics` cho API. Muốn xem dashboard: thêm tạm một file override cục bộ, không commit, có `ports: ["127.0.0.1:3000:3000"]` cho `grafana`, rồi vào qua SSH tunnel (mục 5).
+- Metric chỉ có nhãn route, nhóm status, mã lỗi (không có dữ liệu người dùng). Chạy giám sát tốn thêm tài nguyên: không bật trong lúc đo SLO.
+
 ## 6. Khởi động lại và sự cố
 
 - Mọi service có `restart: unless-stopped`: Docker tự chạy lại container khi nó **dừng** hoặc khi máy khởi động lại.
