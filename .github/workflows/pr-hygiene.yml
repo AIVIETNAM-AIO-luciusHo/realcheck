@@ -1,0 +1,34 @@
+name: PR hygiene
+
+# Không bắt buộc: không nằm trong needs của ci-ok. Chỉ đọc; không dùng pull_request_target
+# nên PR từ fork chạy với quyền đọc và mã của chính PR.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check commits and PR body
+        env:
+          # Qua biến môi trường, không nội suy vào lệnh shell (tránh chèn lệnh từ tiêu đề/thân PR).
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          printf '%s' "$PR_BODY" > "$RUNNER_TEMP/body.md"
+          git log --format=%B "$BASE_SHA..$HEAD_SHA" > "$RUNNER_TEMP/commits.txt"
+          python -m scripts.check_pr_hygiene --title "$PR_TITLE" \
+            --body-file "$RUNNER_TEMP/body.md" --commits-file "$RUNNER_TEMP/commits.txt"
