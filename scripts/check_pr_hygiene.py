@@ -5,6 +5,7 @@ Ba check: (1) commit và thân PR không có dòng attribution bị cấm; (2) t
 mẫu; (3) tiêu đề hoặc mục "Task liên quan" có KAN-<số> hoặc #<số>.
 
 Dùng: python -m scripts.check_pr_hygiene --title "..." --body-file body.md --commits-file commits.txt
+Với --author dependabot[bot] (đúng chuỗi) bỏ yêu cầu mục nội dung và mã KAN/#; vẫn kiểm dòng bị cấm ở tiêu đề, commit và thân PR (trừ khối <details>).
 Thoát 0 nếu đạt, 1 nếu có lỗi, 2 nếu thiếu đầu vào.
 """
 
@@ -115,9 +116,25 @@ def _has_substance(text: str) -> bool:
     )
 
 
-def check(title: str, body: str, commits: str) -> list[str]:
-    problems = forbidden_lines(body, "thân PR") + forbidden_lines(commits, "commit")
+# Tác giả PR do GitHub gán; người thường không đặt được tên có ngoặc vuông. Chỉ so đúng chuỗi này.
+BOT_AUTHOR = "dependabot[bot]"
+
+
+_DETAILS = re.compile(r"<details\b.*?</details\s*>", re.DOTALL | re.IGNORECASE)
+
+
+def check(title: str, body: str, commits: str, author: str = "") -> list[str]:
+    bot = author == BOT_AUTHOR
+    # Thân PR của bot chứa release notes của thư viện trong <details> (có thể có dòng
+    # "Co-authored-by:" của upstream): chỉ bỏ phần đó khi kiểm cấm. Commit của PR vẫn kiểm đủ.
+    checked_body = _DETAILS.sub("", _clean(body)) if bot else body
+    problems = forbidden_lines(checked_body, "thân PR") + forbidden_lines(
+        commits, "commit"
+    )
     problems += forbidden_lines(title, "tiêu đề")
+    if bot:
+        # Miễn mẫu nội dung và mã KAN/#; không miễn kiểm dòng bị cấm ở trên.
+        return problems
     for key in (RESULT, LIMITS):
         sec = section(body, key)
         if sec is None:
@@ -137,6 +154,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--title", required=True)
     ap.add_argument("--body-file", type=Path, required=True)
     ap.add_argument("--commits-file", type=Path, required=True)
+    ap.add_argument(
+        "--author",
+        default="",
+        help="login tác giả PR (github.event.pull_request.user.login)",
+    )
     a = ap.parse_args(argv)
     try:
         body = a.body_file.read_text(encoding="utf-8")
@@ -144,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
     except OSError as exc:
         print(f"Không đọc được đầu vào: {exc}", file=sys.stderr)
         return 2
-    problems = check(a.title, body, commits)
+    problems = check(a.title, body, commits, a.author)
     for p in problems:
         print(f"LỖI: {p}")
     print("pr-hygiene: " + ("ĐẠT" if not problems else f"{len(problems)} lỗi"))

@@ -306,3 +306,158 @@ def test_ma_task_chap_nhan_bien_the(title):
 def test_cau_mo_ta_quy_tac_co_ca_hai_cum_van_khong_do():
     desc = "- cấm `Co-Authored-By:` và `Generated with [Claude Code]` trong commit\n"
     assert h.check("feat: x (#1)", GOOD_BODY + "\n" + desc, CLEAN_COMMITS) == []
+
+
+# --- Miễn cho tác giả dependabot[bot] (C-36) ---
+DEPENDABOT_BODY = """Bumps [fastapi](https://github.com/fastapi/fastapi) from 0.162.0 to 0.163.0.
+<details>
+<summary>Release notes</summary>
+<p>Some notes.</p>
+</details>
+
+Dependabot will resolve any conflicts with this PR as long as you don't alter it yourself.
+You can trigger a rebase of this PR by commenting `@dependabot rebase`.
+"""
+DEPENDABOT_COMMITS = (
+    "chore(deps): bump fastapi from 0.162.0 to 0.163.0\n\n"
+    "Signed-off-by: dependabot[bot] <support@github.com>\n"
+)
+BOT = "dependabot[bot]"
+
+
+def test_bot_that_vuot_khong_can_muc_va_ma_task():
+    assert (
+        h.check("chore(deps): bump fastapi", DEPENDABOT_BODY, DEPENDABOT_COMMITS, BOT)
+        == []
+    )
+
+
+def test_cung_noi_dung_do_nguoi_thuong_van_truot():
+    assert h.check(
+        "chore(deps): bump fastapi", DEPENDABOT_BODY, DEPENDABOT_COMMITS, "luciusHo"
+    )
+    assert h.check(
+        "chore(deps): bump fastapi", DEPENDABOT_BODY, DEPENDABOT_COMMITS
+    )  # không author
+
+
+@pytest.mark.parametrize(
+    "author",
+    [
+        "Dependabot[bot]",
+        "dependabot[bot] ",
+        "dependabot",
+        "dependabot[bot]x",
+        "xdependabot[bot]",
+        "app/dependabot",
+        "",
+    ],
+)
+def test_chi_khop_dung_chuoi_tac_gia(author):
+    assert h.check("chore: x", DEPENDABOT_BODY, DEPENDABOT_COMMITS, author)
+
+
+def test_ten_bot_trong_tieu_de_hay_than_khong_duoc_mien():
+    body = "Opened by dependabot[bot]\n" + DEPENDABOT_BODY
+    assert h.check(
+        "dependabot[bot]: bump fastapi", body, DEPENDABOT_COMMITS, "luciusHo"
+    )
+
+
+@pytest.mark.parametrize(
+    ("title", "body", "commits"),
+    [
+        (
+            "chore(deps): bump x",
+            DEPENDABOT_BODY + "\nCo-Authored-By: A <a@b.c>\n",
+            DEPENDABOT_COMMITS,
+        ),
+        (
+            "chore(deps): bump x",
+            DEPENDABOT_BODY,
+            DEPENDABOT_COMMITS + "\nCo-Authored-By: Claude <noreply@anthropic.com>\n",
+        ),
+        (
+            "chore(deps): bump x",
+            DEPENDABOT_BODY
+            + "\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+            DEPENDABOT_COMMITS,
+        ),
+        ("Generated with Claude: bump", DEPENDABOT_BODY, DEPENDABOT_COMMITS),
+    ],
+)
+def test_bot_van_bi_cam_attribution(title, body, commits):
+    assert h.check(title, body, commits, BOT)
+
+
+def test_main_author_qua_tham_so(tmp_path, capsys):
+    (tmp_path / "b.md").write_text(DEPENDABOT_BODY, encoding="utf-8")
+    (tmp_path / "c.txt").write_text(DEPENDABOT_COMMITS, encoding="utf-8")
+    base = [
+        "--title",
+        "chore(deps): bump",
+        "--body-file",
+        str(tmp_path / "b.md"),
+        "--commits-file",
+        str(tmp_path / "c.txt"),
+    ]
+    assert h.main([*base, "--author", BOT]) == 0
+    assert h.main(base) == 1
+    assert h.main([*base, "--author", "luciusHo"]) == 1
+
+
+def test_workflow_lay_tac_gia_tu_user_login_qua_bien_moi_truong():
+    from pathlib import Path
+
+    wf = (Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "PR_AUTHOR: ${{ github.event.pull_request.user.login }}" in wf
+    assert '--author "$PR_AUTHOR"' in wf
+    assert "github.actor" not in wf
+
+
+UPSTREAM_NOTES = DEPENDABOT_BODY.replace(
+    "<p>Some notes.</p>",
+    "<p>Changelog</p>\n<ul>\n<li>fix\n</ul>\nCo-authored-by: Upstream Dev <dev@example.com>\n"
+    "Generated with Claude Code\n",
+)
+
+
+def test_release_notes_co_authored_trong_details_khong_lam_bot_truot():
+    assert "Co-authored-by: Upstream" in UPSTREAM_NOTES
+    assert h.check("chore(deps): bump x", UPSTREAM_NOTES, DEPENDABOT_COMMITS, BOT) == []
+
+
+def test_nguoi_thuong_van_loi_voi_cung_than_co_co_authored():
+    problems = h.check(
+        "chore(deps): bump x", UPSTREAM_NOTES, DEPENDABOT_COMMITS, "luciusHo"
+    )
+    assert any("thân PR" in p for p in problems)
+
+
+@pytest.mark.parametrize(
+    "commits",
+    [
+        DEPENDABOT_COMMITS + "\nCo-Authored-By: A <a@b.c>\n",
+        DEPENDABOT_COMMITS + "\nGenerated with Claude Code\n",
+    ],
+)
+def test_commit_cua_bot_co_attribution_van_loi_du_than_co_details(commits):
+    assert any(
+        "commit" in p
+        for p in h.check("chore(deps): bump x", UPSTREAM_NOTES, commits, BOT)
+    )
+
+
+def test_bot_co_dong_cam_ngoai_details_van_loi():
+    body = DEPENDABOT_BODY + "\nCo-authored-by: A <a@b.c>\n"
+    assert any(
+        "thân PR" in p
+        for p in h.check("chore(deps): bump x", body, DEPENDABOT_COMMITS, BOT)
+    )
+
+
+def test_details_viet_hoa_va_nhieu_dong_van_duoc_bo():
+    body = "Bumps x.\n<DETAILS>\n<summary>n</summary>\nCo-authored-by: A <a@b.c>\n</DETAILS >\n"
+    assert h.check("chore(deps): bump x", body, DEPENDABOT_COMMITS, BOT) == []

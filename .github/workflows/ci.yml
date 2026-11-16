@@ -56,12 +56,13 @@ jobs:
           # Qua biến môi trường, không nội suy vào lệnh shell (tránh chèn lệnh từ tiêu đề/thân PR).
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/body.md"
           git log --format=%B "$BASE_SHA..$HEAD_SHA" > "$RUNNER_TEMP/commits.txt"
-          python -m scripts.check_pr_hygiene --title "$PR_TITLE" \
+          python -m scripts.check_pr_hygiene --title "$PR_TITLE" --author "$PR_AUTHOR" \
             --body-file "$RUNNER_TEMP/body.md" --commits-file "$RUNNER_TEMP/commits.txt"
 
   # Job duy nhất Ruleset cần yêu cầu: required check = "ci-ok"
