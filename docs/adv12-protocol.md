@@ -27,16 +27,22 @@ Trên mỗi miền, ghi cỡ mẫu và CI bootstrap theo group (seed 42, 2000 re
 ## 4. Tiêu chí "có cải thiện" (viết trước khi chạy)
 Một thí nghiệm Ex được ghi **"cải thiện"** chỉ khi đủ cả ba, tính trên **validation** khi chọn và trên tập cuối khi báo:
 1. Tỉ lệ ảnh thật bị gọi AI của Ex thấp hơn E0 và CI của hiệu không chứa 0.
-2. Trên GenImage, accuracy của Ex không thấp hơn E0 quá **ĐỀ XUẤT: 2 điểm phần trăm** (Lực quyết số này trước khi khóa; nêu mức tụt thật dù nhỏ) và AUROC không tụt có CI loại 0.
-3. Không có nguồn AI nào (SD1.4, Midjourney, GLIDE) mà recall tụt quá **ĐỀ XUẤT: 5 điểm phần trăm**.
+2. Trên GenImage, accuracy của Ex không thấp hơn E0 quá **2 điểm phần trăm** (Lực chốt 16/11; nêu mức tụt thật dù nhỏ) và AUROC không tụt có CI loại 0.
+3. Không có nguồn AI nào (SD1.4, Midjourney, GLIDE) mà recall tụt quá **5 điểm phần trăm** (Lực chốt 16/11).
 
-**Điểm vận hành cố định (C4):** khi so Ex với E0, giữ nguyên ngưỡng của E0 (0,3 / 0,5 / 0,7) hoặc so ở cùng FPR GenImage đã khóa trước khi chạy; không so một model ở ngưỡng đã dịch với E0 ở ngưỡng cũ. **E4 (hiệu chuẩn, ngưỡng) chỉ là dịch điểm vận hành, không phải model tốt hơn** (không đổi thứ tự điểm, AUROC giữ nguyên); E4 không được ghi "cải thiện" theo mục này, chỉ ghi "đổi điểm vận hành" kèm mức tụt recall và accuracy. Báo kèm số recall AI từng nguồn GenImage và (ADV-06) recall ảnh AI như số tham khảo, không chỉ "không tụt quá 5 điểm".
+**Điểm vận hành cố định (C4):** khi so Ex với E0, **điểm chính là ngưỡng của E0 (0,3 / 0,5 / 0,7)**; điểm phụ, báo kèm, là cùng FPR của E0 trên validation GenImage ở `score > 0,7`, giá trị tính từ E0 và ghi vào protocol JSON **trước khi chạy** E1 đến E5. Báo cả hai, không chọn một sau khi thấy số; không so một model ở ngưỡng đã dịch với E0 ở ngưỡng cũ. **E4 (hiệu chuẩn, ngưỡng) chỉ là dịch điểm vận hành, không phải model tốt hơn (Lực xác nhận 16/11 đây là ý định)** (không đổi thứ tự điểm, AUROC giữ nguyên); E4 không được ghi "cải thiện" theo mục này, chỉ ghi "đổi điểm vận hành" kèm mức tụt recall và accuracy. Báo kèm số recall AI từng nguồn GenImage và (ADV-06) recall ảnh AI như số tham khảo, không chỉ "không tụt quá 5 điểm".
 
-**Sức mạnh thống kê ở miền ảnh điện thoại (C2):** #116 chỉ có 38 ảnh thật (Wilson 95% của tỉ lệ gọi AI ở E0: 60,8% đến 87,0%). Với n = 38 hiệu hai model chỉ phân biệt được khi rất lớn; mỗi báo cáo ghi mức hiệu tối thiểu phát hiện được (tính từ bootstrap theo nhóm của chính cohort) và **"không đủ sức để kết luận" là kết cục hợp lệ** cho mọi Ex ở miền điện thoại, không bị coi là thất bại của thí nghiệm.
+**Sức mạnh thống kê ở miền ảnh điện thoại (C2):** #116 chỉ có 38 ảnh thật (Wilson 95% của tỉ lệ gọi AI ở E0: 60,8% đến 87,0%). Hiệu hai model trên cùng 38 ảnh được kiểm bằng **kiểm định dấu chính xác trên các ảnh đổi nhãn** (ảnh E0 gọi AI mà Ex không gọi, và ngược lại): 6/6 cùng hướng cho p = 0,031, 7/8 cho p = 0,070 (không đủ), 9/10 cho p = 0,0215. Mức 6/38 (khoảng 16 điểm) chỉ là cận dưới lạc quan, đòi mọi ảnh đổi nhãn cùng một hướng. Mỗi báo cáo ghi số ảnh đổi nhãn theo hai hướng và p; **"không đủ sức để kết luận" là kết cục hợp lệ** cho mọi Ex ở miền điện thoại, không bị coi là thất bại của thí nghiệm.
 
 Không đủ ba điều thì ghi "chưa phân biệt được" hoặc "không cải thiện" kèm số. Không dựa vào ADV-06 để tuyên bố cải thiện. Không ghi "đạt 90%" cho ảnh điện thoại. Cải thiện trên mẫu nhỏ chỉ là gợi ý, không đổi model phục vụ API (đổi model là PR riêng kèm QA độc lập, #59).
 
-**Chọn "model tốt nhất của E0..E3" cho E4 và E5:** ĐỀ XUẤT: model thỏa tiêu chí 2 và 3 trên validation có tỉ lệ ảnh thật bị gọi AI thấp nhất; hòa trong CI thì chọn model có số đặc trưng nhỏ hơn. Lực chốt trước khi chạy E0..E3.
+**Chọn "model tốt nhất của E0..E3" cho E4 và E5 (Lực chốt 16/11):** model thỏa tiêu chí 2 và 3 trên validation có tỉ lệ ảnh thật bị gọi AI thấp nhất; hòa trong CI thì chọn model có số đặc trưng nhỏ hơn. 
+
+**Test GenImage (C5):** 384 ảnh đã mở một lần cho e571. Chỉ **một model thắng** (chọn trên validation theo mục này) được chấm test GenImage, **một lần**; các model khác không chấm test để tránh nhìn nhiều lần. Chấm test cho model mới là quyết định mở ở mục 8.2.
+
+**Bậc tự do trong từng Ex (C6):** lưới tối đa, tập lớp ViT của E2, mức và loại tăng cường của E1, số cấu hình E5 phải ghi vào protocol JSON của từng mã **trước khi chạy**; chọn cấu hình trong cùng mã chỉ trên validation và ghi tổng số cấu hình đã thử.
+
+**Tăng cường chỉ ở train (C8):** validation và test **không** tăng cường; mọi biến thể của một ảnh nằm cùng split với ảnh gốc (theo `group_id`).
 
 ## 5. Quy tắc validation-only
 - Chọn model, đặc trưng, C, tăng cường, hiệu chuẩn và ngưỡng (0,5; vùng 0,3 đến 0,7 hoặc ngưỡng theo `target_fpr`) **chỉ trên validation**, rồi khóa.
@@ -53,6 +59,6 @@ Mẫu protocol JSON ở mục 5 của kế hoạch (`status` `proposed` đến `
 
 ## 8. Cần Lực quyết trước khi khóa
 1. ~~Hai số ĐỀ XUẤT ở mục 4 (2 điểm, 5 điểm) và tiêu chí chọn model.~~ **Đã chốt 16/11** theo đề xuất; chữ ĐỀ XUẤT ở mục 4 giữ lại làm dấu vết lịch sử.
-2. Có chấm test GenImage lần hai cho model mới không (test đã mở một lần cho e571).
+2. Có chấm test GenImage lần hai cho model mới không (test đã mở một lần cho e571). **Mặc định theo mục 4: chỉ model thắng, một lần.**
 3. Cohort #116 đã sẵn sàng chưa (ảnh cá nhân nằm trên máy Loan, #160) và ai chạy.
 4. Người tính lại độc lập.
