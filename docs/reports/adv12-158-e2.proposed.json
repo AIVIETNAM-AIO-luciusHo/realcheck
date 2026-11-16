@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "status": "proposed",
+  "experiment": "E2",
+  "issue": 158,
+  "code_commit": "2c1a651feee77f2b0149ff4f6d5e06e54fdc0837",
+  "locked_by": null,
+  "lock_ref": null,
+  "run_id": null,
+  "independent_qa_approved": false,
+  "depends_on": [
+    "#192 merged or reviewed code pinned",
+    "#161 individual lock",
+    "E0 validation secondary FPR pinned before this experiment"
+  ],
+  "model": {
+    "path": ".cache/adv12-e2-run01/fit/adv12_e2.joblib",
+    "sha256": null,
+    "state": "not trained; record model and feature-manifest hashes before cost/final evaluation"
+  },
+  "baseline_model": {
+    "sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+    "dataset": "genimage",
+    "C": 10.0,
+    "seed": 42,
+    "thresholds": {
+      "binary": 0.5,
+      "low": 0.3,
+      "high": 0.7
+    }
+  },
+  "labels": {
+    "path": ".cache/adv12-158-preparation/development-labels.csv",
+    "sha256": "7d489ad312ae428f8bcf755b2c810c063fb2409c63013dc3fb10222e2db1c434",
+    "n": 4859,
+    "train": 3988,
+    "val": 871,
+    "test": 0,
+    "has_group_id": true
+  },
+  "encoder": {
+    "model_id": "openai/clip-vit-base-patch32",
+    "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "weights_verified_files": [
+      {
+        "file": "config.json",
+        "size_bytes": 4186,
+        "sha256": "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770"
+      },
+      {
+        "file": "preprocessor_config.json",
+        "size_bytes": 316,
+        "sha256": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd"
+      },
+      {
+        "file": "pytorch_model.bin",
+        "size_bytes": 605247071,
+        "sha256": "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f"
+      }
+    ],
+    "cache_path": ".cache/adv12-158-hf",
+    "offline_resolution_verified": true,
+    "processor_class": "CLIPImageProcessorPil",
+    "model_instantiated": false
+  },
+  "configuration": {
+    "count": 1,
+    "layers": [
+      6,
+      9,
+      12
+    ],
+    "layer_indices": "hidden_states 1..N; concatenated pre-post_layernorm CLS; no projection",
+    "post_layernorm": false,
+    "l2_normalize": false,
+    "feature_dim": 2304,
+    "C": 10.0,
+    "max_iter": 2000,
+    "seed": 42,
+    "augment": 0.0,
+    "image_column": "raw_path",
+    "extract_batch_size": 8,
+    "raw_float32_feature_bytes_estimate": 44780544,
+    "estimate_is_not_measured_peak_ram": true
+  },
+  "thresholds": {
+    "binary": 0.5,
+    "low": 0.3,
+    "high": 0.7,
+    "secondary_target_fpr": null,
+    "secondary_target_fpr_status": "Luc must pin from E0 GenImage validation score >0.7 before E2/E3"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "pillow": "13.0.0",
+    "environment": {
+      "python": "3.12.14",
+      "packages_sha256": "178e84d2841526f75522ae6eb4ede2d653f34dbf59e4fecba710323966987694"
+    },
+    "pip_freeze_sha256": "8d250fc96a2ae49e7a33361c125564eccf415b24834b1923840f4013f38d3975",
+    "device": "cpu",
+    "torch_num_threads": 4,
+    "thread_env": {
+      "OMP_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4"
+    },
+    "HF_HUB_OFFLINE": "1"
+  },
+  "cost_profile": {
+    "path": ".cache/adv12-158-preparation/cost-sample-ids.json",
+    "sha256": "ab9e61d51289ab66563524f70f1f503fd1456c34d46003de8852d2f4b6328599",
+    "n": 100,
+    "selection": "25 per GenImage validation source; order by SHA256(adv12-cost-42|filepath); fixed before any results",
+    "by_source": {
+      "genimage_real": 25,
+      "genimage_sd14": 25,
+      "genimage_midjourney": 25,
+      "genimage_glide": 25
+    },
+    "warmup": 3,
+    "batch_size": 1,
+    "metric": "nearest-rank p50/p95/p99; raw read/decode + normalize + encoder + LR; offline, not HTTP SLO",
+    "memory": "OS process peak RSS from a fresh process; no GPU VRAM claim"
+  },
+  "max_runs_per_phase": 1,
+  "used_marker_required": true,
+  "runner_enforces_protocol_json": false,
+  "final_eval": {
+    "holdout_n": 384,
+    "candidate_test_n_not_equivalent": 849,
+    "inventory_sha256": "38a7bccb213b67e478bef0be25a54b047f74373adbe0bd91e35fc08e707c1ff2",
+    "authorized": false,
+    "winner_only": true,
+    "phone_images": "Loan machine; no transfer",
+    "ADV06_role": "development reference only, not model selection"
+  },
+  "replacement_decision": {
+    "eligible_now": false,
+    "feature_contract_matches_e571_512": false,
+    "quality_measured": false,
+    "cost_measured": false,
+    "HTTP_SLO_measured": false
+  },
+  "commands_after_lock": [
+    "python -m scripts.adv12_run extract --labels .cache/adv12-158-preparation/development-labels.csv --image-column raw_path --output .cache/adv12-e2-run01/features.npz --encoder layers --model-id openai/clip-vit-base-patch32 --revision 3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268 --layers 6,9,12 --augment 0 --batch-size 8 --device cpu",
+    "python -m scripts.adv12_run fit --features .cache/adv12-e2-run01/features.npz --output-dir .cache/adv12-e2-run01/fit --name adv12_e2 --C 10 --seed 42 --split val",
+    "python -m scripts.benchmark_adv12 --model .cache/adv12-e2-run01/fit/adv12_e2.joblib --feature-manifest .cache/adv12-e2-run01/features.json --labels .cache/adv12-158-preparation/development-labels.csv --sample-ids .cache/adv12-158-preparation/cost-sample-ids.json --warmup 3 --device cpu --output .cache/adv12-e2-run01/cost.json"
+  ],
+  "pending": [
+    "Luc lock and exact approved clean commit",
+    "E0 secondary FPR",
+    "Model/feature-manifest hashes after fit before benchmark",
+    "Available RAM recheck and resource budget approval",
+    "Loan cohort evaluation path and independent recalculation",
+    "No existing serving model/config change"
+  ]
+}
