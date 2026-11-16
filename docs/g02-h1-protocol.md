@@ -21,7 +21,7 @@ Câu hỏi: A_eff của probe 4 đặc trưng đổi bao nhiêu khi nén lại *
 | Kết quả | Điều kiện | Ghi được |
 |---|---|---|
 | Giảm vượt đối chứng | cận trên CI 95% của (ΔM2 − ΔR) < 0 ở ≥ 2/3 số lát cắt hợp lệ | "A_eff giảm thêm so với nén gần vô hại khi nén ở M2"; không nêu nguyên nhân |
-| Không phân biệt | CI của (ΔM2 − ΔR) chứa 0 | "không thấy khác biệt với đối chứng ở mức M2"; A_eff vẫn vượt 0,55 thì G02 vẫn chưa đạt |
+| Không phân biệt | CI của (ΔM2 − ΔR) chứa 0 | "không thấy khác biệt với đối chứng ở mức M2"; G02 vẫn chưa đạt (không kết cục nào của H1 làm G02 đạt) |
 | Tăng | cận dưới CI 95% của ΔM2 > 0 | ghi nguyên văn, không giải thích |
 | Đối chứng đã giảm mạnh | ΔR < −0,05 (ĐỀ XUẤT) | phép R không còn "vô hại": ghi, không kết luận thêm |
 | Không đủ sức | < 3 lát cắt hợp lệ | không kết luận |
