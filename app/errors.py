@@ -97,6 +97,7 @@ def error_response(
 
 
 async def handle_api_error(request: Request, exc: ApiError) -> JSONResponse:
+    request.app.state.metrics.errors.labels(code=exc.code.value).inc()
     return error_response(request, exc.code, exc.message)
 
 

@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from app.errors import register_error_handlers
 from app.inference import InferenceService, Scorer, load_model_scorer
 from app.logging import RequestContextMiddleware, configure_logging
+from app.metrics import Metrics
 from app.routes import router
 from app.settings import Settings
 
@@ -39,6 +40,7 @@ def create_app(
     app.state.scorer = scorer
     app.state.loader = loader
     app.state.inference = InferenceService(app.state.settings)
+    app.state.metrics = Metrics(app)
     app.add_middleware(RequestContextMiddleware)
     register_error_handlers(app)
     app.include_router(router)
