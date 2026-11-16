@@ -34,4 +34,4 @@ Không đổi mức nén, đặc trưng, lát cắt, seed sau khi thấy số; k
 Khác nhau, người tính lại tự viết lại phần nén và bootstrap. Hạn chế: chuẩn hóa JPEG95 làm giảm dấu nén của M1/M2; không tách được dấu vết sinh ảnh chính đáng khỏi nén; nhiều phép kiểm (3 phép × lát cắt × đặc trưng) không hiệu chỉnh chung; cùng nhãn và split với H4 nên chịu cùng nhiễu mẫu.
 
 ## 6. Cần Lực quyết
-Hai mức M1/M2 (trước khi xem), ngưỡng −0,05 của đối chứng, số lát cắt tối thiểu, người chạy và người tính lại.
+Hai mức M1/M2 (trước khi xem), ngưỡng −0,05 của đối chứng, số lát cắt tối thiểu, dung sai +0,02 của đơn điệu M1→M2 (cũng ở H4 mục 8), người chạy và người tính lại.
