@@ -38,6 +38,33 @@ jobs:
       # Không còn bước bỏ qua: thiếu test thì pytest exit 5 và job fail
       - run: pytest --cov=app --cov-fail-under=70
 
+  # Không bắt buộc: không nằm trong needs của ci-ok (CI-4). Môi trường đủ phụ thuộc để 0 skip.
+  test-full:
+    runs-on: ubuntu-latest
+    env:
+      HF_HUB_OFFLINE: "1" # không tải trọng số CLIP; test dùng model giả
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install torch CPU, then the rest
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.15.0
+          pip install -r requirements.txt -r models/requirements-ml.txt -r streamlit/requirements.txt -r locust/requirements.txt
+      - run: mkdir -p artifacts && pytest -rs --junitxml=artifacts/unit.xml --cov=app --cov-report=xml:artifacts/coverage.xml --cov-fail-under=70
+      - name: Zero skips (xfail is allowed)
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          from scripts.check_mvp_gates import MIN_UNIT_TESTS, _junit
+          reason = _junit(Path("artifacts/unit.xml"), MIN_UNIT_TESTS)
+          print(reason or "0 fail, 0 error, 0 skip")
+          sys.exit(1 if reason else 0)
+          PY
+
   # Job duy nhất Ruleset cần yêu cầu: required check = "ci-ok"
   ci-ok:
     if: always()
