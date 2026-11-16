@@ -11,59 +11,121 @@ Thoát 0 nếu đạt, 1 nếu có lỗi, 2 nếu thiếu đầu vào.
 import argparse
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
-FORBIDDEN = (
-    re.compile(r"^[\W_]*co-authored-by\s*:", re.IGNORECASE),
-    re.compile(r"^[\W_]*generated with\s*\[?claude code", re.IGNORECASE),
-)
-RESULT = "Kết quả kiểm chứng"
-LIMITS = "Giới hạn, rủi ro và việc chưa làm"
-TASK = "Task liên quan"
-TASK_REF = re.compile(r"KAN-\d+|(?<![\w&])#\d+")
 MIN_CHARS = 20
+MIN_WORDS = 4
+# Tiền tố tiêu đề đã bỏ dấu và hạ chữ thường; chấp nhận đuôi như "(Coder tự đo)", ":" hay "và việc còn chờ".
+RESULT = "ket qua kiem chung"
+LIMITS = "gioi han"
+TASK = "task lien quan"
+LABELS = {
+    RESULT: "Kết quả kiểm chứng",
+    LIMITS: "Giới hạn, rủi ro và việc chưa làm",
+    TASK: "Task liên quan",
+}
+TASK_REF = re.compile(r"KAN-\d+|(?<![\w&])#\d+", re.IGNORECASE)
+_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+_INVISIBLE = dict.fromkeys(
+    [*range(0x200B, 0x2010), 0x2060, 0xFEFF, 0x00AD, *range(0x202A, 0x202F)]
+)
+_DASHES = dict.fromkeys([*range(0x2010, 0x2016), 0x2212, 0xFE58, 0xFE63, 0xFF0D], "-")
 # Dòng còn nguyên từ mẫu (xem .github/pull_request_template.md): chưa điền.
 _PLACEHOLDER = re.compile(
     r"^(```\w*|\*\*Cách reviewer chạy lại:\*\*|.*(→|->)\s*$|.*___.*)$"
 )
+_HEADING = re.compile(r"^ {0,3}(#{1,6})[ \t]*(.*?)[ \t#]*$")
+# Dòng bắt đầu bằng cụm bị cấm (cho phép khoảng trắng, ký hiệu, emoji đầu dòng), hoặc đúng dạng trailer
+# "Co-Authored-By: Tên <email>" ở giữa dòng. Câu mô tả quy tắc (không có email) không khớp.
+_FORBIDDEN_LINE = (
+    re.compile(r"^[\W_]*co[-\s_]?authored[-\s_]?by\s*:", re.IGNORECASE),
+    re.compile(r"^[\W_]*generated\s+(?:with|by)\s*\W*claude", re.IGNORECASE),
+)
+_TRAILER_ANYWHERE = re.compile(
+    r"co[-\s_]?authored[-\s_]?by\s*:[^<\n]{1,80}<[^<>\s]+@[^<>\s]+>", re.IGNORECASE
+)
+
+
+def _clean(text: str) -> str:
+    """NFKC, bỏ ký tự vô hình, quy mọi gạch ngang Unicode về '-', xuống dòng chuẩn."""
+    text = unicodedata.normalize("NFKC", text).translate(_INVISIBLE).translate(_DASHES)
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _fold(text: str) -> str:
+    """Bỏ dấu, đ thành d, chữ thường, gộp khoảng trắng: so khớp tiêu đề không phân biệt dấu/hoa thường."""
+    text = unicodedata.normalize(
+        "NFKD", _clean(text).replace("đ", "d").replace("Đ", "D")
+    )
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return re.sub(r"\s+", " ", text).strip().lower()
 
 
 def forbidden_lines(text: str, where: str) -> list[str]:
-    return [
-        f"{where}: có dòng bị cấm: {line.strip()[:80]!r}"
-        for line in text.splitlines()
-        if any(p.search(line) for p in FORBIDDEN)
-    ]
+    found = []
+    for line in _clean(text).split("\n"):
+        if any(p.search(line) for p in _FORBIDDEN_LINE) or _TRAILER_ANYWHERE.search(
+            line
+        ):
+            found.append(f"{where}: có dòng bị cấm: {line.strip()[:80]!r}")
+    return found
 
 
-def section(body: str, title: str) -> str | None:
-    """Nội dung dưới tiêu đề `## title` tới tiêu đề `## ` kế tiếp; None nếu không có tiêu đề (cho phép đuôi như "(Coder tự đo)")."""
-    m = re.search(rf"^##\s+{re.escape(title)}\b.*$", body, re.MULTILINE)
-    if not m:
-        return None
-    rest = body[m.end() :]
-    nxt = re.search(r"^##\s", rest, re.MULTILINE)
-    return rest[: nxt.start()] if nxt else rest
+def _headings(body: str):
+    """(chỉ số dòng, cấp, văn bản đã gấp) của mọi tiêu đề ATX ngoài khối mã và chú thích."""
+    lines = _COMMENT.sub("", _clean(body)).split("\n")
+    out, fence = [], False
+    for k, line in enumerate(lines):
+        if re.match(r"^ {0,3}(```|~~~)", line):
+            fence = not fence
+            continue
+        m = None if fence else _HEADING.match(line)
+        if m:
+            text = re.sub(
+                r"^\**\s*(?:\d+\s*[.):-]?\s*)?", "", m.group(2)
+            )  # "**", "1.", "2)"
+            out.append((k, len(m.group(1)), _fold(text.strip("* "))))
+    return lines, out
+
+
+def section(body: str, key: str) -> str | None:
+    """Nội dung dưới tiêu đề khớp `key` (tiền tố, bỏ dấu, hoa thường, `##` hoặc `###`...) tới tiêu đề
+    kế tiếp cùng cấp hoặc cao hơn; None nếu không có tiêu đề."""
+    lines, heads = _headings(body)
+    for n, (k, level, text) in enumerate(heads):
+        if text.startswith(key):
+            end = next((h[0] for h in heads[n + 1 :] if h[1] <= level), len(lines))
+            return "\n".join(lines[k + 1 : end])
+    return None
 
 
 def real_content(text: str) -> str:
-    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
-    lines = [ln.strip() for ln in text.splitlines()]
+    lines = [ln.strip() for ln in _COMMENT.sub("", _clean(text)).split("\n")]
     return " ".join(ln for ln in lines if ln and not _PLACEHOLDER.match(ln))
+
+
+def _has_substance(text: str) -> bool:
+    """Đủ ký tự và ít nhất MIN_WORDS từ, trong đó có từ khác nhau (chặn chuỗi lặp độn chữ)."""
+    words = re.findall(r"\w+", real_content(text))
+    return (
+        len(real_content(text)) >= MIN_CHARS
+        and len(words) >= MIN_WORDS
+        and len(set(words)) >= 2
+    )
 
 
 def check(title: str, body: str, commits: str) -> list[str]:
     problems = forbidden_lines(body, "thân PR") + forbidden_lines(commits, "commit")
-    for name in (RESULT, LIMITS):
-        sec = section(body, name)
+    problems += forbidden_lines(title, "tiêu đề")
+    for key in (RESULT, LIMITS):
+        sec = section(body, key)
         if sec is None:
-            problems.append(f"thân PR thiếu mục '{name}'")
-        elif len(real_content(sec)) < MIN_CHARS:
-            problems.append(f"mục '{name}' trống hoặc còn nguyên mẫu")
+            problems.append(f"thân PR thiếu mục '{LABELS[key]}'")
+        elif not _has_substance(sec):
+            problems.append(f"mục '{LABELS[key]}' trống hoặc còn nguyên mẫu")
     task = section(body, TASK) or ""
-    if not TASK_REF.search(
-        title + "\n" + re.sub(r"<!--.*?-->", "", task, flags=re.DOTALL)
-    ):
+    if not TASK_REF.search(_clean(title) + "\n" + _COMMENT.sub("", _clean(task))):
         problems.append(
             "không có mã KAN-<số> hoặc #<số> ở tiêu đề hoặc mục 'Task liên quan'"
         )
