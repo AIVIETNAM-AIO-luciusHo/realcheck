@@ -1,4 +1,4 @@
-# Protocol ADV-12 (#161): BẢN NHÁP để Lực khóa, chưa chạy gì
+# Protocol ADV-12 (#161): đã khóa 16/11/2026, chưa chạy thí nghiệm nào
 
 **Trạng thái:** Khóa bởi Lực ngày 16/11/2026, trước khi chạy thí nghiệm. Lực chọn đúng các đề xuất ở mục 4 (2 điểm accuracy, 5 điểm recall, tiêu chí chọn model E0..E3). Chưa chạy thí nghiệm nào, chưa có số. Các mục còn lại ở mục 8 vẫn chờ Lực. Công cụ và lệnh từng thí nghiệm ở [`adv12-experiment-plan.md`](adv12-experiment-plan.md); file này chỉ ghi **luật chơi** để không chỉnh sau khi thấy kết quả. Câu hỏi: giảm ảnh thật (ảnh điện thoại, Zalo) bị gọi "Ảnh AI" mà không làm tụt GenImage.
 
