@@ -133,6 +133,7 @@ def fit_args(feats, out, **over):
         "name": "adv12_probe",
         "C": 10.0,
         "seed": 42,
+        "split": None,
     }
     return Namespace(**{**base, **over})
 
@@ -149,7 +150,7 @@ def test_fit_ghi_model_va_diem_dung_dinh_dang(tmp_path):
     ] == ["train"]
     assert meta["model_sha256"] == run.sha256_file(out / "adv12_probe.joblib")
     assert meta["features_sha256"] == run.sha256_file(feats)
-    for name, n in (("val", 4), ("test", 4)):
+    for name, n in (("val", 4),):
         with (out / f"adv12_probe.{name}_scores.csv").open(newline="") as stream:
             reader = csv.DictReader(stream)
             assert reader.fieldnames == [
@@ -162,6 +163,7 @@ def test_fit_ghi_model_va_diem_dung_dinh_dang(tmp_path):
             rows = list(reader)
         assert len(rows) == n and all(0 <= float(r["score"]) <= 1 for r in rows)
     assert not (out / "adv12_probe.train_scores.csv").exists()  # không xuất điểm train
+    assert not (out / "adv12_probe.test_scores.csv").exists()
 
 
 def test_fit_tat_dinh(tmp_path):
@@ -169,8 +171,154 @@ def test_fit_tat_dinh(tmp_path):
     run.cmd_extract(extract_args(make_dataset(tmp_path), feats), embed=embed)
     for d in ("a", "b"):
         run.cmd_fit(fit_args(feats, tmp_path / d))
-    for f in ("adv12_probe.val_scores.csv", "adv12_probe.test_scores.csv"):
+    for f in ("adv12_probe.val_scores.csv",):
         assert (tmp_path / "a" / f).read_bytes() == (tmp_path / "b" / f).read_bytes()
+
+
+@pytest.mark.parametrize("splits", [None, ["test"], ["val", "test"]])
+def test_fit_predicts_only_requested_splits(tmp_path, monkeypatch, splits):
+    feats = tmp_path / "f.npz"
+    run.cmd_extract(extract_args(make_dataset(tmp_path), feats), embed=embed)
+    seen = []
+    original = run.LogisticRegression.predict_proba
+
+    def predict(self, features):
+        seen.extend(features.tolist())
+        return original(self, features)
+
+    monkeypatch.setattr(run.LogisticRegression, "predict_proba", predict)
+    out = tmp_path / "fit"
+    argv = ["fit", "--features", str(feats), "--output-dir", str(out)]
+    for split in splits or []:
+        argv.extend(["--split", split])
+    assert run.main(argv) == 0
+    data = run.load_npz(feats)
+    selected = splits or ["val"]
+    expected = np.concatenate(
+        [data["features"][data["splits"] == split] for split in selected]
+    )
+    assert np.array_equal(np.array(seen), expected)
+    assert (out / "adv12_probe.test_scores.csv").exists() == ("test" in selected)
+    assert (out / "adv12_probe.val_scores.csv").exists() == ("val" in selected)
+    for split in selected:
+        with (out / f"adv12_probe.{split}_scores.csv").open(newline="") as stream:
+            rows = list(csv.DictReader(stream))
+        assert [r["sample_id"] for r in rows] == data["ids"][
+            data["splits"] == split
+        ].tolist()
+
+
+def test_score_defaults_to_validation(tmp_path, monkeypatch):
+    import models.score as ms
+
+    seen = []
+    monkeypatch.setattr(
+        ms, "load_scorer", lambda _: lambda im: seen.append(im.size) or 0.2
+    )
+    labels = make_dataset(tmp_path)
+    output = tmp_path / "e0.csv"
+    assert (
+        run.main(
+            [
+                "score",
+                "--model",
+                "e571.joblib",
+                "--labels",
+                str(labels),
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    with output.open(newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    expected = [r["filepath"] for r in run.read_rows(labels) if r["split"] == "val"]
+    assert [r["sample_id"] for r in rows] == expected
+    assert len(seen) == 4
+
+
+def test_score_checks_group_leak_before_filter_or_model_load(tmp_path, monkeypatch):
+    import models.score as ms
+
+    groups = [f"g{k}" for k in range(16)]
+    groups[9] = "g0"
+    labels = make_dataset(tmp_path, groups)
+    monkeypatch.setattr(
+        ms, "load_scorer", lambda _: pytest.fail("must reject before loading model")
+    )
+    output = tmp_path / "e0.csv"
+    assert (
+        run.main(
+            [
+                "score",
+                "--model",
+                "e571.joblib",
+                "--labels",
+                str(labels),
+                "--split",
+                "val",
+                "--output",
+                str(output),
+            ]
+        )
+        == 2
+    )
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("suffix", [".npz", ".json", ".augment.jsonl"])
+def test_extract_preserves_existing_artifacts(tmp_path, suffix):
+    output = tmp_path / "f.npz"
+    existing = output.with_suffix(suffix)
+    existing.write_bytes(b"previous run")
+    args = extract_args(make_dataset(tmp_path), output)
+    with pytest.raises(FileExistsError):
+        run.cmd_extract(
+            args, embed=lambda _: pytest.fail("must reject before extraction")
+        )
+    assert existing.read_bytes() == b"previous run"
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [".joblib", ".joblib.sha256", ".fit.json", ".val_scores.csv", ".test_scores.csv"],
+)
+def test_fit_preserves_existing_artifacts(tmp_path, monkeypatch, suffix):
+    feats = tmp_path / "f.npz"
+    run.cmd_extract(extract_args(make_dataset(tmp_path), feats), embed=embed)
+    out = tmp_path / "fit"
+    out.mkdir()
+    existing = out / f"adv12_probe{suffix}"
+    existing.write_bytes(b"previous run")
+    monkeypatch.setattr(
+        run.LogisticRegression,
+        "fit",
+        lambda *_: pytest.fail("must reject before fitting"),
+    )
+    with pytest.raises(FileExistsError):
+        run.cmd_fit(fit_args(feats, out))
+    assert existing.read_bytes() == b"previous run"
+
+
+def test_score_preserves_existing_output(tmp_path, monkeypatch):
+    import models.score as ms
+
+    output = tmp_path / "e0.csv"
+    output.write_bytes(b"previous run")
+    monkeypatch.setattr(
+        ms, "load_scorer", lambda _: pytest.fail("must reject before loading model")
+    )
+    args = Namespace(
+        labels=make_dataset(tmp_path),
+        model=tmp_path / "m.joblib",
+        output=output,
+        split=["val"],
+        image_column="filepath",
+    )
+    with pytest.raises(FileExistsError):
+        run.cmd_score(args)
+    assert output.read_bytes() == b"previous run"
 
 
 def test_fit_chan_ro_group_giua_hai_split(tmp_path):
