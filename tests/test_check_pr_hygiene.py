@@ -118,3 +118,37 @@ def test_main_ma_thoat(tmp_path, capsys):
 def test_tieu_de_muc_co_duoi_ghi_chu():
     body = GOOD_BODY.replace(h.RESULT, h.RESULT + " (Coder tự đo)")
     assert h.check("feat: x (#1)", body, CLEAN_COMMITS) == []
+
+
+def test_cau_mo_ta_quy_tac_khong_bi_coi_la_vi_pham():
+    mo_ta = (
+        "- cấm `Co-Authored-By:` và 'Generated with [Claude Code]' trong commit và PR\n"
+        'Quy tắc "Co-Authored-By: ..." được kiểm bằng regex.\n'
+    )
+    assert h.check("feat: x (#1)", GOOD_BODY + "\n" + mo_ta, CLEAN_COMMITS) == []
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Co-Authored-By: A <a@b.c>",
+        "  - Co-authored-by: A",
+        "> 🤖 Generated with [Claude Code](u)",
+    ],
+)
+def test_dong_that_dau_dong_van_bi_bat(line):
+    assert h.check("feat: x (#1)", GOOD_BODY + "\n" + line + "\n", CLEAN_COMMITS)
+    assert h.check("feat: x (#1)", GOOD_BODY, CLEAN_COMMITS + line + "\n")
+
+
+def test_ci_ok_phu_thuoc_pr_hygiene_va_chi_chay_tren_pull_request():
+    from pathlib import Path
+
+    import yaml
+
+    wf = yaml.safe_load(Path(".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    assert wf["jobs"]["ci-ok"]["needs"] == ["lint", "test", "pr-hygiene"]
+    assert wf["jobs"]["pr-hygiene"]["if"] == "github.event_name == 'pull_request'"
+    assert {"edited", "ready_for_review"} <= set(wf[True]["pull_request"]["types"])
+    assert not Path(".github/workflows/pr-hygiene.yml").exists()
+    assert "pull_request_target" not in str(wf)

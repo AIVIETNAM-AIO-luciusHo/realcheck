@@ -14,8 +14,8 @@ import sys
 from pathlib import Path
 
 FORBIDDEN = (
-    re.compile(r"co-authored-by\s*:", re.IGNORECASE),
-    re.compile(r"generated with\s*\[?claude code", re.IGNORECASE),
+    re.compile(r"^[\W_]*co-authored-by\s*:", re.IGNORECASE),
+    re.compile(r"^[\W_]*generated with\s*\[?claude code", re.IGNORECASE),
 )
 RESULT = "Kết quả kiểm chứng"
 LIMITS = "Giới hạn, rủi ro và việc chưa làm"
