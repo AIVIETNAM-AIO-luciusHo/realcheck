@@ -31,6 +31,7 @@ import json
 import platform
 import re
 import sys
+import time
 import warnings
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -41,8 +42,10 @@ from PIL import Image
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 
+from models.clip_input import CLIP_MODEL_ID, CLIP_REVISION
 from models.extract_features import read_labels, sha256_file
 from models.normalize import normalize_image
+from models.run_info import peak_rss_mib
 
 SPLITS = ("train", "val", "test")
 PACKAGES = (
@@ -134,17 +137,26 @@ def extract_rows(
 
 
 def make_embed(args):
+    if args.device == "cuda":
+        import torch
+
+        if not torch.cuda.is_available():
+            raise ValueError("--device cuda requested but CUDA is not available")
     if args.encoder == "last":
         from models.clip_input import encode_images, load_encoder
 
-        encoder = load_encoder()
+        encoder = load_encoder(device=args.device)
         return lambda images: encode_images(images, encoder)
     if not args.layers:
         raise ValueError("--encoder layers cần --layers a,b,c")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", args.revision or ""):
+        raise ValueError("--encoder layers cần --revision SHA 40 ký tự đã ghim")
     from models import clip_layers
 
     layers = [int(v) for v in args.layers.split(",")]
-    model, processor = clip_layers.load_vision_model(args.model_id, args.revision)
+    model, processor = clip_layers.load_vision_model(
+        args.model_id, args.revision, device=args.device
+    )
     return lambda images: clip_layers.extract_features(
         images, model, processor, layers, batch_size=len(images)
     )
@@ -160,6 +172,7 @@ def cmd_extract(args, embed=None) -> int:
             raise FileExistsError(f"output đã tồn tại: {path}")
     rows = read_rows(args.labels)
     labels_hash = sha256_file(args.labels)
+    started = time.perf_counter()
     embed = embed or make_embed(args)
     features, records = extract_rows(
         rows,
@@ -169,6 +182,7 @@ def cmd_extract(args, embed=None) -> int:
         augment_seed=args.augment_seed,
         batch_size=args.batch_size,
     )
+    extraction_seconds = time.perf_counter() - started
     if sha256_file(args.labels) != labels_hash:
         raise ValueError("labels.csv đổi trong lúc trích; bỏ lượt này")
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -186,10 +200,13 @@ def cmd_extract(args, embed=None) -> int:
         "features_sha256": sha256_file(args.output),
         "encoder": args.encoder,
         "layers": args.layers,
-        "model_id": args.model_id
-        if args.encoder == "layers"
-        else "e571 path (models.clip_input)",
-        "revision": args.revision,
+        "model_id": args.model_id if args.encoder == "layers" else CLIP_MODEL_ID,
+        "revision": args.revision if args.encoder == "layers" else CLIP_REVISION,
+        "device": args.device,
+        "batch_size": args.batch_size,
+        "cpu_thread_policy": 4 if args.device == "cpu" else None,
+        "extraction_seconds_including_load": extraction_seconds,
+        "peak_rss_process_mib": peak_rss_mib(),
         "image_column": args.image_column,
         "augment": {
             "p": args.augment,
@@ -402,6 +419,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     ex.add_argument("--augment-seed", type=int, default=42)
     ex.add_argument("--batch-size", type=int, default=32)
+    ex.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     fit = sub.add_parser("fit")
     fit.add_argument("--features", type=Path, required=True)
     fit.add_argument("--output-dir", type=Path, required=True)

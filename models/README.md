@@ -142,6 +142,13 @@ Ban đầu người dùng xác nhận chưa chốt manifest và chưa mở GenIm
 ## ADV-12: đặc trưng nhiều lớp ViT (THỬ NGHIỆM, #144)
 `models/clip_layers.py` trích CLS của nhiều lớp `CLIPVisionModel` (`output_hidden_states`) theo danh sách lớp (`0` là embedding, `1..N` là các khối, số âm đếm từ cuối), trả nối `(B, L*D)` hoặc riêng `(B, L, D)`. **Đây là thí nghiệm cho ADV-12, không dùng cho model phục vụ:** đặc trưng không cùng không gian với `models.clip_input` (bản đóng băng của e571) nên không thể đưa vào probe e571 hay `models.score`. `load_vision_model` tải trọng số Hugging Face (cần mạng hoặc cache, nên ghim `revision`); test dùng `CLIPVisionConfig` nhỏ khởi tạo ngẫu nhiên, không tải gì và tự bỏ qua khi máy thiếu `torch`/`transformers` (cài `models/requirements-ml.txt`).
 
+Với runner `scripts.adv12_run extract --encoder layers`, **bắt buộc `--revision` SHA
+40 ký tự**. `--device cpu|cuda` mặc định CPU, CUDA không sẵn sàng thì dừng, không tự
+đổi về CPU. Tensor processor được chuyển theo thiết bị của model; CPU dùng 4 torch
+thread như e571. Manifest ghi model ID/revision thật, device, batch size, thời gian
+trích (kể cả load) và peak RSS toàn tiến trình. Các giá trị này không phải latency
+từng ảnh hoặc SLO HTTP. Xem [quy trình E2/E3](../docs/adv12-e2-e3-runbook.md).
+
 ## ADV-12: tăng cường ảnh (THỬ NGHIỆM, #144)
 `models/augment.py` có `jpeg_recompress(img, quality)`, `downscale_upscale(img, factor)`, `screenshot_like(img, seed)` và `apply_random(img, seed, p)`. Mọi hàm nhận/trả ảnh RGB cùng kích thước, tất định theo tham số/seed (cùng Pillow thì cùng pixel). `apply_random` trả `(ảnh, danh sách phép đã áp dụng)` dạng `[{"op": "jpeg_recompress", "quality": 55}, ...]` để ghi vào manifest và dựng lại. **Không đổi `normalize_image`, đường train hay model phục vụ**: ảnh sau tăng cường vẫn phải đi qua `normalize_image` như ảnh thường. Chỉ dùng để thử nghiệm ADV-12; kế hoạch ở `docs/adv12-experiment-plan.md` (PR ADV-12 riêng).
 Lưu ý khi dùng `augment`: **nén lại có thể làm TĂNG dung lượng** (nguồn đã nén nặng nén lại ở chất lượng cao hơn), và dung lượng sau chuẩn hóa là shortcut đã biết (ADV-10); vì vậy `jpeg_recompress` (trong `.info["size_ratio"]`) và `apply_random` (mỗi phép trong danh sách) ghi `size_ratio` = dung lượng JPEG 95 của ảnh sau phép / trước phép, để kiểm phân bố dung lượng giữa thật và AI trước khi train. EXIF và ICC của ảnh gốc bị bỏ (chuyển RGB, không giữ metadata).

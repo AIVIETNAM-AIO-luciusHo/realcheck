@@ -83,6 +83,13 @@ Kiệt bổ sung regression test cho phần tích hợp của PR #15; Lực/Loan
 `score` chặn group lẫn split trước lọc/nạp model; cả ba lệnh giữ nguyên artifact cũ
 khi từ chối ghi đè. Dùng ảnh/feature tổng hợp, không chạy E0/E1 thật hoặc tiêu thụ protocol.
 
+#158 bổ sung test revision phải ghim trước download, chuyển device tới loader/tensor,
+CPU 4 thread và metadata thời gian/RSS. Tensor `meta` kiểm đường chuyển thiết bị mà
+không cần GPU. `test_benchmark_adv12.py` dùng clock giả, ảnh/probe sklearn tổng hợp:
+warmup không vào percentile, batch 1/đúng thứ tự ID, từ chối train/test/trùng/ghi đè,
+CUDA không có, hash artifact sai/đổi giữa lượt, JSON lỗi còn giữ. Không tải hoặc chạy
+trọng số pretrained trong pytest; không dùng thời gian test làm số E2/E3.
+
 `test_model_loading.py` kiểm nạp model lúc khởi động bằng `models.score` giả và loader giả: đối số `load_scorer`, `REALCHECK_MODEL_PATH`, log `model_loaded`/`model_load_failed`, 503 không lộ chi tiết, scorer tiêm thắng loader, import `app.main` không kéo torch/numpy, biến `app` mức module (chạy trong subprocess). Không cần torch hay model thật.
 
 `test_docker_static.py` kiểm tĩnh `Dockerfile` và `.dockerignore` bằng thư viện chuẩn (không chạy docker): base image khớp CI, user không root, healthcheck, cổng, biến môi trường, torch ghim bản CPU, danh sách `COPY`, và mọi module `models/` mà `models.score` import đều nằm trong `models/*.py`. Chưa thay thế lần build và chạy container thật.
