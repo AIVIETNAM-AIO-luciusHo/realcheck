@@ -36,7 +36,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt -r streamlit/requirements.txt
       # Không còn bước bỏ qua: thiếu test thì pytest exit 5 và job fail
-      - run: pytest --cov=app --cov-fail-under=70
+      - run: pytest --cov=app --cov-fail-under=70 -rs
 
   # Không bắt buộc: không nằm trong needs của ci-ok (CI-4). Môi trường đủ phụ thuộc để 0 skip.
   test-full:
