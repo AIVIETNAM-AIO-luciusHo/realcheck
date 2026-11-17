@@ -115,7 +115,7 @@ Cải thiện rõ trên ảnh thật đời mới (OpenFake reddit, ảnh thật
 | 5 | Không đánh giá model train trên bộ mới bằng validation 1.309 ảnh của bộ B | Bắt buộc khi dùng bộ B | Mới, ghi ở mục 2 |
 | 6 | Chia validation nguồn mới theo `group_id`; manifest đã có `uid` (dùng như `sample_id`), hash, nguồn, công cụ, `norm_version`, còn thiếu `group_id` | Làm sau | **Xong theo D01** ở [ADV-12d](data-review-adv12d.md): 0 group vắt split; 7 prompt chung train/validation chờ Lực quyết |
 | 7a | Chạy `scripts.check_data` và metadata audit trên ảnh của bộ mới | Làm sau | **Một phần** ([ADV-12d](data-review-adv12d.md)): `check_data` và hash/dHash trên mẫu 392 ảnh khớp 100%; metadata audit chưa làm |
-| 7 | Kiểm tay mẫu ảnh thật LAION/Pexels; ghi COCO là giả định | Làm sau | **Một phần** ([ADV-12d](data-review-adv12d.md)): LAION 51/51 đã xem, 23 không phải ảnh chụp gốc rõ ràng; Pexels 5/68 |
+| 7 | Kiểm tay mẫu ảnh thật LAION/Pexels; ghi COCO là giả định | Làm sau | **Xong lượt một người xem** ([ADV-12d](data-review-adv12d.md)): "có thể AI" LAION 23/51, Pexels 25/68; chờ người xem thứ hai |
 | 8 | Script tải tái lập được từ repo sạch | Làm sau | Chưa |
 
 ## Lệnh tái lập

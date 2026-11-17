@@ -7,7 +7,7 @@
 | 1 | Giấy phép Landscapes HQ | **Xong**: tra được giấy phép từng ảnh cho 415/415 ảnh |
 | 2 | `group_id` và chia validation theo group | **Xong** theo D01: 14.525 group, 0 group vắt split; manifest mới |
 | 3 | `check_data`, metadata audit, dHash trên ảnh | **Một phần**: mẫu 392 ảnh; metadata audit chưa làm |
-| 4 | Kiểm tay nhãn "thật" LAION/Pexels | **Một phần**: LAION 51/51 đã xem, 23 ảnh không phải ảnh chụp gốc rõ ràng; Pexels 5/68 |
+| 4 | Kiểm tay nhãn "thật" LAION/Pexels | **Xong lượt một người xem**: 119/119 ảnh; "có thể AI" LAION 23/51, Pexels 25/68 |
 
 Manifest: [`data/metadata/realcheck_mixed_v3/adv12d/`](../data/metadata/realcheck_mixed_v3/adv12d/README.md), SHA256 `1700ec92ad3ace6dad0aab85ae7c72daadd3350e860bf084668a02c8a8531c5a`.
 
@@ -58,11 +58,11 @@ Mẫu 119 ảnh thật (51 LAION, 68 Pexels) từ mục 3; xem từng ảnh ở 
 | Nguồn | Đã xem | Thật | Có thể AI | Không chắc | Tỉ lệ "có thể AI" (Wilson 95%) |
 |---|---:|---:|---:|---:|---|
 | LAION | 51/51 | 27 | 23 | 1 | 45% (32–59%) |
-| Pexels | 5/68 | 3 | 2 | 0 | chưa tính (mẫu chưa đủ) |
+| Pexels | 68/68 | 42 | 25 | 1 | 37% (26–49%) |
 
-- **"Có thể AI" gộp ảnh do AI sinh với ảnh ghép, chỉnh sửa hoặc nén nặng**; chưa tách. Caption cho thấy ít nhất 4/23 là ảnh ghép hoặc đã chỉnh (ảnh chia đôi, so sánh hai ảnh), nhiều ảnh là ảnh người nổi tiếng hoặc sự kiện chất lượng thấp. Vì vậy chỉ ghi được: **khoảng một nửa mẫu LAION không phải ảnh chụp gốc rõ ràng**, không ghi "45% là ảnh AI".
-- Hệ quả nếu được xác nhận: nhãn "thật" của LAION không sạch; nên tách LAION khỏi ảnh thật khi train hoặc báo kết quả riêng theo nguồn. Đề xuất, Lực quyết.
-- **Chưa làm:** 63 ảnh Pexels còn lại; tách loại trong 23 ảnh LAION; người xem thứ hai (đề xuất Kiệt) xem độc lập 23 ảnh. Lý do: chưa kịp trong 17/11. Bao giờ: trước hạn #160 (18/11), không kịp thì ghi lại khi đóng.
+- **"Có thể AI" gộp ảnh do AI sinh với ảnh ghép, chỉnh sửa hoặc nén nặng**; chưa tách. Caption cho thấy ít nhất 4/23 là ảnh ghép hoặc đã chỉnh (ảnh chia đôi, so sánh hai ảnh), nhiều ảnh là ảnh người nổi tiếng hoặc sự kiện chất lượng thấp. Vì vậy chỉ ghi được: **khoảng một nửa mẫu LAION và hơn một phần ba mẫu Pexels không được người xem coi là ảnh chụp gốc rõ ràng**, không ghi "45% hay 37% là ảnh AI". Ảnh Pexels là ảnh stock thường đã chỉnh màu chuyên nghiệp, nên tỉ lệ ở Pexels dễ bị đẩy lên bởi ảnh chỉnh sửa.
+- Hệ quả nếu được xác nhận: nhãn "thật" của LAION và Pexels không sạch; nên báo kết quả riêng theo nguồn, và cân nhắc tách hai nguồn này khỏi ảnh thật khi train. Đề xuất, Lực quyết.
+- **Chưa làm:** tách AI và ảnh ghép/chỉnh trong 48 ảnh "có thể AI"; người xem thứ hai (đề xuất Kiệt) xem độc lập 48 ảnh đó. Lý do: cần người xem độc lập. Bao giờ: khi Kiệt nhận; ghi lại khi đóng #160.
 - Giới hạn: một người xem; mẫu theo cụm 8 row group; ảnh AI tốt có thể qua mắt người. COCO "trước 2019 nên là ảnh thật" vẫn là giả định chưa kiểm.
 
 ## Tái lập
