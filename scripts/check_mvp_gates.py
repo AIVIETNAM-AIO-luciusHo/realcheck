@@ -163,18 +163,37 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Bảng gate nghiệm thu core MVP-12")
     ap.add_argument("--artifacts", type=Path, default=Path("artifacts"))
     ap.add_argument("--slo", type=Path, default=Path("docs/performance/slo.json"))
+    ap.add_argument(
+        "--only", help="chỉ chấm các cổng này, ví dụ G01,G02 (mặc định: cả 9)"
+    )
+    ap.add_argument(
+        "--require",
+        help="các cổng quyết định mã thoát; cổng khác chỉ in (mặc định: mọi cổng được chấm)",
+    )
     a = ap.parse_args(argv)
+    only = set(a.only.split(",")) if a.only else None
+    known = {g[0] for g in gates(a.artifacts, a.slo)}
+    required = set(a.require.split(",")) if a.require else None
+    if (only or set()) - known or (required or set()) - known:
+        print(f"Cổng không hợp lệ; hợp lệ: {', '.join(sorted(known))}", file=sys.stderr)
+        return 2
     results = [
         (gid, title, src, files, *evaluate_gate(files, check))
         for gid, title, src, files, check in gates(a.artifacts, a.slo)
+        if only is None or gid in only
     ]
     for gid, title, src, files, status, why in results:
         print(f"{gid} [{status}] {title} ({src})")
         print(f"     bằng chứng: {', '.join(f.as_posix() for f in files)}")
         if why:
             print(f"     lý do: {why}")
-    ok = all(r[4] == DAT for r in results)
-    print("TẤT CẢ GATE ĐẠT" if ok else "CHƯA ĐỦ ĐIỀU KIỆN NGHIỆM THU CORE")
+    ok = all(r[4] == DAT for r in results if required is None or r[0] in required)
+    if only is not None or required is not None:
+        print(
+            "CÁC CỔNG BẮT BUỘC ĐẠT" if ok else "CÁC CỔNG BẮT BUỘC CHƯA ĐẠT"
+        )  # không phải nghiệm thu core
+    else:
+        print("TẤT CẢ GATE ĐẠT" if ok else "CHƯA ĐỦ ĐIỀU KIỆN NGHIỆM THU CORE")
     return 0 if ok else 1
 
 
