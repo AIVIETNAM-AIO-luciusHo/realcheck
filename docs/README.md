@@ -30,6 +30,7 @@ Báo cáo, kịch bản demo, số đo và bảng đánh giá.
 - [**Sổ quyết định kỹ thuật** (D01–D14, hợp đồng `score`, manifest, phạm vi M1/M2)](decisions/realcheck-baseline.md): trạng thái từng quyết định, người duyệt, ngày; nguồn chính khi tài liệu khác lệch nhau.
 - [Manifest, holdout và ngưỡng Kiệt chọn (05/11)](decisions/ml-selection.md).
 - [Kiểm độc lập bộ dữ liệu mở rộng (ADV-09, #54)](data-review-adv09.md).
+- [ADV-12d: giấy phép Landscapes HQ, group_id và kiểm mẫu bộ mở rộng (#160)](data-review-adv12d.md); manifest ở `data/metadata/realcheck_mixed_v3/adv12d/`.
 - Hồ sơ ML lịch sử, viết trước khi chọn e571 hoặc cho candidate cũ (số trong đó, như 95,68%/856, là của model cũ): [bàn giao ML KAN-16 đến KAN-20](ml-handoff.md), [bản ứng viên giữ split](ml-preserved-split.md), [KAN-37, KAN-39, KAN-44, KAN-51](ml-normalization-release.md), [truy vết và tái lập thí nghiệm](ml-reproducibility.md), [Jira liên quan đến nhánh ML](ml-jira-links.md).
 
 ## Đối chứng shortcut ADV-10

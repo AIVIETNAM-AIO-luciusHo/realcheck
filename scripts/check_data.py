@@ -22,7 +22,11 @@ COLUMNS = [
 ]  # fmt: skip
 # group_id do scripts.add_group_ids gắn (#99): ảnh trùng byte hoặc gần trùng cùng group
 SPLITS = {"train", "val", "test"}
-EXPECTED_SIZE = {"genimage": (256, 256), "cifake": (32, 32)}
+# community, openfake: bộ mở rộng realcheck_mixed_v3 (#54, #160), cùng normalize_image 256x256
+EXPECTED_SIZE = {
+    "genimage": (256, 256), "cifake": (32, 32), "community": (256, 256),
+    "openfake": (256, 256),
+}  # fmt: skip
 # Hai ảnh có dHash lệch <= ngưỡng này coi là gần trùng
 NEAR_DUP_BITS = 4
 # Tỷ lệ ảnh AI trong mỗi split phải nằm trong khoảng này
