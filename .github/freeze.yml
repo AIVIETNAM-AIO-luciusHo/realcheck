@@ -1,0 +1,3 @@
+# Bật freeze: đổi thành `enabled: true` (hoặc đặt biến repo FREEZE_ENABLED=true).
+# Job đọc file này từ nhánh gốc, nên phải merge thay đổi vào main mới có hiệu lực.
+enabled: false
