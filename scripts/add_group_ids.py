@@ -52,7 +52,13 @@ def group_ids(rows: list[dict[str, str]], root: Path) -> list[str]:
     for row in rows:
         with Image.open(root / row["filepath"]) as image:
             hashes.append(dhash(image))
+    return group_ids_from_hashes(rows, raw_sha, hashes)
 
+
+def group_ids_from_hashes(
+    rows: list[dict[str, str]], raw_sha: list[str], hashes: list[int]
+) -> list[str]:
+    """Như group_ids nhưng nhận sẵn SHA256 ảnh gốc và dHash ảnh chuẩn hóa (manifest không ảnh)."""
     parent = list(range(len(rows)))
 
     def find(i: int) -> int:
@@ -85,7 +91,9 @@ def group_ids(rows: list[dict[str, str]], root: Path) -> list[str]:
         name = "g-" + min(raw_sha[i] for i in group)[:16]
         for key in ("split", "label"):
             if len({rows[i][key] for i in group}) > 1:
-                paths = ", ".join(rows[i]["raw_path"] for i in group)
+                paths = ", ".join(
+                    rows[i].get("raw_path", rows[i]["filepath"]) for i in group
+                )
                 problems.append(f"{name}: khác {key} trong cùng group ({paths})")
         names.update(dict.fromkeys(group, name))
     if len(set(names.values())) != len(members):

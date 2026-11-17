@@ -130,7 +130,7 @@ Sau khi nén cùng chất lượng, dung lượng file phản ánh **độ chi t
   | COCO | Chú thích CC BY 4.0; ảnh theo điều khoản Flickr của từng ảnh | Nhóm COCO không sở hữu bản quyền ảnh; người dùng tự chịu trách nhiệm |
   | FFHQ | Bộ dữ liệu CC BY-NC-SA 4.0 (NVIDIA); từng ảnh theo giấy phép Flickr riêng | Không dùng để phát triển nhận dạng khuôn mặt |
   | VISION | CC BY-SA 4.0 theo README của bộ | Phải trích dẫn bài báo EURASIP 2017 |
-  | Landscapes HQ | **Chưa xác nhận** | Ảnh lấy từ Unsplash và Flickr; trang tổng hợp ghi "Other" |
+  | Landscapes HQ | Từng ảnh: Unsplash License, CC BY 2.0, CC BY-NC 2.0, CC0 hoặc Public Domain Mark (`metadata.json` chính thức, 415/415 ảnh tra được, #160) | Ảnh từ Unsplash và Flickr; CC BY/BY-NC cần ghi công, tác giả và URL trong [manifest adv12d](metadata/realcheck_mixed_v3/adv12d/README.md); chờ Lực duyệt dùng để train |
 - CIFAKE trên Hugging Face gán `0 = FAKE, 1 = REAL`; script đã đổi về quy ước của nhóm.
 - Tránh chụp mặt người lạ.
 - Gate dữ liệu là kiểm tra metadata (post `A_eff <= 0.55`), không phải dung lượng file. Gate đạt không chứng minh hết mọi shortcut trong pixel.
