@@ -3,4 +3,4 @@ altair==6.3.0
 httpx==0.28.1
 pandas==3.1.0
 pillow==13.0.0
-streamlit==1.66.1
+streamlit==1.67.0
