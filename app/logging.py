@@ -47,6 +47,7 @@ class RequestContextMiddleware:
         scope.setdefault("state", {})["request_id"] = request_id
         started = perf_counter()
         status = 500
+        route = "other"
 
         async def send_with_request_id(message: Message) -> None:
             nonlocal status
@@ -58,6 +59,11 @@ class RequestContextMiddleware:
         try:
             await self.app(scope, receive, send_with_request_id)
         finally:
+            duration = perf_counter() - started
+            route = getattr(scope.get("route"), "path", "other")
+            metrics = getattr(scope.get("app") and scope["app"].state, "metrics", None)
+            if metrics:
+                metrics.observe_request(route, status, duration)
             logger.info(
                 json.dumps(
                     {

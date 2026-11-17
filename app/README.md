@@ -17,7 +17,7 @@ API nhận 1 ảnh, kiểm tra hợp lệ, gọi `score(image)` từ `models/`, 
 | `settings.py` | Cấu hình đọc từ biến môi trường |
 | `logging.py` | `X-Request-ID` và log có cấu trúc |
 
-Endpoint: `POST /v1/analyze`, `GET /health`, `GET /docs`, `GET /openapi.json`. `GET /metrics`: chưa triển khai (giám sát đã cắt).
+Endpoint: `POST /v1/analyze`, `GET /health`, `GET /docs`, `GET /openapi.json`. `GET /metrics` (Prometheus, registry riêng mỗi app): `realcheck_requests_total{route,status_class}`, `realcheck_request_duration_seconds{route}`, `realcheck_api_errors_total{code}`, `realcheck_inference_slots_in_use`, `realcheck_model_ready`. Nhãn là tập đóng, không có dữ liệu người dùng; route lạ gộp thành `other`. Nginx không chuyển `/metrics` cho API; chỉ truy cập trong mạng Compose.
 
 ## Model đang dùng
 API local/lab dùng **reference e571** do Kiệt chọn (issue #39), SHA256 `e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494`. Model không nằm trong Git.

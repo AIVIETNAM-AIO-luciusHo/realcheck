@@ -83,6 +83,10 @@ def error_response(
 ) -> JSONResponse:
     """Dựng response lỗi; tự gắn request ID vì lỗi 500 đi vòng qua middleware."""
     default_status, default_message = ERROR_TABLE[code]
+    # Mọi đường lỗi (ApiError, 404/405, 422, 500) đều qua đây; nhãn là ErrorCode nên cardinality đóng.
+    metrics = getattr(request.app.state, "metrics", None)
+    if metrics:
+        metrics.errors.labels(code=code.value).inc()
     request_id = getattr(request.state, "request_id", None) or str(uuid4())
     body = ErrorResponse(
         error=ErrorDetail(

@@ -4,7 +4,7 @@ import asyncio
 import json
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from threading import BoundedSemaphore
+from threading import BoundedSemaphore, Lock
 from time import perf_counter
 from typing import TypeVar
 
@@ -41,9 +41,20 @@ class InferenceService:
     def __init__(self, settings: Settings) -> None:
         self._timeout_s = settings.model_timeout_s
         self._slots = BoundedSemaphore(settings.inference_slots)
+        self._busy = 0
+        self._busy_lock = Lock()
         self._executor = ThreadPoolExecutor(
             max_workers=settings.inference_slots, thread_name_prefix="inference"
         )
+
+    @property
+    def busy(self) -> int:
+        return self._busy
+
+    def _release(self) -> None:
+        with self._busy_lock:
+            self._busy -= 1
+        self._slots.release()
 
     async def run(self, scorer: Scorer | None, job: Callable[[Scorer], T]) -> T:
         """Chạy job(scorer) trên worker thread; hết slot thì từ chối, không xếp hàng."""
@@ -51,13 +62,15 @@ class InferenceService:
             raise ApiError(ErrorCode.MODEL_NOT_READY)
         if not self._slots.acquire(blocking=False):
             raise ApiError(ErrorCode.SERVICE_BUSY)
+        with self._busy_lock:
+            self._busy += 1
         try:
             future = self._executor.submit(job, scorer)
         except RuntimeError:
-            self._slots.release()
+            self._release()
             raise ApiError(ErrorCode.MODEL_NOT_READY) from None
         # Thread không hủy được CLIP nên slot nhả theo future, không nhả ở finally.
-        future.add_done_callback(lambda _: self._slots.release())
+        future.add_done_callback(lambda _: self._release())
 
         result = asyncio.wrap_future(future)
         done, _ = await asyncio.wait({result}, timeout=self._timeout_s)

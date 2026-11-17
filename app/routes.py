@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, Request, Response, UploadFile
 
 from app.errors import error_docs
+from app.metrics import CONTENT_TYPE
 from app.schemas import AnalyzeResponse, ErrorCode, HealthResponse
 from app.uploads import analyze_image, read_upload
 from app.verdict import MISSING_EXIF, build_reason, decide_verdict
@@ -49,3 +50,9 @@ async def health(request: Request, response: Response) -> HealthResponse:
     if not ready:
         response.status_code = 503
     return HealthResponse(status="ok" if ready else "not_ready", model_ready=ready)
+
+
+@router.get("/metrics", include_in_schema=False)
+async def metrics(request: Request) -> Response:
+    """Chỉ cho mạng nội bộ Compose: Nginx không có rule /metrics (xem test)."""
+    return Response(request.app.state.metrics.render(), media_type=CONTENT_TYPE)
