@@ -225,7 +225,6 @@ docs-local/
 # technical-report
 docs/technical-report
 
-CLAUDE.md
  
 
 # Dữ liệu và model: chỉ giữ README, .gitkeep, labels.csv
