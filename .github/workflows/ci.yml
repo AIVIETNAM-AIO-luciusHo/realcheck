@@ -56,6 +56,11 @@ jobs:
           pip install --index-url https://download.pytorch.org/whl/cpu torch==2.15.0
           pip install -r requirements.txt -r models/requirements-ml.txt -r streamlit/requirements.txt -r locust/requirements.txt
       - run: mkdir -p artifacts && pytest -rs --junitxml=artifacts/unit.xml --cov=app --cov-report=xml:artifacts/coverage.xml --cov-fail-under=70
+      - name: Gates G01 (required) and G02 (status only)
+        run: |
+          # Báo cáo audit G02 là bản đã commit (data/metadata_audit.json), không sinh lại; G02 chưa đạt theo quyết định #147.
+          cp data/metadata_audit.json artifacts/metadata-audit.json
+          python -m scripts.check_mvp_gates --artifacts artifacts --only G01,G02 --require G01
       - name: Zero skips (xfail is allowed)
         run: |
           python - <<'PY'
