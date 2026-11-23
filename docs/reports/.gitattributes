@@ -1,0 +1,2 @@
+# Keep the original Windows sidecar bytes so its recorded SHA256 survives checkout.
+vps-load-probe-20261116.jsonl -text whitespace=cr-at-eol

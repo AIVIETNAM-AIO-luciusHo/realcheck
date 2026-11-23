@@ -4,6 +4,7 @@ Cấu hình qua biến môi trường và --rc-scenario (xem locust/README.md). 
 time.time() (đồng hồ treo tường, có thể nhảy nếu NTP chỉnh); latency đo cùng đồng hồ, không gồm đọc file payload. Không dùng model stub, không giả X-Forwarded-For.
 """
 
+import hashlib
 import json
 import math
 import os
@@ -76,6 +77,8 @@ def _load_payloads():
     if not groups:
         raise SystemExit(f"RC_PAYLOAD_DIR={PAYLOAD_DIR} cần thư mục con chứa .jpg/.png")
     mix = _parse_mix(MIX, groups)
+    _pool.clear()
+    _weights.clear()
     for name, w in mix.items():
         for f in groups[name]:
             _pool.append((f, TYPES[f.suffix.lower()]))
@@ -158,6 +161,11 @@ class AnalyzeUser(HttpUser):
     def analyze(self):
         path, mime = random.choices(_pool, _weights)[0]
         data = path.read_bytes()
+        payload_info = {
+            "payload_path": path.relative_to(PAYLOAD_DIR).as_posix(),
+            "payload_bytes": len(data),
+            "payload_sha256": hashlib.sha256(data).hexdigest(),
+        }
         t0 = time.time()
         with self.client.post(
             "/v1/analyze",
@@ -185,6 +193,7 @@ class AnalyzeUser(HttpUser):
                     "error_code": code,
                     "latency_ms": (time.time() - t0) * 1000,
                     "payload": path.name,
+                    **payload_info,
                 }
             )
             if outcome == "200":
