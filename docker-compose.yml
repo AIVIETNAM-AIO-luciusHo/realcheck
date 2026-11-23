@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:1.28.0-alpine
+    image: nginx:1.28.3-alpine
     ports:
       - "${REALCHECK_HTTP_PORT:-80}:80"
     volumes:

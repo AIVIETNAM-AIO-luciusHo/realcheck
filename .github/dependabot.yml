@@ -1,0 +1,131 @@
+# C-35. Dependabot chỉ đọc file này trên nhánh mặc định: PR Draft thì chưa có hiệu lực. KHÔNG merge trước #177 và quyết định chính sách Security PR (PLAN 9.5).
+#
+# Ba thứ khác nhau (đừng nhầm):
+#   1. Dependabot ALERTS: cảnh báo thụ động trong tab Security, không mở PR, không đọc file này.
+#   2. Dependabot SECURITY updates: PR tự mở khi có lỗ hổng. Bật trong Settings, không bằng file này.
+#      Theo tài liệu GitHub, `allow` và `ignore` trong file này CŨNG áp cho security updates;
+#      `open-pull-requests-limit` thì không giới hạn security PR (tối đa 10 riêng).
+#   3. Dependabot VERSION updates: PR nâng phiên bản theo lịch. Chỉ bật khi có file này trên nhánh mặc định.
+#
+# Hệ quả thiết kế: `ignore` và `allow` làm mất luôn security PR của gói bị loại. Chỉ chấp nhận ở nơi
+# mà ta CHỦ ĐỘNG không muốn bot đụng gói (nhóm model e571 trong requirements.txt gốc, python major/minor).
+# Ở /models, /scripts, /locust dùng `open-pull-requests-limit: 0` (không version PR, security PR vẫn
+# tới nếu Lực bật Security updates). Gói model phải xử lý bằng quy trình riêng, không auto-merge.
+#
+# Không nâng: numpy, scikit-learn, pillow, joblib, pandas, torch, transformers, sentence-transformers,
+# huggingface-hub, CLIP revision, ruff (ruff gắn chéo requirements.txt, ci.yml, .pre-commit-config.yaml).
+# Không auto-merge: file này không có cấu hình auto-merge, và không được thêm.
+version: 2
+
+updates:
+  # GitHub Actions: rủi ro thấp; gộp minor+patch, major tách PR để đọc changelog.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
+
+  # Base image Python: KHÔNG nâng major/minor (Dockerfile, streamlit/Dockerfile và ci.yml phải khớp
+  # đồng thời; test_docker_static kiểm). Chỉ nhận patch của cùng bản 3.11.
+  - package-ecosystem: docker
+    directories: [/, /streamlit]
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  # nginx trong docker-compose.yml: schema SchemaStore có ecosystem `docker-compose`.
+  # NOT VERIFIED: Dependabot có đọc đúng docker-compose.yml này (tên file, image có biến) không.
+  # Chỉ patch của nginx 1.28.x.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      - dependency-name: nginx
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  # requirements.txt gốc (API + test) lẫn gói model. `allow` chỉ cho gói API/test; gói còn lại
+  # (numpy, scikit-learn, pillow, joblib, pandas, ruff) không có version PR.
+  # Giới hạn đã biết: allow cũng áp cho security updates, nên gói model ở file này KHÔNG có
+  # security PR; chỉ có Alerts. Đây là chủ ý (đổi gói model = PR riêng + QA độc lập).
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    # ĐIỀU KIỆN: chỉ thêm `- dependency-name: prometheus-client` vào allow sau khi #173 (prometheus-client==0.26.0)
+    # đã merge vào main; chưa merge thì KHÔNG thêm (thư mục này chưa có gói đó).
+    allow:
+      - dependency-name: fastapi
+      - dependency-name: uvicorn
+      - dependency-name: httpx
+      - dependency-name: "pydantic*"
+      - dependency-name: python-multipart
+      - dependency-name: "pytest*"
+    groups:
+      api-and-test:
+        patterns: ["*"]
+
+  # UI. pandas và pillow bị loại (khớp requirements.txt gốc và model); httpx để thư mục gốc lo,
+  # đổi httpx phải đổi tay ở cả hai nơi (test_dependency_pins kiểm bằng nhau).
+  - package-ecosystem: pip
+    directory: /streamlit
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    allow:
+      - dependency-name: streamlit
+      - dependency-name: altair
+    groups:
+      ui:
+        patterns: ["*"]
+
+  # Thư mục gói model/dữ liệu/đo tải: KHÔNG version PR. Không dùng allow/ignore để không chặn security PR
+  # (nếu sau này Lực bật Security updates). torch còn nằm trong Dockerfile (ecosystem docker không thấy).
+  - package-ecosystem: pip
+    directory: /models
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: pip
+    directory: /scripts
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: pip
+    directory: /locust
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 0
+
+# Không có trong file (cố ý):
+#  - .pre-commit-config.yaml: không đưa vào; ruff gắn chéo requirements.txt, ci.yml, .pre-commit-config.yaml nên cập nhật tay cùng lúc 3 nơi.
+#  - reviewers/assignees: tính năng reviewers đã bị GitHub chuyển sang CODEOWNERS; review do CODEOWNERS.
+#  - labels: không đặt nhãn tùy chỉnh (nhãn `dependencies` chưa tồn tại trong repo).
