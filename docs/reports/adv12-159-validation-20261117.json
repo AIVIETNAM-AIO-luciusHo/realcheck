@@ -1,0 +1,28 @@
+{
+  "scope": "local synthetic software verification; not an E4/E5 experiment or independent QA",
+  "source_commit": "fad5cf9d460ab3ffce347c1d51b6b722785dbfa7",
+  "python": "3.12.14",
+  "pillow": "13.0.0",
+  "packages_sha256": "178e84d2841526f75522ae6eb4ede2d653f34dbf59e4fecba710323966987694",
+  "ruff_check": "passed",
+  "ruff_format_check": {"status": "passed", "files": 181},
+  "regression_before_fix": {"failed_as_expected": 2},
+  "focused_after_fix": {
+    "passed": 66,
+    "scope": "calibration, fusion, comparison; before two additional E0-reference tests included in final full suite"
+  },
+  "final_full_suite": {
+    "command": "python -m pytest --cov=app --cov-fail-under=70 -q --tb=short --basetemp .cache/pytest-full-159-v2",
+    "passed": 1206,
+    "failed": 0,
+    "skipped": 0,
+    "xfailed": 1,
+    "xfail_scope": "existing strict D12/FR-A04 infinite scorer process-exit limitation in test_inference.py",
+    "app_coverage_percent": 99.43,
+    "elapsed_seconds": 529.46,
+    "local_log_sha256": "c738e638fe251de56215f9fe19eeb5dd83550efeccbb43e12f47e9308fd1e97c"
+  },
+  "experiment_run": false,
+  "independent_qa_approved": false,
+  "ci": "reported separately on the PR"
+}
