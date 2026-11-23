@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "status": "proposed",
+  "experiment": "E1",
+  "issue": 157,
+  "code_commit": "b928588bf622b6d9a630b0f3237febe00b5b5bff",
+  "code_commit_status": "candidate runner commit; Luc must pin approved clean checkout before running",
+  "locked_by": null,
+  "locked_at": null,
+  "run_id": null,
+  "independent_qa_approved": false,
+  "baseline_model": {
+    "sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+    "dataset": "genimage",
+    "C": 10.0,
+    "seed": 42,
+    "thresholds": {
+      "binary": 0.5,
+      "low": 0.3,
+      "high": 0.7
+    }
+  },
+  "model": {
+    "path": ".cache/adv12-e1-run01/fit/adv12_e1.joblib",
+    "sha256": null,
+    "status": "output of the proposed single training configuration; record hash after fit before authorizing final evaluation"
+  },
+  "splits": {
+    "labels": {
+      "path": ".cache/adv12-157-preparation/development-labels.csv",
+      "sha256": "7d489ad312ae428f8bcf755b2c810c063fb2409c63013dc3fb10222e2db1c434",
+      "n": 4859,
+      "has_group_id": true
+    },
+    "train": {
+      "n": 3988,
+      "sha256": "59aaace6453d953ba4b142207e26ad6d432fc6a8fba74fed1e92779f00bbb994",
+      "inventory_file": "train-inventory.jsonl",
+      "by_source": {
+        "genimage_glide": 700,
+        "genimage_midjourney": 700,
+        "genimage_real": 1888,
+        "genimage_sd14": 700
+      },
+      "labels": {
+        "1": 2100,
+        "0": 1888
+      },
+      "group_count": 3988
+    },
+    "validation": {
+      "n": 871,
+      "sha256": "bbda229da02e2cd1f47a0834c9dc896857ed4758b84d4cc4fe1bd00337798863",
+      "inventory_file": "val-inventory.jsonl",
+      "by_source": {
+        "genimage_glide": 150,
+        "genimage_midjourney": 150,
+        "genimage_real": 421,
+        "genimage_sd14": 150
+      },
+      "labels": {
+        "1": 450,
+        "0": 421
+      },
+      "group_count": 871
+    },
+    "final_eval": {
+      "genimage_test": {
+        "n": 384,
+        "sha256": "38a7bccb213b67e478bef0be25a54b047f74373adbe0bd91e35fc08e707c1ff2",
+        "inventory_file": "protected-holdout-384.jsonl",
+        "historical_selection_sha256": "ee2cd345984779501b7f8773d6daaa445b5f547aae13b68ea62887b9f53a11af",
+        "candidate_test_rows": 849,
+        "excluded_from_historical_holdout": 465,
+        "selected_hashes_match_reference": 384,
+        "evaluation_authorized": false
+      },
+      "new_phone_116": {
+        "n": 38,
+        "manifest_sha256": "722e781b3b97122c4ed48d9aa32e115baf8f9080d8da715c82c747a75ba66063",
+        "image_location": "Loan machine only",
+        "new_evaluation_authorized": false,
+        "existing_e0_result": "already seen 2026-11-15; not a new E0 run"
+      }
+    },
+    "development_only": {
+      "adv06": {
+        "manifest_sha256": "665219d8eca1d5fac963e6af7f91d66623f9026dafade277ad259049ce643828",
+        "image_location": "Loan machine only",
+        "new_evaluation_authorized": false
+      }
+    }
+  },
+  "seeds": {
+    "train": 42,
+    "augment": 42,
+    "bootstrap": 42,
+    "replicates": 2000
+  },
+  "thresholds": {
+    "binary": 0.5,
+    "low": 0.3,
+    "high": 0.7,
+    "locked_on": "existing e571 operating point; unchanged for E0/E1",
+    "target_fpr": null,
+    "target_fpr_status": "derive from E0 validation score >0.7; Luc must pin before E1"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "pillow": "13.0.0",
+    "environment": {
+      "python": "3.12.14",
+      "packages_sha256": "178e84d2841526f75522ae6eb4ede2d653f34dbf59e4fecba710323966987694"
+    },
+    "fresh_venv": true,
+    "platform": "Windows-11-10.0.26200-SP0",
+    "pip_freeze": {
+      "command": "uv pip freeze --python .venv/Scripts/python.exe",
+      "file": "pip-freeze.txt",
+      "sha256": "803f5cd3c71f659f37ad760974f741d936c51d6c780a0f45ae19e317f954d6b5"
+    },
+    "encoder_device": "cpu (existing runner path; GPU not enabled by this preparation)"
+  },
+  "encoder": {
+    "id": "sentence-transformers/clip-ViT-B-32",
+    "revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+    "device": "cpu",
+    "HF_HUB_OFFLINE": "1"
+  },
+  "proposed_configuration": {
+    "count": 1,
+    "C": [
+      10.0
+    ],
+    "max_iter": 2000,
+    "image_column": "raw_path",
+    "training_sources": [
+      "genimage_glide",
+      "genimage_midjourney",
+      "genimage_real",
+      "genimage_sd14"
+    ],
+    "cifake_included": false,
+    "augment": {
+      "p": 0.5,
+      "applied_splits": [
+        "train"
+      ],
+      "operations_in_order": [
+        "jpeg_recompress quality integer 30..90",
+        "downscale_upscale factor in [0.5,0.67,0.75]",
+        "screenshot_like sub-seed recorded in augmentation log"
+      ]
+    }
+  },
+  "predictions_allowed_before_final_eval": [
+    "GenImage validation only after individual protocol lock"
+  ],
+  "execution": {
+    "max_runs": 1,
+    "used_marker_required": true,
+    "runner_enforces_protocol_json": false,
+    "on_failure": "keep artifacts and report; another run requires a new protocol"
+  },
+  "needs_luc_decisions": [
+    "Approve individual protocol and exact code commit.",
+    "For E1, pin secondary target FPR measured from E0 validation before E1.",
+    "Confirm final-evaluation runner/Loan handoff, independent recalculation and winner-only holdout policy."
+  ],
+  "notes": "No real experiment, prediction or training has run. No serving-model, G02 or SLO change. This is a proposal, not an approval.",
+  "commands_after_lock": [
+    "python -m scripts.adv12_run extract --labels .cache/adv12-157-preparation/development-labels.csv --image-column raw_path --output .cache/adv12-e1-run01/e1.npz --encoder last --augment 0.5 --augment-seed 42 --batch-size 8",
+    "python -m scripts.adv12_run fit --features .cache/adv12-e1-run01/e1.npz --output-dir .cache/adv12-e1-run01/fit --name adv12_e1 --C 10 --seed 42 --split val"
+  ]
+}
