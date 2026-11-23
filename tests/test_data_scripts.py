@@ -263,6 +263,26 @@ def test_check_images_reports_decompression_bomb(tmp_path, monkeypatch):
     assert check_data.failures
 
 
+@pytest.mark.parametrize(
+    ("source", "size", "ok"),
+    [
+        ("openfake_real", (256, 256), True),
+        ("community_ai", (256, 256), True),
+        ("community_real", (300, 300), False),
+        ("unknown_real", (256, 256), False),
+    ],
+)
+def test_check_images_knows_the_expanded_datasets(
+    tmp_path, monkeypatch, source, size, ok
+):
+    path = tmp_path / "x.jpg"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(np.zeros((size[1], size[0], 3), dtype=np.uint8)).save(path, "JPEG")
+    monkeypatch.setattr(check_data, "failures", [])
+    check_data.check_images(pd.DataFrame([{"filepath": str(path), "source": source}]))
+    assert not check_data.failures if ok else check_data.failures
+
+
 @pytest.fixture
 def split_reference(tmp_path):
     raw = tmp_path / "raw"
