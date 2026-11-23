@@ -1,0 +1,21 @@
+{
+  "file": "adv12-159-preparation-20261117-final.zip",
+  "bytes": 202755,
+  "sha256": "8b525dfbc6e8ac3235baa5a01dec9c911d7bd92e668f7eea953d7095c77a3348",
+  "checksummed_members": 18,
+  "verification": {
+    "zip_sha256": true,
+    "crc": true,
+    "all_member_checksums": true,
+    "wrong_zip_sha256_rejected": true,
+    "modified_member_with_new_zip_sha256_rejected": true,
+    "internal_document_links": true,
+    "models_loaded_by_verifier": false
+  },
+  "location": "local deliveries directory outside Git",
+  "sent_to_Luc_Loan": false,
+  "images_included": false,
+  "clip_weights_included": false,
+  "experiment_run": false,
+  "independent_qa_approved": false
+}
