@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "status": "proposed",
+  "issue": 159,
+  "prepared_on": "2026-11-17",
+  "code_commit": "fad5cf9d460ab3ffce347c1d51b6b722785dbfa7",
+  "code_commit_status": "review candidate; clean immediately after source commit; pin actual approved clean checkout after merge",
+  "locked_by": null,
+  "locked_at": null,
+  "run_id": null,
+  "independent_qa_approved": false,
+  "baseline_model": {
+    "sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+    "thresholds": {
+      "low": 0.3,
+      "binary": 0.5,
+      "high": 0.7
+    }
+  },
+  "splits": {
+    "labels": {
+      "path": ".cache/adv12-159-preparation/development-labels.csv",
+      "sha256": "7d489ad312ae428f8bcf755b2c810c063fb2409c63013dc3fb10222e2db1c434",
+      "n": 4859,
+      "test_n": 0,
+      "has_group_id": true
+    },
+    "validation": {
+      "n": 871,
+      "n_real": 421,
+      "n_ai": 450,
+      "by_source": {
+        "genimage_glide": 150,
+        "genimage_midjourney": 150,
+        "genimage_real": 421,
+        "genimage_sd14": 150
+      },
+      "inventory_sha256": "bbda229da02e2cd1f47a0834c9dc896857ed4758b84d4cc4fe1bd00337798863"
+    },
+    "test": {
+      "evaluation_authorized": false,
+      "historical_holdout_n": 384,
+      "candidate_test_rows": 849,
+      "rule": "winner only, once, separate Luc authorization; do not open all candidates"
+    }
+  },
+  "anchor": {
+    "sha256": null,
+    "selection": "best E0-E3 under shared ADV12 v2.1 validation rule; pin receipt/hash before experiment"
+  },
+  "input_scores": {
+    "e0": {
+      "sha256": null,
+      "n": 871,
+      "producer_model_sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494"
+    },
+    "anchor": {
+      "sha256": null,
+      "n": 871
+    },
+    "receipt_verification_required": true,
+    "mixed": {
+      "sha256": null,
+      "n": 871
+    }
+  },
+  "operating_points": {
+    "primary": {
+      "low": 0.3,
+      "binary_ge": 0.5,
+      "high_gt": 0.7
+    },
+    "secondary": {
+      "target_fpr": null,
+      "origin": "E0 validation score > 0.7; lock before experiment",
+      "rule": "score >= selected threshold",
+      "purpose": "descriptive secondary operating point; not serving verdict"
+    }
+  },
+  "environment": {
+    "python": "3.12.14",
+    "packages_sha256": "178e84d2841526f75522ae6eb4ede2d653f34dbf59e4fecba710323966987694"
+  },
+  "pillow": "13.0.0",
+  "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+  "bootstrap": {
+    "replicates": 2000,
+    "seed": 42,
+    "unit": "group_id",
+    "paired": true,
+    "stratified_by": "label",
+    "conditional_on_fixed_fitted_parameters_and_cutoff": true,
+    "selection_adjusted": false
+  },
+  "roles": {
+    "writer": "Kiet",
+    "runner": null,
+    "independent_recalculator": null
+  },
+  "protocol_gate": {
+    "enforcement": "manual; runner does not validate protocol JSON or consume used marker",
+    "used_marker_path": null,
+    "retain_failed_attempts": true,
+    "rerun_requires_new_protocol": true
+  },
+  "final_cohorts": {
+    "ADV06": "development only; no sole model selection",
+    "Samsung_A25_116": "38 real images on Loan machine; no AI recall; route/manifest/runner pending; exact paired sign test required",
+    "GenImage": "winner only with separate authorization"
+  },
+  "probability_verified": false,
+  "frozen_parameters_sha256": null,
+  "result": null,
+  "reporting": [
+    "N per source",
+    "primary E0-minus-result paired CI",
+    "accuracy at >=0.5, AUROC, recall by AI source",
+    "secondary FPR/FNR/accuracy and conditional CI",
+    "all failures and no-improvement outcomes",
+    "no SLO/G02/serving changes"
+  ],
+  "prerequisites": [
+    "PR192 and this runner reviewed/merged",
+    "individual protocol approved by Luc",
+    "best E0-E3 anchor selected and pinned",
+    "E0 score receipt and secondary target FPR locked beforehand",
+    "clean source and runtime fingerprint verified",
+    "Loan cohort route and mixed-data QA resolved before final use",
+    "E0-E4 results available under plan",
+    "Luc resolves E5 anchor/title mismatch before locking"
+  ],
+  "experiment": "E5",
+  "configurations": 1,
+  "fusion": {
+    "method": "arithmetic mean",
+    "weights": [
+      0.5,
+      0.5
+    ],
+    "stacking": false,
+    "weight_search": false,
+    "additional_Platt": false
+  },
+  "mixed_model": {
+    "proposed_sha256": "7164eeca27ce1d30f73ed70451cafd2a4c26423352a04a2cf44ff26685e19678",
+    "status": "candidate only, independent QA and release approval false",
+    "original_historical_sha256": "26b8882963b9224eb72d2010b46dd390dbd3545173c40c4e452908fbd596c28d",
+    "run_both_variants": false
+  },
+  "open_decision": {
+    "title_and_plan": "e571 plus mixed-v3",
+    "shared_protocol": "best E0-E3 anchor",
+    "resolution": null,
+    "rule": "e571 only if selected or Luc explicitly amends/locks a separate protocol before any run; do not choose after results"
+  },
+  "conclusion_rule": "report no improvement or indistinguishable if fixed validation constraints fail; no post-result grid"
+}

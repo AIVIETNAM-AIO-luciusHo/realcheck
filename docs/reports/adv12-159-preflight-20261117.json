@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "prepared_on": "2026-11-17",
+  "status": "preparation_only_no_E4_E5_run",
+  "run_id": null,
+  "independent_qa_approved": false,
+  "development": {
+    "file": "development-labels.csv",
+    "sha256": "7d489ad312ae428f8bcf755b2c810c063fb2409c63013dc3fb10222e2db1c434",
+    "train_n": 3988,
+    "val_n": 871,
+    "test_n": 0,
+    "val_by_source": {
+      "genimage_glide": 150,
+      "genimage_midjourney": 150,
+      "genimage_real": 421,
+      "genimage_sd14": 150
+    },
+    "validation_inventory_sha256": "bbda229da02e2cd1f47a0834c9dc896857ed4758b84d4cc4fe1bd00337798863",
+    "metadata_alignment_verified": true,
+    "images_rehashed_this_preflight": false,
+    "image_hash_verification_inherited_from": "adv12-157-preflight-20261116.json"
+  },
+  "models": {
+    "e571": {
+      "sha256": "e5718345abf157d3334c3503cdce441892462f19b149e28658d71e0a59b69494",
+      "bytes": 3606,
+      "checksum_verified": true,
+      "bundle_contract_verified": true,
+      "encoder_loaded": false,
+      "predict_called": false,
+      "metadata": {
+        "dataset": "genimage",
+        "labels_sha256": "4bf8e4901ae09f258eeb01a5471ce1416898848f111dee2b1b2c3359235dfcad",
+        "features_sha256": "1a08a1005c3ea3f6daf2172f944b97d51a6d3d33f73ec812558840d2cedfa217",
+        "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+        "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+        "feature_dim": 512,
+        "normalize_embeddings": true,
+        "pillow_version": "13.0.0",
+        "norm_version": "1",
+        "C": 10.0,
+        "seed": 42
+      },
+      "thresholds": {
+        "binary": 0.5,
+        "low": 0.3,
+        "high": 0.7
+      }
+    },
+    "mixed-original-26b888": {
+      "sha256": "26b8882963b9224eb72d2010b46dd390dbd3545173c40c4e452908fbd596c28d",
+      "bytes": 3616,
+      "checksum_verified": true,
+      "bundle_contract_verified": true,
+      "encoder_loaded": false,
+      "predict_called": false,
+      "metadata": {
+        "dataset": "realcheck_mixed_v3",
+        "labels_sha256": "2997cdb9a7899f6daa4807fe024b87bf4150ef2286473676fa59d31ef2a22c5d",
+        "features_sha256": "e27c23fe5708108f2c7309e5a8287cff4eaab905a5631cacbd56f301412356af",
+        "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+        "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+        "feature_dim": 512,
+        "normalize_embeddings": true,
+        "pillow_version": "13.0.0",
+        "norm_version": "1",
+        "C": 10.0,
+        "seed": 42
+      },
+      "thresholds": {
+        "binary": 0.5,
+        "low": 0.3,
+        "high": 0.7
+      },
+      "training_origin": {
+        "git_commit": "9a3ca19e7f8eee273476bcf3ea8f3c4c6510c483",
+        "git_dirty": true,
+        "clean_equivalent_same_bytes": false,
+        "reason": "original run used an uncommitted working tree; clean retraining produced different bytes (7164ee)"
+      }
+    },
+    "mixed-clean-7164ee": {
+      "sha256": "7164eeca27ce1d30f73ed70451cafd2a4c26423352a04a2cf44ff26685e19678",
+      "bytes": 3616,
+      "checksum_verified": true,
+      "bundle_contract_verified": true,
+      "encoder_loaded": false,
+      "predict_called": false,
+      "metadata": {
+        "dataset": "realcheck_mixed_v3",
+        "labels_sha256": "2997cdb9a7899f6daa4807fe024b87bf4150ef2286473676fa59d31ef2a22c5d",
+        "features_sha256": "e27c23fe5708108f2c7309e5a8287cff4eaab905a5631cacbd56f301412356af",
+        "clip_model_id": "sentence-transformers/clip-ViT-B-32",
+        "clip_revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f",
+        "feature_dim": 512,
+        "normalize_embeddings": true,
+        "pillow_version": "13.0.0",
+        "norm_version": "1",
+        "C": 10.0,
+        "seed": 42
+      },
+      "thresholds": {
+        "binary": 0.5,
+        "low": 0.3,
+        "high": 0.7
+      },
+      "training_origin": {
+        "git_commit": "e4b6d29018144d86c515262750a0a28aa56835f4",
+        "git_dirty": false,
+        "scope": "fit from existing feature cache only; acquisition and normalization provenance not newly certified",
+        "packaging_git_commit": "285316782afcaf6e6b61b24b1a8dfb0042caeef5",
+        "packaging_git_dirty": true,
+        "independent_qa_approved": false,
+        "release_approved": false
+      }
+    }
+  },
+  "environment": {
+    "python": "3.12.14",
+    "packages_sha256": "178e84d2841526f75522ae6eb4ede2d653f34dbf59e4fecba710323966987694"
+  },
+  "not_done": [
+    "real score generation",
+    "E4 calibration on real scores",
+    "E5 fusion on real scores",
+    "cohort evaluation",
+    "test evaluation",
+    "independent QA"
+  ],
+  "blockers": [
+    "individual E4/E5 locked protocols absent",
+    "best E0-E3 model not selected",
+    "E0 validation FPR not locked",
+    "E5 anchor/title versus shared protocol needs Luc decision",
+    "Loan mixed-data QA and local cohort route pending"
+  ],
+  "candidate_runner_commit": "fad5cf9d460ab3ffce347c1d51b6b722785dbfa7",
+  "candidate_runner_status": "review candidate; clean immediately after source commit; pin actual approved clean checkout after merge"
+}
