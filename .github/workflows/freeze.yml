@@ -1,0 +1,33 @@
+name: Freeze
+
+# Chỉ đọc. Dùng sự kiện pull_request thường (không phải bản target), không chạy code của PR.
+# KHÔNG nằm trong needs của ci-ok: bật làm check bắt buộc là quyết định riêng của Lực.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Kiểm freeze
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          FREEZE_VAR: ${{ vars.FREEZE_ENABLED }}
+        run: |
+          git diff --no-renames --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/changed.txt"
+          # Cờ bật đọc từ nhánh gốc để PR không tự tắt freeze bằng cách sửa file này
+          git show "$BASE_SHA:.github/freeze.yml" > "$RUNNER_TEMP/freeze.yml" 2>/dev/null || true
+          python .github/scripts/check_freeze.py --files "$RUNNER_TEMP/changed.txt" --freeze-file "$RUNNER_TEMP/freeze.yml"
